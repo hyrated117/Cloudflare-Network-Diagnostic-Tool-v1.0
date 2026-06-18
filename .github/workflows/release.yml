@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧱 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🧰 Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 🧰 Set up Swift (Linux via Swift toolchain)
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: "5.9"
+
+      - name: 📦 Install NPM dependencies (installers)
+        working-directory: ./installers
+        run: |
+          npm install
+
+      - name: 🏗 Build MCP installer pack
+        run: |
+          mkdir -p release/artifacts/installers
+          tar -czf release/artifacts/installers/mcp-installer-pack.tar.gz installers server
+          ls -R release
+
+      - name: 🔐 Generate checksums
+        run: |
+          cd release/artifacts/installers
+          sha256sum mcp-installer-pack.tar.gz > SHA256SUMS
+          cd -
+
+      - name: 📝 Generate release notes
+        id: notes
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          cat > release/release-notes.md <<EOF
+# Cloudflare Network Diagnostic Tool – $TAG
+
+## Changes
+
+- MCP server updates
+- Installer improvements
+- Performance and stability enhancements
+
+## Artifacts
+
+- \`mcp-installer-pack.tar.gz\`
+- \`SHA256SUMS\`
+EOF
+
+      - name: 📤 Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.notes.outputs.tag }}
+          name: Cloudflare Network Diagnostic Tool ${{ steps.notes.outputs.tag }}
+          body_path: release/release-notes.md
+          files: |
+            release/artifacts/installers/mcp-installer-pack.tar.gz
+            release/artifacts/installers/SHA256SUMS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

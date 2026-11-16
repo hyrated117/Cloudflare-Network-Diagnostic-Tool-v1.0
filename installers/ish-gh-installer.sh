@@ -4,14 +4,14 @@ echo "[1/7] Updating Alpine packages..."
 apk update
 
 echo "[2/7] Installing build dependencies..."
-apk add build-base git go wget
+apk add --no-cache build-base git go wget
 
 echo "[3/7] Creating workspace..."
 mkdir -p /root/src
 cd /root/src
 
 echo "[4/7] Cloning GitHub CLI source..."
-git clone https://github.com/cli/cli.git
+git clone --depth 1 https://github.com/cli/cli.git
 cd cli
 
 echo "[5/7] Building GitHub CLI..."
@@ -28,49 +28,3 @@ echo ""
 echo "🎉 GitHub CLI installed successfully!"
 echo "Run: gh --version"
 echo ""
-name: Security Scan
-
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-
-jobs:
-  dependency-check:
-    runs-on: ubuntu-24.04
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install Python Safety
-        run: |
-          pip install safety
-
-      - name: Run Python Safety Scan
-        run: |
-          # Using 'scan' is recommended over deprecated 'check'
-          # If you must use 'check', replace the command below with: safety check
-          safety scan || true 
-          # Note: '|| true' allows the job to continue even if vulnerabilities are found, 
-          # depending on your security policy. Remove '|| true' to fail the build on vulnerabilities.
-
-      - name: Set up Node.js 18
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Audit Node Dependencies
-        working-directory: ./installers
-        run: |
-          # FIX: Generate package-lock.json first if it doesn't exist
-          npm install --package-lock-only
-          
-          # Run the audit
-          npm audit --audit-level=moderate

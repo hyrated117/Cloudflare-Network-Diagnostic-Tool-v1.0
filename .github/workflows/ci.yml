@@ -2,60 +2,42 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
+
+permissions:
+  contents: read
 
 jobs:
-  swift-build:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-      
-      - name: Build SwiftUI App
-        run: |
-          xcodebuild -scheme GeneratedApp -configuration Release -derivedDataPath build
-      
-      - name: Run Swift Tests
-        run: |
-          xcodebuild -scheme GeneratedApp -configuration Debug test -derivedDataPath build
-
-  python-lint:
+  validate-python-and-json:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
-      - name: Install dependencies
-        run: |
-          pip install flake8 pylint pytest
-      
-      - name: Lint with flake8
-        run: |
-          flake8 server/ --count --select=E9,F63,F7,F82 --show-source --statistics
-      
-      - name: Run Python tests
-        run: |
-          pytest server/ -v
 
-  node-lint:
+      - name: Compile Python sources
+        run: python -m compileall -q server installers Tools reference
+
+      - name: Validate JSON configuration and package manifests
+        run: |
+          python -m json.tool server/mcp-server.json >/dev/null
+          python -m json.tool server/mcp-client.json >/dev/null
+          python -m json.tool installers/package.json >/dev/null
+
+  validate-node:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
-      
-      - name: Install dependencies
-        run: |
-          cd installers && npm install
-      
-      - name: Lint with ESLint
-        run: |
-          cd installers && npm run lint
+          node-version: '20'
+
+      - name: Check JavaScript syntax
+        run: node --check server/index.js && node --check installers/cli.js

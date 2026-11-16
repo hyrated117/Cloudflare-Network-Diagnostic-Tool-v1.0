@@ -1,36 +1,23 @@
 #!/bin/bash
-# Python-specific MCP Server Installer
+# Python-only MCP server installer (macOS/Linux).
+set -euo pipefail
 
-set -e
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+INSTALL_DIR="${HOME:?HOME must be set}/.local/cloudflare-mcp"
+SERVER_DIR="${INSTALL_DIR}/server"
+CONFIG_DIR="${INSTALL_DIR}/config"
 
-echo "🐍 Installing Python MCP Server"
+command -v python3 >/dev/null 2>&1 || { echo "Python 3 is required." >&2; exit 1; }
+SOURCE="${REPO_ROOT}/server/index.py"
+[ -f "${SOURCE}" ] || { echo "Server source not found: ${SOURCE}" >&2; exit 1; }
 
-VERSION="1.0.0"
-INSTALL_DIR="${HOME}/.local/cloudflare-mcp"
+mkdir -p "${SERVER_DIR}" "${CONFIG_DIR}"
+install -m 755 "${SOURCE}" "${SERVER_DIR}/index.py"
+for config in mcp-server.json mcp-client.json; do
+    source="${REPO_ROOT}/server/${config}"
+    [ ! -f "${source}" ] || install -m 644 "${source}" "${CONFIG_DIR}/${config}"
+done
 
-mkdir -p "${INSTALL_DIR}/server"
-
-# Check Python version
-if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 is required but not installed."
-    exit 1
-fi
-
-echo "✓ Python $(python3 --version) detected"
-
-# Copy server files
-cp server/index.py "${INSTALL_DIR}/server/"
-chmod +x "${INSTALL_DIR}/server/index.py"
-
-# Create virtual environment
-python3 -m venv "${INSTALL_DIR}/venv"
-source "${INSTALL_DIR}/venv/bin/activate"
-
-# Install dependencies
-echo "Installing dependencies..."
-pip install --upgrade pip setuptools wheel
-pip install flask requests pyyaml
-
-echo "✅ Python MCP Server installed successfully!"
-echo "Location: ${INSTALL_DIR}/server/index.py"
-echo "Virtual environment: ${INSTALL_DIR}/venv"
+echo "Python MCP server installed at ${SERVER_DIR}/index.py"
+echo "Configure your MCP client to launch that script with python3."

@@ -2,10 +2,6 @@
 
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const VERSION = '1.0.0';
 const PROJECT_NAME = 'Cloudflare Network Diagnostic Tool';
@@ -72,10 +68,10 @@ Commands:
     if (allExists) {
       this.log('✓ Installation is complete');
       return true;
-    } else {
-      this.warning('⚠ Installation appears incomplete');
-      return false;
     }
+
+    this.warning('⚠ Installation appears incomplete');
+    return false;
   }
 
   startServer() {

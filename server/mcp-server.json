@@ -67,8 +67,12 @@
         "properties": {
           "format": {
             "type": "string",
-            "enum": ["json", "csv", "pdf"],
+            "enum": ["json", "csv"],
             "description": "Export format"
+          },
+          "results": {
+            "type": "object",
+            "description": "Diagnostic payload to export"
           }
         }
       }

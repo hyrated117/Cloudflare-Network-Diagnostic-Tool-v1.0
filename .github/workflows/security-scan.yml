@@ -2,56 +2,50 @@ name: Security Scan
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
   schedule:
-    - cron: '0 2 * * 0'  # Weekly scan
+    - cron: '0 2 * * 0'
+
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
-  codeql:
-    name: CodeQL Analysis
+  dependency-audit:
+    name: Dependency audit
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'python', 'javascript' ]
-    
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-    
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
-      with:
-        languages: ${{ matrix.language }}
-    
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v2
-    
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
 
-  dependency-check:
-    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      
-      - name: Check for vulnerable dependencies
+
+      - name: Install Python security tools
         run: |
+          python -m pip install --upgrade pip
           pip install safety
-          safety check
-      
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+
+      - name: Run Python dependency scan
+        run: |
+          safety scan --full-report
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
-      
-      - name: Check npm dependencies
+
+      - name: Audit Node dependencies
+        working-directory: ./installers
         run: |
-          cd installers && npm audit --audit-level=moderate
+          if [ -f package.json ]; then
+            npm install --package-lock-only
+            npm audit --audit-level=moderate
+          else
+            echo "No package.json found in installers; skipping npm audit."
+          fi

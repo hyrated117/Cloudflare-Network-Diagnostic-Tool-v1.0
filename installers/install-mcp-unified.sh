@@ -4,16 +4,15 @@
 
 set -euo pipefail
 
- echo "🚀 Cloudflare Network Diagnostic Tool - MCP Server Installer"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+
+echo "🚀 Cloudflare Network Diagnostic Tool - MCP Server Installer"
 echo "================================================="
 
 VERSION="1.0.0"
 INSTALL_DIR="${HOME}/.local/cloudflare-mcp"
 LOG_FILE="${INSTALL_DIR}/install.log"
-
-# Resolve repository files relative to this script, not the caller's working directory.
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 
 # Colors
 GREEN='\033[0;32m'
@@ -21,7 +20,6 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Create installation directory before logging.
 mkdir -p "${INSTALL_DIR}"
 
 log() {
@@ -39,7 +37,6 @@ warning() {
 
 log "Installing to: ${INSTALL_DIR}"
 
-# Check for available runtimes.
 PYTHON_AVAILABLE=false
 NODE_AVAILABLE=false
 if command -v python3 >/dev/null 2>&1; then
@@ -60,7 +57,6 @@ if [ "${PYTHON_AVAILABLE}" = false ] && [ "${NODE_AVAILABLE}" = false ]; then
     error "Python 3 or Node.js is required. Install one and retry."
 fi
 
-# Install Python server if available.
 if [ "${PYTHON_AVAILABLE}" = true ]; then
     PYTHON_SOURCE="${REPO_ROOT}/server/index.py"
     [ -f "${PYTHON_SOURCE}" ] || error "Python server source not found: ${PYTHON_SOURCE}"
@@ -70,7 +66,6 @@ if [ "${PYTHON_AVAILABLE}" = true ]; then
     log "✓ Python server files installed"
 fi
 
-# Install Node server if available. The package manifest lives under installers/.
 if [ "${NODE_AVAILABLE}" = true ]; then
     NODE_SOURCE="${REPO_ROOT}/server/index.js"
     NODE_PACKAGE="${REPO_ROOT}/installers/package.json"
@@ -80,11 +75,10 @@ if [ "${NODE_AVAILABLE}" = true ]; then
     mkdir -p "${INSTALL_DIR}/server/node"
     install -m 644 "${NODE_SOURCE}" "${INSTALL_DIR}/server/node/index.js"
     install -m 644 "${NODE_PACKAGE}" "${INSTALL_DIR}/server/node/package.json"
-    (cd "${INSTALL_DIR}/server/node" && npm install --omit=dev)
+    (cd "${INSTALL_DIR}/server/node" && npm install --omit=dev >/dev/null)
     log "✓ Node.js server and dependencies installed"
 fi
 
-# Copy configuration files when present.
 log "Copying configuration files..."
 mkdir -p "${INSTALL_DIR}/config"
 for config in mcp-server.json mcp-client.json; do
@@ -101,5 +95,5 @@ log "Version: ${VERSION}"
 log "Install directory: ${INSTALL_DIR}"
 log "Log file: ${LOG_FILE}"
 log ""
-log "Note: The current server/index.py and server/index.js are diagnostic stubs, not complete MCP protocol servers."
+log "Use the project server implementations in server/index.py and server/index.js."
 log "For more information, visit: https://github.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0"

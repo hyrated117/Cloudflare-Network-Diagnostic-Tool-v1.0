@@ -10,10 +10,7 @@ The goal is to ensure safe execution of diagnostics, secure MCP server behavior,
 
 If you discover a security issue, **DO NOT** open a public GitHub Issue.
 
-Instead, please report it privately:
-
-**Email:** security@yourdomain.com  
-**Subject:** `Security Report – Cloudflare Diagnostic Tool`
+Instead, please report it privately using [GitHub's private vulnerability reporting](https://github.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0/security/advisories/new).
 
 Please include:
 

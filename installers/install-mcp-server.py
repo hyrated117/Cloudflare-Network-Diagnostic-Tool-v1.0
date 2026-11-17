@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Install the Python MCP server and its configuration files."""
+"""Install the Python MCP server and configuration files."""
 
+import json
 import shutil
 import sys
 from datetime import datetime
@@ -25,7 +26,7 @@ class MCPInstaller:
     def log(self, message, level="INFO"):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         msg = f"[{timestamp}] [{level}] {message}"
-        print(msg)
+        print(msg, file=sys.stderr if level == "ERROR" else sys.stdout)
         self.install_dir.mkdir(parents=True, exist_ok=True)
         with self.log_file.open("a", encoding="utf-8") as log_file:
             log_file.write(msg + "\n")
@@ -40,23 +41,47 @@ class MCPInstaller:
             self.log(f"Server file not found: {source}", "ERROR")
             return 1
 
-        self.server_dir.mkdir(parents=True, exist_ok=True)
-        self.config_dir.mkdir(parents=True, exist_ok=True)
-        destination = self.server_dir / "index.py"
-        shutil.copy2(source, destination)
-        if sys.platform != "win32":
-            destination.chmod(0o755)
-        self.log(f"Installed Python server to {destination}")
+        try:
+            self.server_dir.mkdir(parents=True, exist_ok=True)
+            self.config_dir.mkdir(parents=True, exist_ok=True)
+            destination = self.server_dir / "index.py"
+            shutil.copy2(source, destination)
+            if sys.platform != "win32":
+                destination.chmod(0o755)
 
-        for name in ("mcp-server.json", "mcp-client.json"):
-            config_source = self.repo_root / "server" / name
-            if config_source.is_file():
-                shutil.copy2(config_source, self.config_dir / name)
-                self.log(f"Copied {name}")
-
-        self.log(f"{PROJECT_NAME} v{VERSION} installation complete")
-        self.log(f"Run with: {sys.executable} {destination}")
-        return 0
+            server_config = {
+                "name": PROJECT_NAME,
+                "version": VERSION,
+                "description": "MCP server for Cloudflare network diagnostics",
+                "type": "stdio",
+                "command": sys.executable,
+                "args": [str(destination)],
+                "env": {"PYTHONUNBUFFERED": "1"},
+            }
+            (self.config_dir / "mcp-server.json").write_text(
+                json.dumps(server_config, indent=2) + "\n", encoding="utf-8"
+            )
+            client_config = {
+                "name": "Cloudflare Diagnostic Client",
+                "version": VERSION,
+                "description": "MCP Client configuration for Cloudflare Network Diagnostic Tool",
+                "servers": {
+                    "cloudflare-diagnostics": {
+                        "command": sys.executable,
+                        "args": [str(destination)],
+                        "env": {"PYTHONUNBUFFERED": "1"},
+                    }
+                },
+            }
+            (self.config_dir / "mcp-client.json").write_text(
+                json.dumps(client_config, indent=2) + "\n", encoding="utf-8"
+            )
+            self.log(f"Installed Python server to {destination}")
+            self.log(f"{PROJECT_NAME} v{VERSION} installation complete")
+            return 0
+        except OSError as exc:
+            self.log(f"Installation failed: {exc}", "ERROR")
+            return 1
 
 
 if __name__ == "__main__":

@@ -1,47 +1,51 @@
 # Python-specific MCP Server Installer for Windows
 
+[CmdletBinding()]
 param(
-    [string]$InstallDir = "$env:APPDATA\Cloudflare-MCP"
+    [string]$InstallDir = (Join-Path $env:APPDATA "Cloudflare-MCP")
 )
 
-Write-Host "🐍 Installing Python MCP Server" -ForegroundColor Green
-
-$version = "1.0.0"
-
-# Create install directory
-if (-not (Test-Path $InstallDir)) {
-    New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+$ErrorActionPreference = "Stop"
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$source = Join-Path $repoRoot "server\index.py"
+if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
+    throw "Python server source not found: $source"
 }
 
+$python = Get-Command python.exe -ErrorAction SilentlyContinue
+if (-not $python) { $python = Get-Command py.exe -ErrorAction SilentlyContinue }
+if (-not $python) { throw "Python 3 is required but was not found on PATH." }
+
+$InstallDir = [System.IO.Path]::GetFullPath($InstallDir)
 $serverDir = Join-Path $InstallDir "server"
-New-Item -ItemType Directory -Path $serverDir -Force | Out-Null
+$configDir = Join-Path $InstallDir "config"
+New-Item -ItemType Directory -Path $serverDir, $configDir -Force | Out-Null
+$destination = Join-Path $serverDir "index.py"
+Copy-Item -LiteralPath $source -Destination $destination -Force
 
-# Check Python installation
-if (-not (Get-Command python.exe -ErrorAction SilentlyContinue)) {
-    Write-Host "❌ Python 3 is required but not installed." -ForegroundColor Red
-    exit 1
+$pythonCommand = $python.Source
+$serverConfig = @{
+    name = "Cloudflare Network Diagnostic Tool"
+    version = "1.0.0"
+    description = "MCP server for Cloudflare network diagnostics"
+    type = "stdio"
+    command = $pythonCommand
+    args = @($destination)
+    env = @{ PYTHONUNBUFFERED = "1" }
 }
-
-$pythonVersion = python.exe --version 2>&1
-Write-Host "✓ $pythonVersion detected" -ForegroundColor Green
-
-# Copy server files
-if (Test-Path "server\index.py") {
-    Copy-Item -Path "server\index.py" -Destination $serverDir -Force
+$clientConfig = @{
+    name = "Cloudflare Diagnostic Client"
+    version = "1.0.0"
+    description = "MCP Client configuration for Cloudflare Network Diagnostic Tool"
+    servers = @{
+        "cloudflare-diagnostics" = @{
+            command = $pythonCommand
+            args = @($destination)
+            env = @{ PYTHONUNBUFFERED = "1" }
+        }
+    }
 }
-
-# Create virtual environment
-$venvPath = Join-Path $InstallDir "venv"
-python.exe -m venv $venvPath
-
-# Activate and install dependencies
-$activateScript = Join-Path $venvPath "Scripts\Activate.ps1"
-& $activateScript
-
-Write-Host "Installing dependencies..." -ForegroundColor Cyan
-pip install --upgrade pip setuptools wheel
-pip install flask requests pyyaml
-
-Write-Host "✅ Python MCP Server installed successfully!" -ForegroundColor Green
-Write-Host "Location: $serverDir\index.py"
-Write-Host "Virtual environment: $venvPath"
+$serverConfig | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $configDir "mcp-server.json") -Encoding utf8
+$clientConfig | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $configDir "mcp-client.json") -Encoding utf8
+Write-Host "Python MCP server installed at $destination" -ForegroundColor Green
+Write-Host "MCP configuration files are in $configDir" -ForegroundColor Green

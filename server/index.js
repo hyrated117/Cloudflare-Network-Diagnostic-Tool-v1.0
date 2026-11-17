@@ -4,10 +4,21 @@
 import { execFileSync } from 'node:child_process';
 import dns from 'node:dns';
 import net from 'node:net';
+import { pathToFileURL } from 'node:url';
 
 const PROTOCOL_VERSION = '2024-11-05';
 const timestamp = () => new Date().toISOString();
 const log = (...args) => console.error(...args);
+
+const isDirectExecution = () => {
+  const argv1 = process.argv[1];
+  if (!argv1) return false;
+  try {
+    return import.meta.url === pathToFileURL(argv1).href;
+  } catch {
+    return false;
+  }
+};
 
 class DiagnosticServer {
   constructor() {
@@ -87,8 +98,8 @@ class DiagnosticServer {
         const output = execFileSync(command, [destination], { encoding: 'utf8', timeout: 20000, stdio: ['ignore', 'pipe', 'pipe'] });
         return { tool: 'trace_route', destination, status: 'ok', output: output.trim(), timestamp: timestamp() };
       } catch (error) {
-        if (error.code === 'ENOENT') continue;
-        return { tool: 'trace_route', destination, status: 'error', error: error.stderr?.toString().trim() || error.message, timestamp: timestamp() };
+        if (error?.code === 'ENOENT') continue;
+        return { tool: 'trace_route', destination, status: 'error', error: error?.stderr?.toString().trim() || error?.message, timestamp: timestamp() };
       }
     }
     return { tool: 'trace_route', destination, status: 'unavailable', message: 'No traceroute or tracepath utility available on this system.', timestamp: timestamp() };
@@ -192,7 +203,7 @@ class DiagnosticServer {
   }
 }
 
-if (import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+if (isDirectExecution()) {
   new DiagnosticServer().run().catch((error) => {
     log('Server error:', error);
     process.exitCode = 1;

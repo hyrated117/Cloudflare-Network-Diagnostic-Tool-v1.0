@@ -40,4 +40,4 @@ This project includes:
 ### **macOS / Linux (Unified Installer)**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<your-user>/<your-repo>/main/installers/install-mcp-unified.sh | bash
+curl -fsSL https://raw.githubusercontent.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0/main/installers/install-mcp-unified.sh | bash

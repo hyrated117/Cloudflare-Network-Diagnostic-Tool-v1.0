@@ -1,15 +1,39 @@
 ---
-name: Bug report
-about: Report a bug
+name: Bug Report
+about: Report a problem with the diagnostic tool
+title: "[BUG] "
 labels: bug
+assignees: ''
 ---
 
 ## Description
 
-## Steps to reproduce
+Describe the bug clearly.
 
-## Expected behavior
+## Steps To Reproduce
 
-## Actual behavior
+1.
+2.
+3.
+
+## Expected Behaviour
+
+Describe what should happen.
+
+## Actual Behaviour
+
+Describe what happened instead.
 
 ## Environment
+
+- Windows Version:
+- PowerShell Version:
+- Tool Version:
+
+## Logs / Screenshots
+
+Paste any relevant output or screenshots.
+
+## Additional Information
+
+Anything else that may help identify the issue.

@@ -68,14 +68,18 @@ fi
 
 if [ "${NODE_AVAILABLE}" = true ]; then
     NODE_SOURCE="${REPO_ROOT}/server/index.js"
-    NODE_PACKAGE="${REPO_ROOT}/installers/package.json"
+    NODE_PACKAGE="${REPO_ROOT}/server/package.json"
     [ -f "${NODE_SOURCE}" ] || error "Node server source not found: ${NODE_SOURCE}"
     [ -f "${NODE_PACKAGE}" ] || error "Node package manifest not found: ${NODE_PACKAGE}"
+    command -v npm >/dev/null 2>&1 || error "npm is required to install Node.js server dependencies."
+
     log "Installing Node.js server..."
-    mkdir -p "${INSTALL_DIR}/server/node"
-    install -m 644 "${NODE_SOURCE}" "${INSTALL_DIR}/server/node/index.js"
-    install -m 644 "${NODE_PACKAGE}" "${INSTALL_DIR}/server/node/package.json"
-    (cd "${INSTALL_DIR}/server/node" && npm install --omit=dev >/dev/null)
+    NODE_INSTALL_DIR="${INSTALL_DIR}/server/node"
+    mkdir -p "${NODE_INSTALL_DIR}"
+    install -m 644 "${NODE_SOURCE}" "${NODE_INSTALL_DIR}/index.js"
+    # Use the server's manifest so the installed runtime gets its actual dependencies.
+    install -m 644 "${NODE_PACKAGE}" "${NODE_INSTALL_DIR}/package.json"
+    (cd "${NODE_INSTALL_DIR}" && npm install --omit=dev --no-audit --no-fund) || error "Failed to install Node.js server dependencies."
     log "✓ Node.js server and dependencies installed"
 fi
 

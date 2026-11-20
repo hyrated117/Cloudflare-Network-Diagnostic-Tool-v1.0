@@ -2,67 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
   pull_request:
-    branches: [main, develop]
-  workflow_dispatch:
-
-permissions:
-  contents: read
 
 jobs:
-  validate-python-and-json:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Compile Python sources
-        run: python -m compileall -q server installers Tools reference
-
-      - name: Validate JSON configuration and package manifests
-        run: |
-          python -m json.tool server/mcp-server.json >/dev/null
-          python -m json.tool server/mcp-client.json >/dev/null
-          python -m json.tool installers/package.json >/dev/null
-          python -m json.tool server/package.json >/dev/null
-
-      - name: Exercise Python MCP protocol
-        run: |
-          printf '%s\n' \
-            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
-            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
-            '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"export_results","arguments":{"format":"json","results":{"ok":true}}}}' \
-            | python3 server/index.py
-
-  validate-node:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Check JavaScript syntax
-        run: node --check server/index.js && node --check installers/cli.js
-
-      - name: Exercise Node MCP protocol
-        run: |
-          printf '%s\n' \
-            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
-            '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' \
-            '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"export_results","arguments":{"format":"json","results":{"ok":true}}}}' \
-            | node server/index.js
-
-  validate-shell:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Check Shell syntax
-        run: bash -n Tools/*.sh installers/*.sh

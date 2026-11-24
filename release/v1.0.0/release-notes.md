@@ -132,8 +132,8 @@ N/A for v1.0.0 initial release.
 
 - **Documentation**: [GitHub Wiki](https://github.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0/wiki)
 - **Issues**: [GitHub Issues](https://github.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0/issues)
-- **Security**: See [SECURITY.md](../SECURITY.md)
-- **Contributing**: See [CONTRIBUTING.md](../CONTRIBUTING.md)
+- **Security**: See [SECURITY.md](../../SECURITY.md)
+- **Contributing**: See [CONTRIBUTING.md](../../CONTRIBUTING.md)
 
 ## Credits
 
@@ -151,4 +151,4 @@ License: Other (See LICENSE file)
 
 **Thank you for using Cloudflare Network Diagnostic Tool!**
 
-For detailed information about features and modules, visit the [documentation](../docs/).
+For detailed information about features and modules, visit the [documentation](../../docs/).

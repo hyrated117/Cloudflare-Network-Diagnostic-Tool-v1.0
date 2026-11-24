@@ -64,4 +64,4 @@ This roadmap outlines upcoming features, improvements, and long-term goals.
 
 # ❤️ Contributions Welcome
 
-See: [Contributing Guide](ca://s?q=Open_CONTRIBUTING_Guide)
+See: [Contributing Guide](../CONTRIBUTING.md)

@@ -27,22 +27,22 @@ Guide to the AppMaker generator for creating custom SwiftUI applications.
 
 ## Developer Guides
 
-### [Performance-Guide.md](./Performance-Guide.md)
-Performance optimization strategies and benchmarking.
+### [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
+Common issues, error codes, and debugging tips.
 
-### [Troubleshooting.md](./Troubleshooting.md)
-Common issues and solutions.
+### [PERFORMANCE-GUIDE.md](../PERFORMANCE-GUIDE.md)
+Performance objectives, benchmarks, and optimization strategies.
+
+### [PERFORMANCE-OPTIMIZATION.md](./PERFORMANCE-OPTIMIZATION.md)
+Advanced performance optimization techniques.
 
 ### [Privacy.md](./Privacy.md)
 Privacy considerations and data handling.
 
 ## Additional Resources
 
-### [Roadmap.md](../ROADMAP.md)
+### [ROADMAP.md](../ROADMAP.md)
 Project roadmap and planned features.
-
-### [Performance-Optimization.md](./PERFORMANCE-OPTIMIZATION.md)
-Advanced performance optimization techniques.
 
 ---
 

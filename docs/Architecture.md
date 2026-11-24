@@ -26,7 +26,7 @@ It supports:
 - Severity scoring  
 - Plugin‑based module loading
 
-See **[Modules](ca://s?q=Explain_diagnostic_modules)** for details.
+See **[Modules.md](./Modules.md)** for details.
 
 ---
 
@@ -68,6 +68,6 @@ A generator that creates:
 - Project scaffolding  
 - GitHub‑ready repos  
 
-See **[AppMaker.md](ca://s?q=Show_AppMaker_documentation)**.
+See **[AppMaker.md](./AppMaker.md)**.
 
 ---

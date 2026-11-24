@@ -14,50 +14,10 @@ SOURCE="${REPO_ROOT}/server/index.py"
 
 mkdir -p "${SERVER_DIR}" "${CONFIG_DIR}"
 install -m 755 "${SOURCE}" "${SERVER_DIR}/index.py"
+for config in mcp-server.json mcp-client.json; do
+    source="${REPO_ROOT}/server/${config}"
+    [ ! -f "${source}" ] || install -m 644 "${source}" "${CONFIG_DIR}/${config}"
+done
 
-# Write the config files here, with the absolute path of the installed script.
-# MCP clients resolve a relative "index.py" against their own working directory,
-# not against the config file, so a relative path never finds the server.
-PYTHON="$(command -v python3)"
-SERVER_SCRIPT="${SERVER_DIR}/index.py"
-
-json_escape() {
-    printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
-}
-
-PYTHON_JSON="$(json_escape "${PYTHON}")"
-SCRIPT_JSON="$(json_escape "${SERVER_SCRIPT}")"
-
-cat > "${CONFIG_DIR}/mcp-server.json" <<EOF
-{
-  "name": "Cloudflare Network Diagnostic Tool",
-  "version": "1.0.0",
-  "description": "MCP server for Cloudflare network diagnostics",
-  "type": "stdio",
-  "command": "${PYTHON_JSON}",
-  "args": ["${SCRIPT_JSON}"],
-  "env": {
-    "PYTHONUNBUFFERED": "1"
-  }
-}
-EOF
-
-cat > "${CONFIG_DIR}/mcp-client.json" <<EOF
-{
-  "name": "Cloudflare Diagnostic Client",
-  "version": "1.0.0",
-  "description": "MCP Client configuration for Cloudflare Network Diagnostic Tool",
-  "servers": {
-    "cloudflare-diagnostics": {
-      "command": "${PYTHON_JSON}",
-      "args": ["${SCRIPT_JSON}"],
-      "env": {
-        "PYTHONUNBUFFERED": "1"
-      }
-    }
-  }
-}
-EOF
-
-echo "Python MCP server installed at ${SERVER_SCRIPT}"
-echo "MCP configuration files are in ${CONFIG_DIR}"
+echo "Python MCP server installed at ${SERVER_DIR}/index.py"
+echo "Configure your MCP client to launch that script with python3."

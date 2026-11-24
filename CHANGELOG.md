@@ -40,6 +40,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
   `docs/TROUBLESHOOTING.md` only by case
 - `server/mcp-server.json` and `server/mcp-client.json`, the static config templates
   that carried the relative path
+- `installers/ish-gh-installer.sh`, an unrelated Alpine script that built the GitHub
+  CLI from source and had no connection to this project
+- `.devcontainer/`, a corrupted directory holding a stray feature file and no
+  `devcontainer.json`
 
 ---
 

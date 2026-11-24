@@ -68,30 +68,65 @@ fi
 
 if [ "${NODE_AVAILABLE}" = true ]; then
     NODE_SOURCE="${REPO_ROOT}/server/index.js"
-    NODE_PACKAGE="${REPO_ROOT}/server/package.json"
     [ -f "${NODE_SOURCE}" ] || error "Node server source not found: ${NODE_SOURCE}"
-    [ -f "${NODE_PACKAGE}" ] || error "Node package manifest not found: ${NODE_PACKAGE}"
-    command -v npm >/dev/null 2>&1 || error "npm is required to install Node.js server dependencies."
 
     log "Installing Node.js server..."
     NODE_INSTALL_DIR="${INSTALL_DIR}/server/node"
     mkdir -p "${NODE_INSTALL_DIR}"
     install -m 644 "${NODE_SOURCE}" "${NODE_INSTALL_DIR}/index.js"
-    # Use the server's manifest so the installed runtime gets its actual dependencies.
-    install -m 644 "${NODE_PACKAGE}" "${NODE_INSTALL_DIR}/package.json"
-    (cd "${NODE_INSTALL_DIR}" && npm install --omit=dev --no-audit --no-fund) || error "Failed to install Node.js server dependencies."
-    log "✓ Node.js server and dependencies installed"
+    # The server is an ES module with no runtime dependencies, so this manifest
+    # only tells Node to load index.js as a module and no npm install is needed.
+    printf '{\n  "type": "module"\n}\n' > "${NODE_INSTALL_DIR}/package.json"
+    log "✓ Node.js server files installed"
 fi
 
-log "Copying configuration files..."
+# Write the config files with the absolute path of the installed script.
+# MCP clients resolve a relative "index.py" against their own working directory,
+# not against the config file, so a relative path never finds the server.
+if [ "${PYTHON_AVAILABLE}" = true ]; then
+    SERVER_COMMAND="$(command -v python3)"
+    SERVER_SCRIPT="${INSTALL_DIR}/server/python/index.py"
+    ENV_BODY='"PYTHONUNBUFFERED": "1"'
+else
+    SERVER_COMMAND="$(command -v node)"
+    SERVER_SCRIPT="${INSTALL_DIR}/server/node/index.js"
+    ENV_BODY=''
+fi
+
+json_escape() {
+    printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g'
+}
+
+COMMAND_JSON="$(json_escape "${SERVER_COMMAND}")"
+SCRIPT_JSON="$(json_escape "${SERVER_SCRIPT}")"
+
+log "Writing configuration files..."
 mkdir -p "${INSTALL_DIR}/config"
-for config in mcp-server.json mcp-client.json; do
-    if [ -f "${REPO_ROOT}/server/${config}" ]; then
-        install -m 644 "${REPO_ROOT}/server/${config}" "${INSTALL_DIR}/config/${config}"
-    else
-        warning "Configuration file not found: server/${config}"
-    fi
-done
+cat > "${INSTALL_DIR}/config/mcp-server.json" <<EOF
+{
+  "name": "Cloudflare Network Diagnostic Tool",
+  "version": "${VERSION}",
+  "description": "MCP server for Cloudflare network diagnostics",
+  "type": "stdio",
+  "command": "${COMMAND_JSON}",
+  "args": ["${SCRIPT_JSON}"],
+  "env": {${ENV_BODY}}
+}
+EOF
+cat > "${INSTALL_DIR}/config/mcp-client.json" <<EOF
+{
+  "name": "Cloudflare Diagnostic Client",
+  "version": "${VERSION}",
+  "description": "MCP Client configuration for Cloudflare Network Diagnostic Tool",
+  "servers": {
+    "cloudflare-diagnostics": {
+      "command": "${COMMAND_JSON}",
+      "args": ["${SCRIPT_JSON}"],
+      "env": {${ENV_BODY}}
+    }
+  }
+}
+EOF
 
 log ""
 log "✅ Installation files complete"

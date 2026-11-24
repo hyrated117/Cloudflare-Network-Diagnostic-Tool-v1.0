@@ -1,118 +1,118 @@
-# Modules Documentation
+# Diagnostic Tools
 
-This document provides a comprehensive overview of all diagnostic modules available in the Cloudflare Network Diagnostic Tool.
+The project ships two MCP servers that expose the **same five tools**. There is no
+SwiftUI application, WARP module, DNSSEC module or resolver benchmark in this
+repository — see [Planned tools](#planned-tools-not-implemented).
 
-## Available Modules
+| Server | Runtime | Entry point | Dependencies |
+|---|---|---|---|
+| Node | Node.js 18+, ES module | `server/index.js` | none — `node:child_process`, `node:dns`, `node:net`, `node:url` only |
+| Python | Python 3.8+ | `server/index.py` | none — standard library only |
 
-### 1. DNS Module
+Both implement JSON-RPC 2.0 over newline-delimited stdio (`initialize`, `ping`,
+`tools/list`, `tools/call`); see [Architecture](./Architecture.md) for the transport
+details. Every response is JSON-RPC; diagnostics are logged to stderr only.
 
-**Purpose**: Diagnose DNS resolution and configuration issues.
+## Tool summary
 
-**Features**:
-- DNS A, AAAA, MX, NS, SOA record lookups
-- Multiple resolver support
-- Response time measurement
-- Cache analysis
-- DNSSEC validation
+| Tool | Arguments | Result status values |
+|---|---|---|
+| `dns_check` | `domain` (string, required) | `ok`, `error` |
+| `doh_test` | `url` (HTTP(S) URL, required) | `ok`, `error` |
+| `trace_route` | `destination` (host or IP, required) | `ok`, `error`, `unavailable` |
+| `health_score` | none | `healthy`, `degraded` |
+| `export_results` | `format` (`json`\|`csv`), `results` (object) | `ok` |
 
-**Usage**:
-```swift
-let dnsModule = DNSModule()
-let results = try await dnsModule.resolveDomain("example.com")
-```
-
-### 2. DoH (DNS-over-HTTPS) Module
-
-**Purpose**: Test and validate DNS-over-HTTPS endpoints.
-
-**Features**:
-- Endpoint availability checking
-- Query performance measurement
-- Response validation
-- TLS certificate verification
-- RFC compliance testing
-
-**Configuration**:
-```json
-{
-  "endpoint": "https://1.1.1.1/dns-query",
-  "timeout": 5000,
-  "retries": 3
-}
-```
-
-### 3. Trace Module
-
-**Purpose**: Perform network path analysis and traceroute.
-
-**Features**:
-- ICMP/TCP traceroute
-- Hop-by-hop latency measurement
-- ASN identification
-- Geographic mapping
-- Route optimization suggestions
-
-### 4. WARP Module
-
-**Purpose**: Diagnose Cloudflare WARP connection health.
-
-**Features**:
-- Connection status verification
-- Split tunneling configuration
-- DNS settings validation
-- Performance metrics
-- Fallback mechanism testing
-
-### 5. Resolver Benchmark Module
-
-**Purpose**: Compare DNS resolver performance.
-
-**Features**:
-- Multi-resolver performance testing
-- Query speed comparison
-- Consistency validation
-- Load distribution analysis
-- Recommendations for optimal resolver
-
-### 6. Health Score Module
-
-**Purpose**: Calculate overall network health metrics.
-
-**Features**:
-- Composite health calculation
-- Component-wise scoring
-- Trend analysis
-- Alert generation
-- Recommendations engine
+All results carry `tool` and an ISO-8601 `timestamp`.
 
 ---
 
-## Module Configuration
+## dns_check
 
-Each module can be configured via `ModuleConfig.swift`:
+Resolves a domain to IPv4 and IPv6 addresses.
 
-```swift
-struct ModuleConfig {
-    let enabled: Bool
-    let timeout: TimeInterval
-    let retryCount: Int
-    let cacheDuration: TimeInterval
-    let customSettings: [String: Any]
-}
+- **Node:** `dns.promises.resolve4` and `resolve6` run concurrently; addresses are
+  de-duplicated and results merged.
+- **Python:** `socket.getaddrinfo` returns all address families.
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"tools/call",
+ "params":{"name":"dns_check","arguments":{"domain":"example.com"}}}
 ```
 
-## Adding Custom Modules
+```json
+{"tool":"dns_check","domain":"example.com","status":"ok",
+ "addresses":["93.184.215.14"],"timestamp":"2026-11-24T23:10:02.578Z"}
+```
 
-To create a custom diagnostic module:
+A domain that resolves nothing returns `"status": "error"` with an `error` string
+containing the resolver message. Only A/AAAA lookups are performed — MX, NS, SOA
+and TXT records are not queried.
 
-1. Create a new file in `SwiftUI-App/Engine/`
-2. Implement the `DiagnosticModule` protocol
-3. Register in `DiagnosticEngine.swift`
-4. Add configuration to `ModuleConfig.swift`
+## doh_test
 
-## Module Performance Considerations
+Sends a GET request to a caller-supplied DNS-over-HTTPS endpoint.
 
-- Modules run concurrently for optimal performance
-- Results are cached to reduce redundant operations
-- Large datasets are paginated
-- Network operations have configurable timeouts
+- Accepts `http` and `https` only; URLs containing credentials are rejected.
+- Sends `Accept: application/dns-json` and `User-Agent: Cloudflare-Diagnostic-Tool/1.0`.
+- 5 second timeout. The body is parsed as JSON; non-JSON bodies are returned as a
+  `raw` string.
+- **Python** refuses bodies larger than 64 KiB; **Node** returns the first 4096
+  characters of a non-JSON body.
+
+```json
+{"name":"doh_test","arguments":{"url":"https://cloudflare-dns.com/dns-query?name=example.com&type=A"}}
+```
+
+The result includes `statusCode` and the decoded `response`. Note that any HTTP(S)
+URL is fetched, not only Cloudflare endpoints — treat the tool as a general request
+helper when reviewing what a client can reach.
+
+## trace_route
+
+Runs the system `traceroute`, falling back to `tracepath`.
+
+- 20 second timeout, argv array (no shell), destination must contain no whitespace.
+- `status: "unavailable"` when neither utility exists on the host.
+
+Node returns the combined stdout text; Python returns `returnCode` plus stdout or
+stderr, and reports `status: "error"` for a non-zero exit.
+
+## health_score
+
+A single TCP connect to `1.1.1.1:443` with a 3 second timeout — it is a reachability
+probe, not a composite score:
+
+```json
+{"tool":"health_score","score":95,"status":"healthy","reachable":true,"timestamp":"…"}
+```
+
+`95`/`healthy` when the connection succeeds, `64`/`degraded` when it fails. No DNS
+latency, WARP status or location data feeds into this value.
+
+## export_results
+
+Formats a caller-supplied result object. It never writes files — the formatted text
+is returned in `content`. See [Export](./Export.md).
+
+---
+
+## Behavioural differences between the two servers
+
+Both servers accept the same requests and return the same result shape, with these
+known differences:
+
+| Area | Node | Python |
+|---|---|---|
+| Unknown/extra arguments | ignored | rejected with `-32602` |
+| DoH response size | unbounded | 64 KiB limit |
+| `trace_route` failure | `error` + stderr text | `error` + `returnCode` + output |
+| Timestamp format | `…Z` | `…+00:00` |
+
+## Planned tools (not implemented)
+
+The following appeared in earlier versions of this documentation and have **no code
+in the repository**: DNSSEC validation, resolver benchmarking, WARP diagnostics,
+MX/NS/SOA queries, Cloudflare API/WAF/Radar/Zero Trust integration, plugin manifests
+and a composite health score. They are tracked as future work in
+[docs/ROADMAP.md](./ROADMAP.md) and are not available from either server.

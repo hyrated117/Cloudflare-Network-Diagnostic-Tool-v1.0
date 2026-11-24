@@ -1,73 +1,82 @@
 # Architecture
 
-## Overview
-The system is composed of four major layers:
+## Components
 
-1. **Core Diagnostic Engine**  
-2. **Cloudflare API Layer**  
-3. **SwiftUI App Layer**  
-4. **App‑Maker Platform**
+```
+┌──────────────────────────┐        ┌──────────────────────────┐
+│ MCP client (any)         │        │ Installers / CLI         │
+│  · JSON-RPC 2.0 on stdio │        │  · shell, PowerShell,    │
+└───────────┬──────────────┘        │    Python, Node CLI      │
+            │                       └────────────┬─────────────┘
+            │                                    │ copies server +
+            ▼                                    ▼ writes mcp-*.json
+┌──────────────────────────────────────────────────────────────┐
+│ server/index.js (Node 18+, ESM)   server/index.py (3.8+)      │
+│   protocol → tool dispatch → diagnostics → JSON result        │
+└──────────────────────────────────────────────────────────────┘
+```
 
-Each layer is modular, testable, and independently deployable.
+There is no SwiftUI app, Cloudflare API layer, plugin system or AppMaker generator
+in this repository; those were described by older documentation and are tracked as
+planned work in [docs/ROADMAP.md](./ROADMAP.md). AppMaker has its own
+[status page](./AppMaker.md).
 
----
+## Transport and protocol
 
-## High‑Level Architecture Diagram
+- JSON-RPC 2.0, one message per line, over stdio (stdin/stdout).
+- Methods: `initialize` (reports `protocolVersion: 2024-11-05`, `capabilities.tools`),
+  `notifications/initialized`, `ping`, `tools/list`, `tools/call`.
+- No MCP resources or prompts are served.
+- Error codes: `-32700` parse error, `-32600` invalid request, `-32601` method not
+  found, `-32602` invalid parameters. Notifications never receive a response.
+- Operational logging goes to stderr; stdout carries protocol frames only.
 
+## Tool dispatch
 
----
+Each server keeps a table of tools with a description, an input schema and a
+handler. `tools/call` validates the arguments, runs the handler and returns:
 
-## Diagnostic Engine
-The engine orchestrates all diagnostic modules.  
-It supports:
+- `content[0].text` — the result serialised as JSON
+- `structuredContent` — the same object, structured
+- `isError` — true when the result's `status` is `"error"`
 
-- Parallel execution  
-- Structured results  
-- Severity scoring  
-- Plugin‑based module loading
+Tool behaviour and per-server differences are documented in [Modules](./Modules.md).
 
-See **[Modules.md](./Modules.md)** for details.
+## Diagnostics
 
----
+All diagnostics use the standard library or the operating system's utilities:
 
-## Cloudflare API Layer
-A unified wrapper around Cloudflare endpoints:
+| Tool | Mechanism | Timeout |
+|---|---|---|
+| `dns_check` | `dns.resolve4/resolve6` (Node), `getaddrinfo` (Python) | resolver default |
+| `doh_test` | `fetch` (Node), `urllib` (Python) | 5 s |
+| `trace_route` | `traceroute`, then `tracepath`, argv array | 20 s |
+| `health_score` | TCP connect to `1.1.1.1:443` | 3 s |
+| `export_results` | in-process string formatting | none |
 
-- DNS  
-- WAF  
-- Firewall  
-- Analytics  
-- Radar  
-- Zero Trust  
+## Installation and configuration
 
-Features:
+Installers copy the server into a user-scoped directory and generate client
+configuration with **absolute** paths (a relative path would be resolved against
+the client's working directory):
 
-- Automatic authentication  
-- Retry logic  
-- Error normalization  
-- JSON decoding with strict validation  
+| Installer | Platform | Installs | Config directory |
+|---|---|---|---|
+| `installers/install-mcp-server.sh` | macOS/Linux | Python server | `~/.local/cloudflare-mcp/config` |
+| `installers/install-mcp-unified.sh` | macOS/Linux | Python and/or Node | same |
+| `installers/install-mcp-server.ps1` | Windows | Python server | `%APPDATA%\Cloudflare-MCP\config` |
+| `installers/install-mcp-unified.ps1` | Windows | Python and/or Node | same |
+| `installers/install-mcp-server.py` | any | Python server | `~/.local/cloudflare-mcp/config` |
+| `installers/cli.js` | any | Node server, `install`/`start`/`status` | same |
 
----
+The Node server needs no dependencies; the unified installers write a
+`{"type": "module"}` manifest beside `index.js` and never invoke `npm`.
 
-## SwiftUI App Layer
-The app provides:
+## Verification
 
-- Real‑time diagnostic UI  
-- Result summaries  
-- Export options  
-- Theming + dark mode  
-- Modular views for each diagnostic module  
-
----
-
-## App‑Maker Platform
-A generator that creates:
-
-- SwiftUI apps  
-- Diagnostic modules  
-- Project scaffolding  
-- GitHub‑ready repos  
-
-See **[AppMaker.md](./AppMaker.md)**.
-
----
+- `server/smoke_test.py` — protocol smoke test without network access.
+- `Tools/check-installers.py` / `Tools/check-installers.ps1` — run each installer
+  into a temporary directory and confirm the generated config launches the server.
+- `Tools/validate-json.py` — JSON syntax validation.
+- `.github/workflows/ci.yml` — Linux job (syntax, smoke, JSON, installers) and a
+  Windows job (PowerShell parser, Windows installer check).

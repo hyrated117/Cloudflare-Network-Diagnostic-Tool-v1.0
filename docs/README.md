@@ -17,13 +17,13 @@ Security policies, vulnerability reporting, and best practices.
 ## Feature Documentation
 
 ### [Modules.md](./Modules.md)
-Comprehensive guide to all diagnostic modules and features.
+The five diagnostic tools exposed by the MCP servers.
 
 ### [Export.md](./Export.md)
-Data export functionality, formats, and options.
+Formatting results as JSON or CSV with the `export_results` tool.
 
 ### [AppMaker.md](./AppMaker.md)
-Guide to the AppMaker generator for creating custom SwiftUI applications.
+Planned project generator — not implemented.
 
 ## Developer Guides
 

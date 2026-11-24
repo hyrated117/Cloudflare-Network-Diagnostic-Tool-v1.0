@@ -32,6 +32,9 @@ entries have been removed. The first version in this repository is `1.0.0`.
   directory
 - Unused `axios` dependency removed, so the unified installers write a
   `{"type": "module"}` manifest instead of running `npm install`
+- `installers/package.json` no longer points `main`, `start` and `dev` at an
+  `index.js` that does not exist; it points at `cli.js` and declares no
+  dependencies (unused `express`, `dotenv` and `eslint` removed)
 - Broken relative links in `docs/README.md` and `release/v1.0.0/release-notes.md`,
   and leftover `ca://` links in `docs/Architecture.md` and `docs/ROADMAP.md`
 

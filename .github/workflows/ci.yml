@@ -4,8 +4,67 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   validate:
+    name: Validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check syntax
+        run: |
+          node --check server/index.js
+          node --check installers/cli.js
+          python -m compileall -q server installers Tools
+          for script in installers/*.sh Tools/*.sh; do
+            bash -n "$script"
+          done
+
+      - name: Run Python MCP smoke test
+        run: python server/smoke_test.py
+
+      - name: Validate JSON files
+        run: python Tools/validate-json.py .
+
+      - name: Check installer MCP configs
+        run: python Tools/check-installers.py
+
+  windows:
+    name: Validate PowerShell installers
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check PowerShell syntax
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem -Path installers -Filter *.ps1 | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count -gt 0) {
+              $failed = $true
+              Write-Host "::error file=$($_.FullName)::$($errors[0].Message)"
+            }
+          }
+          if ($failed) { exit 1 }
+
+      - name: Check installer MCP configs
+        shell: pwsh
+        run: ./Tools/check-installers.ps1

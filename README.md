@@ -111,6 +111,7 @@ Arguments, result fields, statuses and timeouts are documented in
 python3 server/smoke_test.py        # protocol smoke test, no network access
 python3 Tools/validate-json.py .    # JSON syntax
 python3 Tools/check-installers.py   # every installer writes a launchable config
+python3 Tools/check-links.py        # no broken relative links in the docs
 node --check server/index.js
 ```
 

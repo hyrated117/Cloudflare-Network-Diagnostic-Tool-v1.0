@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url';
 
 const PROTOCOL_VERSION = '2024-11-05';
 const TRACE_TIMEOUT_MS = 20000;
+const MAX_DOH_BYTES = 65536;
 const timestamp = () => new Date().toISOString();
 const log = (...args) => console.error(...args);
 
@@ -87,7 +88,19 @@ class DiagnosticServer {
         headers: { Accept: 'application/dns-json', 'User-Agent': 'Cloudflare-Diagnostic-Tool/1.0' },
         signal: AbortSignal.timeout(5000),
       });
-      const body = await response.text();
+      // Stop reading at the cap so a remote endpoint cannot make this process
+      // buffer an unbounded body; the over-cap case is a tool result, not a
+      // protocol error, the same way a timeout is.
+      const chunks = [];
+      let size = 0;
+      for await (const chunk of response.body ?? []) {
+        size += chunk.length;
+        if (size > MAX_DOH_BYTES) {
+          return { tool: 'doh_test', url: url.toString(), status: 'error', statusCode: response.status, error: 'DoH response exceeded 64 KiB limit', timestamp: timestamp() };
+        }
+        chunks.push(chunk);
+      }
+      const body = Buffer.concat(chunks, size).toString('utf8');
       let data;
       try { data = JSON.parse(body); } catch { data = { raw: body.slice(0, 4096) }; }
       return { tool: 'doh_test', url: url.toString(), status: response.ok ? 'ok' : 'error', statusCode: response.status, response: data, timestamp: timestamp() };

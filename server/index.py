@@ -14,6 +14,7 @@ import urllib.request
 from datetime import datetime, timezone
 
 PROTOCOL_VERSION = "2024-11-05"
+MAX_DOH_BYTES = 65536
 logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -89,9 +90,11 @@ class DiagnosticServer:
         request = urllib.request.Request(url, headers={"Accept": "application/dns-json", "User-Agent": "Cloudflare-Diagnostic-Tool/1.0"})
         try:
             with urllib.request.urlopen(request, timeout=5) as response:
-                payload = response.read(65537)
-                if len(payload) > 65536:
-                    raise ValueError("DoH response exceeded 64 KiB limit")
+                payload = response.read(MAX_DOH_BYTES + 1)
+                # A body over the cap is a remote outcome, so report it like a
+                # timeout: a tool result with status "error", not -32602.
+                if len(payload) > MAX_DOH_BYTES:
+                    return {"tool": "doh_test", "url": url, "status": "error", "statusCode": response.status, "error": "DoH response exceeded 64 KiB limit", "timestamp": now()}
                 text = payload.decode("utf-8", errors="replace")
                 try:
                     data = json.loads(text)

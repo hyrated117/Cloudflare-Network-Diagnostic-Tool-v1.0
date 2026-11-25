@@ -90,10 +90,12 @@ Then point your MCP client at `config/mcp-server.json` inside the install direct
 
 ## Known issues
 
-1. Python rejects unexpected tool arguments; Node ignores them.
-2. DoH body handling differs: Python refuses bodies over 64 KiB, Node reads them in
+1. DoH body handling differs: Python refuses bodies over 64 KiB, Node reads them in
    full (truncating non-JSON bodies to 4096 characters).
-3. Timestamps differ between implementations (`…Z` vs `…+00:00`).
+2. Timestamps differ between implementations (`…Z` vs `…+00:00`), and `doh_test`
+   echoes the URL as supplied in Python but normalised in Node.
+3. `dns_check` returns the same addresses in a different order: sorted in Python,
+   resolver order in Node.
 4. Neither server caps incoming request-line size; `export_results` has no output cap.
 5. DoH providers may rate limit (`403`/`429`); the tool always sends `GET`.
 6. `health_score` is a single TCP probe and reports a fixed 95 or 64 — it is not a

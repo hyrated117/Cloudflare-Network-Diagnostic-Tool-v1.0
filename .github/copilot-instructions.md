@@ -30,17 +30,22 @@
 - Every network or process operation needs a timeout (DoH 5 s, trace 20 s, TCP probe
   3 s today) and must return a status instead of raising.
 - Handle DNS failure, refused connections, offline hosts and missing utilities without
-  crashing; `trace_route` returns `"unavailable"` when neither `traceroute` nor
-  `tracepath` exists (that is the normal case on Windows).
+  crashing; `trace_route` returns `"unavailable"` when the platform's tracer is
+  missing: `traceroute` or `tracepath` on Linux/macOS, `tracert` on Windows. Windows
+  ships `tracert`, so `unavailable` there means it is not on `PATH`.
 - Do not claim a check succeeded unless it completed.
 
 ## Node and Python parity
 
 - Both servers implement the same five tools; keep argument handling, result fields and
   statuses aligned.
-- Known differences, which must stay deliberate and documented: Python rejects
-  unexpected arguments and caps DoH bodies at 64 KiB; timestamps differ (`Z` vs
-  `+00:00`).
+- Both servers reject unknown tools, missing required arguments and unexpected
+  arguments with `-32602`; keep it that way on both sides.
+- Known differences, which must stay deliberate and documented: Python caps DoH
+  bodies at 64 KiB while Node buffers the whole body (truncating non-JSON text to
+  4096 characters); timestamps differ (`Z` vs `+00:00`); `doh_test` echoes the URL as
+  supplied in Python and normalised in Node; `dns_check` sorts addresses in Python
+  and keeps resolver order in Node.
 - Use the standard library only. Do not add dependencies to either server.
 
 ## Installers

@@ -102,15 +102,17 @@ is returned in `content`. See [Export](./Export.md).
 
 ## Behavioural differences between the two servers
 
-Both servers accept the same requests and return the same result shape, with these
-known differences:
+Both servers accept the same requests and return the same result shape. Unknown
+tools, missing required arguments and unexpected arguments are rejected by both
+with `-32602`. These differences remain:
 
 | Area | Node | Python |
 |---|---|---|
-| Unknown/extra arguments | ignored | rejected with `-32602` |
-| DoH response size | unbounded | 64 KiB limit |
-| `trace_route` failure | `error` + stderr text | `error` + `returnCode` + output |
+| DoH response size | whole body buffered; non-JSON text truncated to 4096 characters | 64 KiB limit; a larger body is rejected with `-32602` |
+| `trace_route` failure | `error` with the failure text, no `returnCode` | `error` with `returnCode` and the captured output |
 | Timestamp format | `…Z` | `…+00:00` |
+| `doh_test` echoed `url` | normalised (`https://host` becomes `https://host/`) | exactly as supplied |
+| `dns_check` address order | resolver order | sorted |
 
 ## Planned tools (not implemented)
 

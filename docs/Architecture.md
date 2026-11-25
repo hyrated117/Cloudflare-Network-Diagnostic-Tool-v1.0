@@ -76,8 +76,10 @@ The Node server needs no dependencies; the unified installers write a
 ## Verification
 
 - `server/smoke_test.py` — protocol smoke test without network access.
-- `Tools/check-installers.py` / `Tools/check-installers.ps1` — run each installer
-  into a temporary directory and confirm the generated config launches the server.
+- `Tools/check-installers.py` / `Tools/check-installers.ps1` — run the shell,
+  unified-shell and Node CLI installers (or the two PowerShell installers) into a
+  temporary directory and confirm the generated config launches the server. Neither
+  check runs `installers/install-mcp-server.py`.
 - `Tools/validate-json.py` — JSON syntax validation.
 - `.github/workflows/ci.yml` — Linux job (syntax, smoke, JSON, installers) and a
   Windows job (PowerShell parser, Windows installer check).

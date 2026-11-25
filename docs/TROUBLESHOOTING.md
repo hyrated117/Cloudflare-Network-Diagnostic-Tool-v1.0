@@ -45,7 +45,7 @@ The servers speak JSON-RPC 2.0, one message per line:
 | `-32700` | Parse error | not valid JSON, or a frame split across lines |
 | `-32600` | Invalid Request | missing `"jsonrpc": "2.0"` or a non-string `method` |
 | `-32601` | Method not found | only `initialize`, `ping`, `tools/list`, `tools/call` exist |
-| `-32602` | Invalid params | missing required argument, unexpected argument (Python), malformed URL, wrong `format` |
+| `-32602` | Invalid params | missing required argument, unexpected argument, malformed URL, wrong `format` |
 
 Notifications (messages without `id`) never get a reply — that is expected, so do
 not wait for one.
@@ -108,8 +108,10 @@ A tool that completes but fails returns a normal result with
   Python a traceback — so capture stderr (`2>/dev/null` hides exactly that).
 - `PYTHONUNBUFFERED=1` (the installers set it) only affects output buffering; it
   does not enable logging. Timestamps appear inside tool results, not in logs.
-- Installers that log write `install.log` in the install directory
-  (`~/.local/cloudflare-mcp/install.log`, `%APPDATA%\Cloudflare-MCP\install.log`).
+- Only three installers log, and they write `install.log` inside
+  `~/.local/cloudflare-mcp/`: `install-mcp-server.py`, `installers/cli.js` and
+  `install-mcp-unified.sh`. `install-mcp-server.sh` and both PowerShell installers
+  write no log, so `%APPDATA%\Cloudflare-MCP\install.log` never appears.
 
 ## Performance
 
@@ -123,9 +125,10 @@ A tool that completes but fails returns a normal result with
 
 | Behaviour | Node | Python |
 |---|---|---|
-| Unexpected arguments | ignored | `-32602` |
-| DoH body limit | none (4096-char truncation for non-JSON) | 64 KiB, else JSON-RPC error |
+| DoH body limit | none; non-JSON text truncated to 4096 characters | 64 KiB, else JSON-RPC error |
 | Timestamps | `…Z` | `…+00:00` |
+| `doh_test` echoed `url` | normalised (`https://host` becomes `https://host/`) | as supplied |
+| `dns_check` address order | resolver order | sorted |
 
 If a client validates result payloads strictly, run the same check against both
 servers before filing a bug.

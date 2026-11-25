@@ -1,5 +1,5 @@
 # 🔐 Security Policy  
-Cloudflare Network Diagnostic Tool • MCP Server • AppMaker Generator
+Cloudflare Network Diagnostic Tool • MCP Servers • Installers • Documentation
 
 This document defines the security expectations, reporting process, and hardening guidelines for this repository.  
 The goal is to ensure safe execution of diagnostics, secure MCP server behavior, and protection of user systems.
@@ -56,8 +56,9 @@ Only the tools implemented in `server/index.py` and `server/index.js` are expose
 - `export_results` — formats a caller-supplied result object as JSON or CSV  
 
 Every tool validates its arguments (types, required keys, no whitespace in
-destinations, no credentials in URLs), and every network or process operation
-has an explicit timeout.
+destinations, no credentials in URLs). Every network or process operation is
+bounded: DoH 5 s, trace 20 s, TCP probe 3 s, and DNS runs through the system
+resolver's own timeouts.
 
 ### ✔ No Resource or Prompt Access  
 The servers expose tools only. No MCP resources, prompts, or file templates are

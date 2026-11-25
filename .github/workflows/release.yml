@@ -67,14 +67,9 @@ jobs:
       - name: Build distribution archive
         shell: bash
         run: |
-          version="${RELEASE_TAG#v}"
-          mkdir -p "dist/v${version}"
-          tar -czf "dist/v${version}/mcp-installer-pack.tar.gz" installers server docs
-          tar -tzf "dist/v${version}/mcp-installer-pack.tar.gz" >/dev/null
-          (
-            cd "dist/v${version}"
-            sha256sum mcp-installer-pack.tar.gz > SHA256SUMS
-          )
+          # Shared with the packaging CI job so both build the same archive.
+          Tools/build-package.sh "${RELEASE_TAG}" "${PWD}/dist"
+          cat "dist/${RELEASE_TAG}/SHA256SUMS"
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
@@ -83,5 +78,5 @@ jobs:
           name: ${{ env.RELEASE_TAG }}
           body_path: release_notes.md
           files: |
-            dist/v${{ env.RELEASE_TAG }}/mcp-installer-pack.tar.gz
-            dist/v${{ env.RELEASE_TAG }}/SHA256SUMS
+            dist/${{ env.RELEASE_TAG }}/mcp-installer-pack.tar.gz
+            dist/${{ env.RELEASE_TAG }}/SHA256SUMS

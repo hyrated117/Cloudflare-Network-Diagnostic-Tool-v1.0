@@ -43,12 +43,58 @@ jobs:
       - name: Check installer MCP configs
         run: python Tools/check-installers.py
 
+  package:
+    name: Validate release package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Same script release.yml runs, so a packaging change breaks here first.
+      - name: Build release archive
+        run: Tools/build-package.sh v0.0.0-ci
+
+      - name: Check archive contents and extract
+        run: python Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract-to dist/pack
+
+      - name: Install from the extracted archive and handshake
+        run: python Tools/check-installers.py --installers-root dist/pack
+
+      - name: Upload the archive for the Windows job
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-installer-pack
+          path: dist/v0.0.0-ci/
+          if-no-files-found: error
+          retention-days: 7
+
   windows:
-    name: Validate PowerShell installers
+    name: Validate Windows installers
+    needs: package
     runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Check PowerShell syntax
         shell: pwsh
@@ -68,3 +114,18 @@ jobs:
       - name: Check installer MCP configs
         shell: pwsh
         run: ./Tools/check-installers.ps1
+
+      # Test the bytes the Linux job built, not a second build of the same sources.
+      - name: Download the release archive built on Linux
+        uses: actions/download-artifact@v4
+        with:
+          name: mcp-installer-pack
+          path: dist/v0.0.0-ci
+
+      # Same archive contract as Linux, then the packaged PowerShell installers.
+      - name: Check archive checksum and extract
+        run: python Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract-to dist/pack --expect-checksum
+
+      - name: Install from the extracted archive and handshake
+        shell: pwsh
+        run: ./Tools/check-installers.ps1 -InstallersRoot dist/pack

@@ -21,8 +21,8 @@ or the network path. There is no other outbound traffic.
 - **No telemetry, analytics or tracking.** Neither server phones home.
 - **No diagnostic history.** Results are returned to the client and not persisted.
 - **No IP addresses, personal data or result archives** are written by the servers.
-- **Logs** go to stderr for the lifetime of the process; set `PYTHONUNBUFFERED=1`
-  (the installers do) if your client needs immediate output.
+- **No logs are written.** Neither server makes a logging call, so nothing about a
+  request is recorded and stderr stays empty unless startup fails.
 
 ## Installer footprint
 

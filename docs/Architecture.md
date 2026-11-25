@@ -29,7 +29,8 @@ planned work in [docs/ROADMAP.md](./ROADMAP.md). AppMaker has its own
 - No MCP resources or prompts are served.
 - Error codes: `-32700` parse error, `-32600` invalid request, `-32601` method not
   found, `-32602` invalid parameters. Notifications never receive a response.
-- Operational logging goes to stderr; stdout carries protocol frames only.
+- stdout carries protocol frames only. The servers make no logging calls, so
+  stderr stays empty unless startup fails.
 
 ## Tool dispatch
 

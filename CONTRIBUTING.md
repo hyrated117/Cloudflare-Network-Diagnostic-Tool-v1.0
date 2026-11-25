@@ -45,7 +45,9 @@ python Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract
 
 - Keep the Node (`server/index.js`) and Python (`server/index.py`) servers
   behaviourally consistent; both are dependency-free and use the standard library.
-- Protocol responses go to stdout as single-line JSON; logs go to stderr.
+- Protocol responses go to stdout as single-line JSON; nothing diagnostic may go
+  to stdout. The servers make no logging calls — stderr carries only fatal startup
+  errors.
 - Every network or process operation needs a timeout, and every tool must return a
   `status` value instead of throwing.
 - Update the documentation with the code. The docs describe only what exists;

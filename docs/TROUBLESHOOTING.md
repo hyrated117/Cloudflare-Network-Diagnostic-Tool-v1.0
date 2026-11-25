@@ -98,10 +98,14 @@ A tool that completes but fails returns a normal result with
 
 ## Logging
 
-- Servers log to **stderr** only. To see it while driving a server by hand, do not
-  discard stderr (`2>/dev/null` hides the useful half).
-- `server/index.py` emits timestamped log records; set `PYTHONUNBUFFERED=1` (the
-  installers already do) so they appear immediately.
+- Servers write **nothing** to stderr during normal operation: neither
+  implementation makes a logging call, so an empty stderr alongside a working
+  handshake is expected, not a fault. stdout carries protocol frames and nothing
+  else.
+- The one exception is a fatal startup error — Node prints `Server error: …` and
+  Python a traceback — so capture stderr (`2>/dev/null` hides exactly that).
+- `PYTHONUNBUFFERED=1` (the installers set it) only affects output buffering; it
+  does not enable logging. Timestamps appear inside tool results, not in logs.
 - Installers that log write `install.log` in the install directory
   (`~/.local/cloudflare-mcp/install.log`, `%APPDATA%\Cloudflare-MCP\install.log`).
 

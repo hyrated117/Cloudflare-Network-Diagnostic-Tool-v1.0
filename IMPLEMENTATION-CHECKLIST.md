@@ -17,7 +17,7 @@ The repository ships two MCP stdio servers, their installers and documentation â
 
 - [x] Both servers expose the same five tools (`dns_check`, `doh_test`, `trace_route`, `health_score`, `export_results`)
 - [ ] Node/Python differences documented and intentional (see [docs/Modules.md](./docs/Modules.md))
-- [x] Protocol frames on stdout only; logging on stderr
+- [x] Protocol frames on stdout only; no logging calls, stderr silent except startup errors
 - [x] DoH (5 s), trace (20 s) and TCP probe (3 s) timeouts in place; DNS uses resolver defaults
 - [x] No runtime dependencies in `server/package.json`
 

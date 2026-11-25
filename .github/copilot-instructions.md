@@ -13,8 +13,9 @@
 
 - `server/index.js` and `server/index.py` speak JSON-RPC 2.0, one message per line,
   over stdio, and both report protocol version `2024-11-05`.
-- Protocol frames go to stdout; operational logging goes to stderr. Never write logs
-  or warnings to stdout.
+- Protocol frames go to stdout and nothing else: never write logs, diagnostics or
+  warnings there. The servers make no logging calls, so stderr stays empty except
+  for a fatal startup error.
 - Preserve error behaviour: `-32700` parse error, `-32600` invalid request,
   `-32601` method not found, `-32602` invalid params. Notifications receive no reply.
 - Keep the result shape: `content[0].text` (the result as a JSON string),

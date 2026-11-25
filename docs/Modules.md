@@ -11,7 +11,8 @@ repository — see [Planned tools](#planned-tools-not-implemented).
 
 Both implement JSON-RPC 2.0 over newline-delimited stdio (`initialize`, `ping`,
 `tools/list`, `tools/call`); see [Architecture](./Architecture.md) for the transport
-details. Every response is JSON-RPC; diagnostics are logged to stderr only.
+details. Every response is JSON-RPC and stdout carries nothing else; the servers
+make no logging calls, so stderr stays empty unless startup fails.
 
 ## Tool summary
 

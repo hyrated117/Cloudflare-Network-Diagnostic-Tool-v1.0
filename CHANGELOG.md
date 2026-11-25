@@ -15,6 +15,8 @@ entries have been removed. The first version in this repository is `1.0.0`.
 ### Added
 - `Tools/check-links.py` plus a CI step that fails the build on broken relative
   links and unsupported schemes (such as `ca://`) in the documentation
+- `Tools/check-package.py` and a CI packaging job that extract the release archive,
+  install from it with a temporary `HOME` and handshake with the packaged server
 - Windows CI job that parses `installers/*.ps1` and runs `Tools/check-installers.ps1`
 
 ### Changed
@@ -22,6 +24,8 @@ entries have been removed. The first version in this repository is `1.0.0`.
   documentation-link and installer checks on Linux
 - The release archive now ships `LICENSE` and `README.md` alongside `installers/`,
   `server/` and `docs/`
+- `Tools/build-package.sh` builds the archive for both `release.yml` and CI, so the
+  two cannot drift apart
 - Documentation rewritten to match the shipped code: `README.md`,
   `docs/Architecture.md`, `docs/Modules.md`, `docs/Export.md`, `docs/Privacy.md`,
   `docs/AppMaker.md` (now a status page), `docs/TROUBLESHOOTING.md`,

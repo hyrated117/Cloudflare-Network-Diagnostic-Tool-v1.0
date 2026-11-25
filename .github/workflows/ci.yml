@@ -46,6 +46,30 @@ jobs:
       - name: Check installer MCP configs
         run: python Tools/check-installers.py
 
+  package:
+    name: Validate release package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Same script release.yml runs, so a packaging change breaks here first.
+      - name: Build release archive
+        run: Tools/build-package.sh v0.0.0-ci
+
+      - name: Extract, install and handshake with the packaged server
+        run: python Tools/check-package.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz
+
   windows:
     name: Validate PowerShell installers
     runs-on: windows-latest

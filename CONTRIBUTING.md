@@ -21,7 +21,14 @@ python3 server/smoke_test.py                      # JSON-RPC smoke test, no netw
 python3 Tools/validate-json.py .                  # JSON syntax
 python3 Tools/check-links.py                      # no broken relative doc links
 python3 Tools/check-installers.py                 # installers write launchable configs
+python3 Tools/build-package.sh v0.0.0-ci          # build the release archive
+python3 Tools/check-package.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz
 ```
+
+The last two build the release tarball with `Tools/build-package.sh` — the same
+script `release.yml` uses — then extract it, install with a temporary `HOME` and
+handshake with the packaged server, so packaging breakage fails on a push rather
+than at tag time.
 
 A second job on Windows parses `installers/*.ps1` and runs
 `Tools/check-installers.ps1`.

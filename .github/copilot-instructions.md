@@ -77,7 +77,13 @@ python3 server/smoke_test.py
 python3 Tools/validate-json.py .
 python3 Tools/check-links.py
 python3 Tools/check-installers.py
+Tools/build-package.sh v0.0.0-ci
+python3 Tools/check-package.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz
 ```
+
+The last two build the release archive with the same script `release.yml` runs, then
+extract, install into a temporary `HOME` and handshake with the packaged server. If
+you change what the archive contains, or an installer, run them.
 
 `node --check` validates one file at a time, so list each file on its own line.
 

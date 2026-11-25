@@ -79,6 +79,7 @@ python3 Tools/check-links.py
 python3 Tools/check-installers.py
 Tools/build-package.sh v0.0.0-ci
 python3 Tools/check-package.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz
+./Tools/check-package.ps1 -Archive dist/v0.0.0-ci/mcp-installer-pack.tar.gz  # Windows
 ```
 
 The last two build the release archive with the same script `release.yml` runs, then

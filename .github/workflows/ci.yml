@@ -71,11 +71,21 @@ jobs:
         run: python Tools/check-package.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz
 
   windows:
-    name: Validate PowerShell installers
+    name: Validate Windows installers
     runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
       - name: Check PowerShell syntax
         shell: pwsh
@@ -95,3 +105,12 @@ jobs:
       - name: Check installer MCP configs
         shell: pwsh
         run: ./Tools/check-installers.ps1
+
+      # Same script release.yml runs, so the archive tested here is the one a tag ships.
+      - name: Build release archive
+        shell: bash
+        run: bash Tools/build-package.sh v0.0.0-ci
+
+      - name: Extract, install and handshake from the archive
+        shell: pwsh
+        run: ./Tools/check-package.ps1 -Archive dist/v0.0.0-ci/mcp-installer-pack.tar.gz

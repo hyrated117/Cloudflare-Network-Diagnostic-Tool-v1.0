@@ -17,6 +17,9 @@ entries have been removed. The first version in this repository is `1.0.0`.
   links and unsupported schemes (such as `ca://`) in the documentation
 - `Tools/check-package.py` and a CI packaging job that extract the release archive,
   install from it with a temporary `HOME` and handshake with the packaged server
+- `Tools/check-package.ps1` and a matching Windows CI run that build the same
+  archive, extract it and run the PowerShell installer against the packaged files,
+  so the Windows installers are exercised on every push
 - Windows CI job that parses `installers/*.ps1` and runs `Tools/check-installers.ps1`
 
 ### Changed

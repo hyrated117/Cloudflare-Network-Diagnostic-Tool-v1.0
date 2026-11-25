@@ -29,9 +29,14 @@ done
 mkdir -p "${DEST}"
 tar -czf "${ARCHIVE}" -C "${REPO_ROOT}" "${CONTENTS[@]}"
 tar -tzf "${ARCHIVE}" >/dev/null
-(
-    cd "${DEST}"
-    sha256sum mcp-installer-pack.tar.gz > SHA256SUMS
-)
+# Git Bash and macOS spell the checksum tool differently.
+if command -v sha256sum >/dev/null 2>&1; then
+    ( cd "${DEST}" && sha256sum mcp-installer-pack.tar.gz > SHA256SUMS )
+elif command -v shasum >/dev/null 2>&1; then
+    ( cd "${DEST}" && shasum -a 256 mcp-installer-pack.tar.gz > SHA256SUMS )
+else
+    echo "error: need sha256sum or shasum to write SHA256SUMS" >&2
+    exit 1
+fi
 
 echo "${ARCHIVE}"

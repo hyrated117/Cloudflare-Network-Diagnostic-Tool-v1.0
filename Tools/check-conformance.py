@@ -13,12 +13,12 @@ Every request except `health_score` is answered without network access: the
 arguments are rejected before a lookup, or PATH is emptied so trace_route reports
 that no traceroute tool exists. `health_score` probes 1.1.1.1:443, so the check
 replaces that connect() in both runtimes (a sitecustomize stub for Python, a
---require stub for Node) and asks twice: once with the probe succeeding and once
-with it failing. The probe is therefore deterministic, and the documented mapping
-is asserted in both directions - reachable answers 95/healthy, blocked answers
-64/degraded - instead of accepting whichever way a real network happened to go.
-The stub logs each intercepted call, so the check also fails loudly if the probe
-target ever changes and the stub stops being exercised.
+--require stub for Node) and asks twice. The stubs answer the first probe as
+reachable and the second as blocked, so the documented mapping is asserted in both
+directions - 95/healthy then 64/degraded - instead of accepting whichever way a
+real network happened to go. Each stub names the outcome it handed back on stderr,
+and the check counts those markers, so a changed probe target fails instead of
+silently falling back to the network.
 `--live-trace DEST` adds one real trace and asserts it succeeds on both servers,
 which is how Windows CI exercises the tracert path.
 """
@@ -62,19 +62,20 @@ REQUESTS = [
     {"jsonrpc": "2.0", "id": 20, "method": "tools/call", "params": {"name": "export_results", "arguments": "not an object"}},
     {"jsonrpc": "2.0", "id": 21, "method": "does/not/exist", "params": {}},
     {"jsonrpc": "2.0", "id": 22, "method": "ping", "params": None},
-    # The only network calls, stubbed one outcome per request: reachable first,
-    # blocked second, so both documented score/status pairs are asserted.
+    # The only network calls, stubbed: the first probe succeeds, the second fails,
+    # so both documented score/status pairs are asserted.
     {"jsonrpc": "2.0", "id": 23, "method": "tools/call", "params": {"name": "health_score", "arguments": {}}},
     {"jsonrpc": "2.0", "id": 24, "method": "tools/call", "params": {"name": "health_score", "arguments": {}}},
     {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
 ]
 MALFORMED_LINE = "{not json"
-# The probe outcomes the stubs hand out, in request order.
-PROBE_SEQUENCE = ("reachable", "blocked")
+# The stubs answer the probes in this order, so the results are asserted exactly.
 HEALTH_SCORE_EXPECTED = (
     {"reachable": True, "score": 95, "status": "healthy"},
     {"reachable": False, "score": 64, "status": "degraded"},
 )
+# Printed to stderr by both stubs; the count proves the probe really was stubbed.
+PROBE_MARKER = "conformance-probe:"
 LIVE_TRACE_REQUESTS = [
     {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
 ]
@@ -83,26 +84,22 @@ LIVE_TRACE_REQUESTS = [
 PYTHON_PROBE_STUB = '''\
 """Stub the health_score probe for Tools/check-conformance.py."""
 
-import os
 import socket
+import sys
 
-_sequence = [mode for mode in os.environ.get("CONFORMANCE_PROBE", "").split(",") if mode]
-_log = os.environ.get("CONFORMANCE_PROBE_LOG")
+_calls = 0
 _original = socket.create_connection
 
 
 def create_connection(address, *args, **kwargs):
-    if tuple(address[:2]) != ("1.1.1.1", 443) or not _sequence:
+    global _calls
+    if tuple(address[:2]) != ("1.1.1.1", 443):
         return _original(address, *args, **kwargs)
-    mode = _sequence.pop(0)
-    if _log:
-        with open(_log, "a", encoding="utf-8") as handle:
-            handle.write(mode + "\\n")
-    if mode == "blocked":
-        raise OSError("conformance check: probe blocked")
-    if mode == "reachable":
+    _calls += 1
+    print("conformance-probe: " + ("reachable" if _calls == 1 else "blocked"), file=sys.stderr)
+    if _calls == 1:
         return socket.socketpair()[0]
-    raise RuntimeError(f"unknown conformance probe mode: {mode}")
+    raise OSError("conformance check: probe blocked")
 
 
 socket.create_connection = create_connection
@@ -112,26 +109,24 @@ socket.create_connection = create_connection
 NODE_PROBE_STUB = """\
 'use strict';
 // Stub the health_score probe for Tools/check-conformance.py.
-const fs = require('node:fs');
 const net = require('node:net');
 const { EventEmitter } = require('node:events');
 
-const sequence = (process.env.CONFORMANCE_PROBE || '').split(',').filter(Boolean);
-const logPath = process.env.CONFORMANCE_PROBE_LOG;
+let calls = 0;
 const original = net.createConnection;
 
 net.createConnection = function createConnection(options, ...rest) {
-  if (!options || options.host !== '1.1.1.1' || options.port !== 443 || sequence.length === 0) {
+  if (!options || options.host !== '1.1.1.1' || options.port !== 443) {
     return original.apply(net, [options, ...rest]);
   }
-  const mode = sequence.shift();
-  if (logPath) fs.appendFileSync(logPath, mode + '\\n');
+  calls += 1;
+  const reachable = calls === 1;
+  process.stderr.write(`conformance-probe: ${reachable ? 'reachable' : 'blocked'}\\n`);
   const socket = new EventEmitter();
   socket.destroy = () => {};
   process.nextTick(() => {
-    if (mode === 'reachable') socket.emit('connect');
-    else if (mode === 'blocked') socket.emit('error', new Error('conformance check: probe blocked'));
-    else throw new Error(`unknown conformance probe mode: ${mode}`);
+    if (reachable) socket.emit('connect');
+    else socket.emit('error', new Error('conformance check: probe blocked'));
   });
   return socket;
 };
@@ -199,22 +194,20 @@ def compare(expected, actual):
         print(f"ok {len(expected)} responses match")
 
 
-def build_env(workdir, log_path):
+def build_env(workdir):
     """Empty PATH (so trace_route finds no tool) plus the probe stubs."""
     env = {**os.environ}
     env["PATH"] = str(workdir / "empty")
-    env["CONFORMANCE_PROBE"] = ",".join(PROBE_SEQUENCE)
-    env["CONFORMANCE_PROBE_LOG"] = str(log_path)
     env["PYTHONPATH"] = os.pathsep.join(filter(None, (str(workdir / "python"), env.get("PYTHONPATH"))))
     env["NODE_OPTIONS"] = " ".join(filter(None, (env.get("NODE_OPTIONS"), f'--require "{workdir / "node-probe-stub.cjs"}"')))
     return env
 
 
-def check_probe_stub(label, log_path):
-    """The stub must have answered every probe; otherwise this measured the network."""
-    intercepted = log_path.read_text(encoding="utf-8").split() if log_path.exists() else []
-    if intercepted != list(PROBE_SEQUENCE):
-        fail(f"{label}: the health_score probe stub intercepted {intercepted}, expected {list(PROBE_SEQUENCE)} (probe target or stubbing changed)")
+def check_probe_stub(label, stderr):
+    """Both probes must have been answered by the stub, not by the network."""
+    answered = stderr.count(PROBE_MARKER)
+    if answered != len(HEALTH_SCORE_EXPECTED):
+        fail(f"{label}: the health_score probe stub answered {answered} of {len(HEALTH_SCORE_EXPECTED)} probes (probe target or stubbing changed)")
 
 
 def check_health_scores(label, normalized):
@@ -233,11 +226,10 @@ def check_health_scores(label, normalized):
             fail(f"{label}: health_score probe {index} returned {actual}, expected {expected}")
 
 
-def run_server(command, workdir, log_name, label):
-    log_path = workdir / log_name
-    completed = run(command, build_env(workdir, log_path), payload())
+def run_server(command, workdir, label):
+    completed = run(command, build_env(workdir), payload())
     normalized = normalize(responses(completed))
-    check_probe_stub(label, log_path)
+    check_probe_stub(label, completed.stderr)
     check_health_scores(label, normalized)
     return normalized
 
@@ -281,11 +273,11 @@ def main():
         (workdir / "python" / "sitecustomize.py").write_text(PYTHON_PROBE_STUB, encoding="utf-8")
         (workdir / "node-probe-stub.cjs").write_text(NODE_PROBE_STUB, encoding="utf-8")
 
-        expected = run_server(PYTHON_SERVER, workdir, "probe-python.log", "server/index.py")
+        expected = run_server(PYTHON_SERVER, workdir, "server/index.py")
         if NODE_SERVER is None:
             fail("node was not found on PATH")
         else:
-            compare(expected, run_server(NODE_SERVER, workdir, "probe-node.log", "server/index.js"))
+            compare(expected, run_server(NODE_SERVER, workdir, "server/index.js"))
 
     if args.live_trace:
         live_trace(args.live_trace)

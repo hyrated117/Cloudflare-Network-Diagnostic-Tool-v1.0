@@ -8,7 +8,7 @@ The MCP servers are local processes. They transmit only what a tool call asks fo
 |---|---|
 | `dns_check` | A/AAAA resolution for the supplied domain via the system resolver |
 | `doh_test` | A single GET to the supplied HTTP(S) DNS-over-HTTPS URL |
-| `trace_route` | The route probes performed by the system `traceroute`/`tracepath` |
+| `trace_route` | The route probes performed by the system `traceroute`/`tracepath`/`tracert` |
 | `health_score` | A TCP connection to `1.1.1.1:443` |
 | `export_results` | none |
 

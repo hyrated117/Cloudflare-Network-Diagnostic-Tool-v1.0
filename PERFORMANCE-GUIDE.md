@@ -32,7 +32,7 @@ Every network or process operation is bounded:
 |---|---|---|
 | `dns_check` | system resolver | resolver defaults — no explicit timeout |
 | `doh_test` | HTTP(S) request | 5 s |
-| `trace_route` | `traceroute` / `tracepath` | 20 s |
+| `trace_route` | `traceroute` / `tracepath` (`tracert` on Windows) | 20 s |
 | `health_score` | TCP connect to `1.1.1.1:443` | 3 s |
 | `export_results` | in-process formatting | none — see payload sizes |
 

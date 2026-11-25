@@ -51,7 +51,7 @@ Only the tools implemented in `server/index.py` and `server/index.js` are expose
 
 - `dns_check` — resolves IPv4/IPv6 addresses for a caller-supplied domain  
 - `doh_test` — sends a request to a caller-supplied HTTP(S) DNS-over-HTTPS URL  
-- `trace_route` — runs the system `traceroute` or `tracepath` for a host or IP  
+- `trace_route` — runs the system `traceroute`, `tracepath` or `tracert` for a host or IP  
 - `health_score` — TCP connectivity check against `1.1.1.1:443`  
 - `export_results` — formats a caller-supplied result object as JSON or CSV  
 

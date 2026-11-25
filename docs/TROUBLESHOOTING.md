@@ -74,10 +74,12 @@ A tool that completes but fails returns a normal result with
 
 ### trace_route
 
-- `status: "unavailable"` means neither `traceroute` nor `tracepath` is on `PATH`.
-  This is the normal result on **Windows**, which ships `tracert` instead — the
-  servers do not invoke it.
-- Install one on Linux/macOS (`traceroute` or `iputils-tracepath`) to get results.
+- `status: "unavailable"` means the utility for this platform is missing:
+  `traceroute` or `tracepath` on Linux/macOS, `tracert` on Windows. `tracert` ships
+  with Windows, so `unavailable` there means it was removed from `PATH`.
+- On Linux/macOS, install one (`traceroute` or `iputils-tracepath`) to get results.
+- Windows runs `tracert -d -h 15 -w 300`: no reverse DNS, at most 15 hops, 300 ms
+  per probe, so a run fits inside the 20 second timeout.
 - The command is bounded at 20 seconds; a slow path returns `status: "error"` with
   the timeout message. Because Node runs it synchronously, later requests in the
   same session wait for it.

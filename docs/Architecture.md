@@ -51,7 +51,7 @@ All diagnostics use the standard library or the operating system's utilities:
 |---|---|---|
 | `dns_check` | `dns.resolve4/resolve6` (Node), `getaddrinfo` (Python) | resolver default |
 | `doh_test` | `fetch` (Node), `urllib` (Python) | 5 s |
-| `trace_route` | `traceroute`, then `tracepath`, argv array | 20 s |
+| `trace_route` | `traceroute`, then `tracepath`; `tracert -d -h 15 -w 300` on Windows | 20 s |
 | `health_score` | TCP connect to `1.1.1.1:443` | 3 s |
 | `export_results` | in-process string formatting | none |
 

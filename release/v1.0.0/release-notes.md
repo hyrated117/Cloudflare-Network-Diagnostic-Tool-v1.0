@@ -26,7 +26,7 @@ documentation to run them.
 |---|---|---|
 | `dns_check` | A/AAAA resolution for a domain | resolver default |
 | `doh_test` | GET to a DNS-over-HTTPS endpoint | 5 s |
-| `trace_route` | system `traceroute` / `tracepath` | 20 s |
+| `trace_route` | system `traceroute` / `tracepath`, `tracert` on Windows | 20 s |
 | `health_score` | TCP probe to `1.1.1.1:443` | 3 s |
 | `export_results` | format a result object as JSON or CSV | none |
 
@@ -90,17 +90,15 @@ Then point your MCP client at `config/mcp-server.json` inside the install direct
 
 ## Known issues
 
-1. `trace_route` returns `"unavailable"` on Windows — the servers invoke
-   `traceroute`/`tracepath`, not `tracert`.
-2. Python rejects unexpected tool arguments; Node ignores them.
-3. DoH body handling differs: Python refuses bodies over 64 KiB, Node reads them in
+1. Python rejects unexpected tool arguments; Node ignores them.
+2. DoH body handling differs: Python refuses bodies over 64 KiB, Node reads them in
    full (truncating non-JSON bodies to 4096 characters).
-4. Timestamps differ between implementations (`…Z` vs `…+00:00`).
-5. Neither server caps incoming request-line size; `export_results` has no output cap.
-6. DoH providers may rate limit (`403`/`429`); the tool always sends `GET`.
-7. `health_score` is a single TCP probe and reports a fixed 95 or 64 — it is not a
+3. Timestamps differ between implementations (`…Z` vs `…+00:00`).
+4. Neither server caps incoming request-line size; `export_results` has no output cap.
+5. DoH providers may rate limit (`403`/`429`); the tool always sends `GET`.
+6. `health_score` is a single TCP probe and reports a fixed 95 or 64 — it is not a
    composite score.
-8. There is no git tag for v1.0.0 in this repository.
+7. There is no git tag for v1.0.0 in this repository.
 
 ## Not in this release
 

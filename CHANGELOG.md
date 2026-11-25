@@ -39,6 +39,10 @@ bytes
   `CONTRIBUTING.md`
 
 ### Fixed
+- `trace_route` works on Windows: both servers run `tracert -d -h 15 -w 300` there
+  instead of looking only for `traceroute`/`tracepath`, which Windows does not ship,
+  so the tool no longer always returns `unavailable`; destinations starting with `-`
+  are rejected in both servers
 - Generated MCP configs now use the installed script's absolute path; clients no
   longer receive a relative `index.py` that resolves against their own working
   directory

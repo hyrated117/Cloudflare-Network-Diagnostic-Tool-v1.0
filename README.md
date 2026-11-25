@@ -98,7 +98,7 @@ printf '%s\n' \
 |---|---|
 | `dns_check` | Resolve IPv4 and IPv6 addresses for a domain |
 | `doh_test` | Send a request to a DNS-over-HTTPS endpoint |
-| `trace_route` | Run the system `traceroute` or `tracepath` |
+| `trace_route` | Run the system `traceroute`, `tracepath` or `tracert` |
 | `health_score` | TCP reachability probe to `1.1.1.1:443` |
 | `export_results` | Format a result object as JSON or CSV |
 

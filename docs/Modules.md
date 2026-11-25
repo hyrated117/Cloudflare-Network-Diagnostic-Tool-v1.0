@@ -71,10 +71,12 @@ helper when reviewing what a client can reach.
 
 ## trace_route
 
-Runs the system `traceroute`, falling back to `tracepath`.
+Runs the platform's traceroute: `traceroute`, falling back to `tracepath` on
+Linux/macOS, and `tracert -d -h 15 -w 300` on Windows.
 
-- 20 second timeout, argv array (no shell), destination must contain no whitespace.
-- `status: "unavailable"` when neither utility exists on the host.
+- 20 second timeout, argv array (no shell), destination must contain no whitespace
+  and must not start with `-`.
+- `status: "unavailable"` when the platform's utility is missing.
 
 Node returns the combined stdout text; Python returns `returnCode` plus stdout or
 stderr, and reports `status: "error"` for a non-zero exit.

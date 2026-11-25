@@ -7,8 +7,15 @@ import net from 'node:net';
 import { pathToFileURL } from 'node:url';
 
 const PROTOCOL_VERSION = '2024-11-05';
+const TRACE_TIMEOUT_MS = 20000;
 const timestamp = () => new Date().toISOString();
 const log = (...args) => console.error(...args);
+
+// Windows ships tracert rather than traceroute. -d skips reverse DNS and -h/-w
+// bound a full run well inside the timeout.
+const traceCandidates = (platform = process.platform) => (platform === 'win32'
+  ? [['tracert', ['-d', '-h', '15', '-w', '300']]]
+  : [['traceroute', []], ['tracepath', []]]);
 
 const isDirectExecution = () => {
   const argv1 = process.argv[1];
@@ -90,19 +97,20 @@ class DiagnosticServer {
   }
 
   async traceRoute(destination) {
-    if (typeof destination !== 'string' || !destination.trim() || /[\s\0]/.test(destination)) {
-      throw new TypeError('destination must be a non-empty host or IP without whitespace');
+    if (typeof destination !== 'string' || !destination.trim() || /[\s\0]/.test(destination) || destination.trim().startsWith('-')) {
+      throw new TypeError("destination must be a non-empty host or IP without whitespace and must not start with '-'");
     }
-    for (const command of ['traceroute', 'tracepath']) {
+    const target = destination.trim();
+    for (const [command, fixedArgs] of traceCandidates()) {
       try {
-        const output = execFileSync(command, [destination], { encoding: 'utf8', timeout: 20000, stdio: ['ignore', 'pipe', 'pipe'] });
-        return { tool: 'trace_route', destination, status: 'ok', output: output.trim(), timestamp: timestamp() };
+        const output = execFileSync(command, [...fixedArgs, target], { encoding: 'utf8', timeout: TRACE_TIMEOUT_MS, stdio: ['ignore', 'pipe', 'pipe'] });
+        return { tool: 'trace_route', destination: target, status: 'ok', output: output.trim(), timestamp: timestamp() };
       } catch (error) {
         if (error?.code === 'ENOENT') continue;
-        return { tool: 'trace_route', destination, status: 'error', error: error?.stderr?.toString().trim() || error?.message, timestamp: timestamp() };
+        return { tool: 'trace_route', destination: target, status: 'error', error: error?.stderr?.toString().trim() || error?.message, timestamp: timestamp() };
       }
     }
-    return { tool: 'trace_route', destination, status: 'unavailable', message: 'No traceroute or tracepath utility available on this system.', timestamp: timestamp() };
+    return { tool: 'trace_route', destination: target, status: 'unavailable', message: 'No traceroute, tracepath or tracert utility available on this system.', timestamp: timestamp() };
   }
 
   async healthScore() {

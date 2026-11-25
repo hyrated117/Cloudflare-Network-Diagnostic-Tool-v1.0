@@ -22,6 +22,15 @@ def now():
     return datetime.now(timezone.utc).isoformat()
 
 
+def trace_candidates():
+    """Commands to try, in order, as (executable, fixed arguments) pairs."""
+    if sys.platform.startswith("win"):
+        # Windows ships tracert rather than traceroute. -d skips reverse DNS and
+        # -h/-w bound a full run well inside the 20 second timeout.
+        return [("tracert", ["-d", "-h", "15", "-w", "300"])]
+    return [("traceroute", []), ("tracepath", [])]
+
+
 class DiagnosticServer:
     """MCP-style JSON-RPC stdio server with network diagnostic tools."""
 
@@ -88,19 +97,19 @@ class DiagnosticServer:
             return {"tool": "doh_test", "url": url, "status": "error", "error": str(exc), "timestamp": now()}
 
     def trace_route(self, destination):
-        if not isinstance(destination, str) or not destination.strip() or any(ch.isspace() for ch in destination):
-            raise ValueError("destination must be a non-empty host or IP without whitespace")
+        if not isinstance(destination, str) or not destination.strip() or any(ch.isspace() for ch in destination) or destination.strip().startswith("-"):
+            raise ValueError("destination must be a non-empty host or IP without whitespace and must not start with '-'")
         destination = destination.strip()
-        for command in ("traceroute", "tracepath"):
+        for command, fixed_args in trace_candidates():
             try:
-                completed = subprocess.run([command, destination], capture_output=True, text=True, timeout=20, check=False)
+                completed = subprocess.run([command, *fixed_args, destination], capture_output=True, text=True, errors="replace", timeout=20, check=False)
             except FileNotFoundError:
                 continue
             except subprocess.TimeoutExpired as exc:
                 return {"tool": "trace_route", "destination": destination, "status": "error", "error": str(exc), "timestamp": now()}
             output = completed.stdout.strip() or completed.stderr.strip() or "No output captured"
             return {"tool": "trace_route", "destination": destination, "status": "ok" if completed.returncode == 0 else "error", "returnCode": completed.returncode, "output": output, "timestamp": now()}
-        return {"tool": "trace_route", "destination": destination, "status": "unavailable", "message": "No traceroute or tracepath utility available on this system.", "timestamp": now()}
+        return {"tool": "trace_route", "destination": destination, "status": "unavailable", "message": "No traceroute, tracepath or tracert utility available on this system.", "timestamp": now()}
 
     def health_score(self):
         try:

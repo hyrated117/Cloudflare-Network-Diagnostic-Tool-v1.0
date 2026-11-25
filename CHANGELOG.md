@@ -27,6 +27,13 @@ entries have been removed. The first version in this repository is `1.0.0`.
   disagrees with the version in the packaged server and unified installer, so an
   archive cannot be published under a stale version
 
+### Fixed
+- `release.yml` no longer appends the repository's whole history to a first tag's
+  release body: with no earlier tag the curated notes stand alone and a notice is
+  logged, and otherwise only the commits since that tag are listed
+- `Tools/check-links.py` checks the Markdown files git tracks, so ignored build output
+  and untracked scratch trees no longer fail the link check or change its count
+
 ## [1.0.1] - 2026-11-25
 
 Patch release: the two servers now answer identically for the two remaining

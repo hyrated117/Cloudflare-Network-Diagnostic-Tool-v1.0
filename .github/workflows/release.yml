@@ -82,22 +82,21 @@ jobs:
         shell: bash
         run: |
           previous_tag="$(git tag --merged "$RELEASE_TAG" --sort=-version:refname | grep -Fxv -- "$RELEASE_TAG" | head -n 1 || true)"
-          if [[ -n "$previous_tag" ]]; then
-            range="${previous_tag}..${RELEASE_TAG}"
-          else
-            range="${RELEASE_TAG}"
-          fi
-          git log --pretty=format:'- %s' "$range" > generated_notes.md
-          printf '\n' >> generated_notes.md
 
           # Hand-written notes live beside the tag (release/v1.0.1/release-notes.md).
-          # They are the release body; the generated commit list follows them. The step
-          # above has already required the file to exist.
+          # They are the release body. The generated commit list follows them, but only
+          # when an earlier tag exists: `git log` on the first tag would list the whole
+          # history instead of a release's commits. The step above requires the notes.
           curated="release/v${VERSION}/release-notes.md"
           cat "$curated" > release_notes.md
-          printf '\n## Commits\n\n' >> release_notes.md
-          echo "Release body: $curated, followed by the generated commit list"
-          cat generated_notes.md >> release_notes.md
+          if [[ -n "$previous_tag" ]]; then
+            printf '\n## Commits\n\n' >> release_notes.md
+            git log --pretty=format:'- %s' "${previous_tag}..${RELEASE_TAG}" >> release_notes.md
+            printf '\n' >> release_notes.md
+            echo "Release body: $curated, followed by commits since $previous_tag"
+          else
+            echo "::notice::No earlier tag, so the body is $curated with no generated commit list"
+          fi
 
       - name: Build distribution archive
         shell: bash

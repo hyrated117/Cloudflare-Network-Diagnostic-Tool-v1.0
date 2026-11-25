@@ -5,9 +5,13 @@ External links (http/https/mailto) are not fetched. Every other target must
 resolve to a file or directory relative to the Markdown file that contains it,
 and must use a relative path or a supported URL scheme. Links inside fenced code
 blocks are ignored, so JSON examples cannot produce false positives.
+
+Only files tracked by git are checked, so ignored build output and untracked scratch
+trees cannot fail the check or change its count.
 """
 
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -30,8 +34,22 @@ def lines_without_fences(path):
         yield number, "" if inside else line
 
 
+def markdown_files():
+    """The tracked Markdown files, or every Markdown file when this is not a checkout."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(ROOT), "ls-files", "-z", "--", "*.md"],
+            capture_output=True,
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return [path for path in sorted(ROOT.rglob("*.md")) if ".git" not in path.parts]
+    names = [name for name in result.stdout.decode("utf-8", "replace").split("\0") if name]
+    return sorted(ROOT / name for name in names)
+
+
 def main():
-    files = [path for path in sorted(ROOT.rglob("*.md")) if ".git" not in path.parts]
+    files = markdown_files()
     total = 0
     problems = []
 

@@ -1,240 +1,53 @@
-# Performance Optimization Guide
+# Performance Notes
 
-This guide covers advanced performance optimization techniques for the Cloudflare Network Diagnostic Tool.
+Where the time goes in the two MCP servers, what bounds each tool, and how to make a run
+faster. Objectives and the measurement approach live in
+[PERFORMANCE-GUIDE.md](../PERFORMANCE-GUIDE.md); this page is about the implementation.
 
-## Advanced Caching Strategies
+## Where the time goes
 
-### Cache Invalidation
+| Tool | Dominant cost | Bound in code |
+|---|---|---|
+| `dns_check` | resolver round trip(s) — Node issues A and AAAA concurrently, Python uses one `getaddrinfo` | resolver defaults |
+| `doh_test` | TLS handshake plus response body | 5 s (`AbortSignal.timeout` / `urlopen(timeout=5)`) |
+| `trace_route` | hop discovery; Node tries `traceroute` then `tracepath` | 20 s per attempt |
+| `health_score` | TCP connect to `1.1.1.1:443` | 3 s |
+| `export_results` | string building | none required |
 
-```swift
-class CacheManager {
-    private let cache = NSCache<NSString, DiagnosticResult>()
-    
-    func invalidateCache(olderThan: TimeInterval) {
-        // Remove entries older than specified time
-        cache.removeAllObjects()
-    }
-    
-    func invalidatePattern(matching pattern: String) {
-        // Selective invalidation based on pattern
-    }
-}
-```
+`trace_route` dominates a run. It spawns a child process (Node uses `execFileSync`, so
+the event loop is blocked for the whole call) and waits for hop discovery to finish or
+for the 20 s timeout. On Windows neither `traceroute` nor `tracepath` exists, so the tool
+returns `"unavailable"` after checking both — quick, but never carrying hop data there.
 
-### Multi-Level Caching
+## Sequential dispatch
 
-```swift
-// Level 1: In-memory cache (fast, limited size)
-// Level 2: Disk cache (slower, larger)
-// Level 3: Network cache (slowest, unlimited)
+Both servers read stdin line by line and handle one request at a time; there is no
+worker pool or request queue. A long `trace_route` therefore holds up every other call on
+that connection. If you need parallel probes, run several server processes, one client
+session each, rather than multiplexing through one connection.
 
-struct MultiLevelCache {
-    let memory = MemoryCache(maxSize: 50_000_000)  // 50MB
-    let disk = DiskCache(maxSize: 500_000_000)     // 500MB
-    let network = NetworkCache()
-}
-```
+## Payload and memory
 
-## Concurrency Optimization
+- There is no caching layer: every call repeats its network work.
+- DoH bodies: Python rejects a body over 64 KiB; Node reads the whole body and keeps only
+  the first 4096 characters when the response is not JSON.
+- JSON and CSV exports are assembled as a single string in memory. Results are small, so
+  there is no streaming path — and no cap on `export_results` output either.
 
-### Actor-Based Concurrency
+## Making a run faster
 
-```swift
-actor DiagnosticEngine {
-    private var results: [String: DiagnosticResult] = [:]
-    
-    func runConcurrently(_ modules: [DiagnosticModule]) async -> [DiagnosticResult] {
-        await withTaskGroup(of: DiagnosticResult.self) { group in
-            for module in modules {
-                group.addTask {
-                    try await module.execute()
-                }
-            }
-            
-            var results: [DiagnosticResult] = []
-            for await result in group {
-                results.append(result)
-            }
-            return results
-        }
-    }
-}
-```
+- Skip `trace_route` unless you need hop-level data; it is the only slow tool.
+- `dns_check` and `doh_test` answer different questions (system resolver versus a
+  specific DoH endpoint) and are both fast — run both instead of retrying one.
+- Keep one long-lived server process. Startup only loads the standard library, but a new
+  process repeats the `initialize` handshake and the client's config load.
+- Do not retry a Windows `"unavailable"` trace; it is deterministic.
 
-### Task Priority Management
+## Measuring
 
-```swift
-// High-priority diagnostics
-Task(priority: .high) {
-    await runCriticalDiagnostics()
-}
-
-// Background diagnostics
-Task(priority: .background) {
-    await runAnalyticsSync()
-}
-```
-
-## Network Optimization
-
-### HTTP/2 Multiplexing
-
-```swift
-let config = URLSessionConfiguration.default
-config.httpVersion = .http2
-let session = URLSession(configuration: config)
-```
-
-### Connection Pooling
-
-```swift
-class ConnectionPool {
-    private let maxConnections = 6
-    private var activeConnections = 0
-    private let queue = DispatchQueue(label: "connection-pool")
-    
-    func acquire() async {
-        await withCheckedContinuation { continuation in
-            queue.async {
-                while self.activeConnections >= self.maxConnections {
-                    // Wait for connection
-                }
-                self.activeConnections += 1
-                continuation.resume()
-            }
-        }
-    }
-}
-```
-
-## Data Processing Optimization
-
-### Lazy Evaluation
-
-```swift
-struct LazyResults {
-    lazy var processedData: [ProcessedResult] = {
-        return rawData.map { process($0) }
-    }()
-}
-```
-
-### Streaming Processing
-
-```swift
-func processLargeDataset(stream: AsyncStream<DataChunk>) async {
-    for await chunk in stream {
-        // Process incrementally
-        processChunk(chunk)
-    }
-}
-```
-
-## Memory Optimization
-
-### Object Pool Pattern
-
-```swift
-class ResultPool {
-    private var available: [DiagnosticResult] = []
-    private let lock = NSLock()
-    
-    func acquire() -> DiagnosticResult {
-        lock.lock()
-        defer { lock.unlock() }
-        return available.popLast() ?? DiagnosticResult()
-    }
-    
-    func release(_ result: DiagnosticResult) {
-        lock.lock()
-        defer { lock.unlock() }
-        available.append(result)
-    }
-}
-```
-
-## Profiling and Analysis
-
-### Using Instruments
-
-1. **Time Profiler**: Identify hot paths
-   ```
-   Xcode → Product → Profile → Time Profiler
-   ```
-
-2. **Allocations**: Track memory usage
-   ```
-   Xcode → Product → Profile → Allocations
-   ```
-
-3. **System Trace**: Analyze system interactions
-   ```
-   Xcode → Product → Profile → System Trace
-   ```
-
-### Custom Profiling
-
-```swift
-struct PerformanceMetrics {
-    var startTime: Date
-    var endTime: Date
-    var memoryUsed: UInt64
-    var cacheHits: Int
-    var networkRequests: Int
-    
-    var duration: TimeInterval {
-        endTime.timeIntervalSince(startTime)
-    }
-}
-```
-
-## Benchmarking Framework
-
-```swift
-class Benchmark {
-    static func measure<T>(
-        _ label: String,
-        block: () throws -> T
-    ) rethrows -> (result: T, time: TimeInterval) {
-        let start = Date()
-        let result = try block()
-        let duration = Date().timeIntervalSince(start)
-        print("\(label): \(duration)ms")
-        return (result, duration)
-    }
-}
-
-// Usage
-let (results, time) = try Benchmark.measure("Full Diagnostics") {
-    try await engine.runDiagnostics()
-}
-```
-
-## Optimization Checklist
-
-- [ ] Enable result caching
-- [ ] Use concurrent module execution
-- [ ] Implement lazy loading
-- [ ] Optimize network requests
-- [ ] Profile with Instruments
-- [ ] Monitor memory usage
-- [ ] Implement connection pooling
-- [ ] Use appropriate data structures
-- [ ] Stream large datasets
-- [ ] Profile on actual devices
-
-## Performance Targets
-
-| Metric | Target | Strategy |
-|--------|--------|----------|
-| Full Diagnostic | < 10s | Concurrency, caching |
-| Memory (Idle) | < 50MB | Object pool, streaming |
-| Memory (Active) | < 150MB | Lazy loading, limits |
-| DNS Lookup | < 500ms | Caching, parallel |
-| Export Speed | > 10MB/s | Streaming, compression |
-
-## Resources
-
-- [Swift Concurrency](https://docs.swift.org/swift-book/LanguageGuide/Concurrency.html)
-- [Advanced Foundation Networking](https://developer.apple.com/videos/play/wwdc2019/712/)
-- [Optimizing App Performance](https://developer.apple.com/videos/play/wwdc2020/10185/)
+- Time each `tools/call` on the client side; both servers stamp every result with a
+  `timestamp`, so a simple before/after diff is enough to spot slow calls.
+- `python3 server/smoke_test.py` exercises the protocol without touching the network, so
+  it isolates startup and framing from network time.
+- Compare Node and Python on the same destination before picking one: the differences are
+  in argument handling and DoH limits, not in timeouts.

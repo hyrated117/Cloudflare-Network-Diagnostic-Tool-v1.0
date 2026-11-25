@@ -41,6 +41,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
   PowerShell only
 - Deleted the shadowed lowercase `issue_template/bug_report.md` duplicate, which
   asked for a Swift version and a v1.1.0 release that never existed
+- The release workflow uploaded from `dist/vvX.Y.Z` while the build wrote
+  `dist/vX.Y.Z`; the upload paths now match the archive that is built
+- `docs/PERFORMANCE-OPTIMIZATION.md` was a Swift/NSCache/Instruments guide; it now
+  documents the servers' real timeouts, payload bounds and measurement method
 - Broken relative links in `docs/README.md` and `release/v1.0.0/release-notes.md`,
   and leftover `ca://` links in `docs/Architecture.md` and `docs/ROADMAP.md`
 

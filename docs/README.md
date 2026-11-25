@@ -34,7 +34,7 @@ Common issues, error codes, and debugging tips.
 Performance objectives, benchmarks, and optimization strategies.
 
 ### [PERFORMANCE-OPTIMIZATION.md](./PERFORMANCE-OPTIMIZATION.md)
-Advanced performance optimization techniques.
+Implementation notes: timeouts, sequential dispatch and payload bounds.
 
 ### [Privacy.md](./Privacy.md)
 Privacy considerations and data handling.

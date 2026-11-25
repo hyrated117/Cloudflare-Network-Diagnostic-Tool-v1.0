@@ -83,5 +83,5 @@ jobs:
           name: ${{ env.RELEASE_TAG }}
           body_path: release_notes.md
           files: |
-            dist/v${{ env.RELEASE_TAG }}/mcp-installer-pack.tar.gz
-            dist/v${{ env.RELEASE_TAG }}/SHA256SUMS
+            dist/${{ env.RELEASE_TAG }}/mcp-installer-pack.tar.gz
+            dist/${{ env.RELEASE_TAG }}/SHA256SUMS

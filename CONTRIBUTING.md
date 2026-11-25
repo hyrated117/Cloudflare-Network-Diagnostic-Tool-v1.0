@@ -21,22 +21,24 @@ python3 server/smoke_test.py                      # JSON-RPC smoke test, no netw
 python3 Tools/validate-json.py .                  # JSON syntax
 python3 Tools/check-links.py                      # no broken relative doc links
 python3 Tools/check-installers.py                 # installers write launchable configs
-python3 Tools/build-package.sh v0.0.0-ci          # build the release archive
-python3 Tools/check-package.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz
+Tools/build-package.sh v0.0.0-ci                  # build the release archive
+python3 Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract-to dist/pack
+python3 Tools/check-installers.py --installers-root dist/pack
 ```
 
-The last two build the release tarball with `Tools/build-package.sh` — the same
-script `release.yml` uses — then extract it, install with a temporary `HOME` and
-handshake with the packaged server, so packaging breakage fails on a push rather
+The last three build the release tarball with `Tools/build-package.sh` — the same
+script `release.yml` uses — check its contents, then install from the extracted copy
+and handshake with the packaged server, so packaging breakage fails on a push rather
 than at tag time.
 
 A second job on Windows parses `installers/*.ps1` and runs
 `Tools/check-installers.ps1`. It then downloads the archive the Linux packaging job
-uploaded — the same bytes, not a second build — and runs the PowerShell installers
-against it, verifying its SHA-256 first:
+uploaded — the same bytes, not a second build — checks its SHA-256, extracts it and
+runs the packaged PowerShell installers against it:
 
 ```powershell
-./Tools/check-package.ps1 -Archive dist/v0.0.0-ci/mcp-installer-pack.tar.gz
+python Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract-to dist/pack --expect-checksum
+./Tools/check-installers.ps1 -InstallersRoot dist/pack
 ```
 
 ## Conventions

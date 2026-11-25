@@ -67,8 +67,11 @@ jobs:
       - name: Build release archive
         run: Tools/build-package.sh v0.0.0-ci
 
-      - name: Extract, install and handshake with the packaged server
-        run: python Tools/check-package.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz
+      - name: Check archive contents and extract
+        run: python Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract-to dist/pack
+
+      - name: Install from the extracted archive and handshake
+        run: python Tools/check-installers.py --installers-root dist/pack
 
       - name: Upload the archive for the Windows job
         uses: actions/upload-artifact@v4
@@ -122,6 +125,10 @@ jobs:
           name: mcp-installer-pack
           path: dist/v0.0.0-ci
 
-      - name: Extract, install and handshake from the archive
+      # Same archive contract as Linux, then the packaged PowerShell installers.
+      - name: Check archive checksum and extract
+        run: python Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract-to dist/pack --expect-checksum
+
+      - name: Install from the extracted archive and handshake
         shell: pwsh
-        run: ./Tools/check-package.ps1 -Archive dist/v0.0.0-ci/mcp-installer-pack.tar.gz
+        run: ./Tools/check-installers.ps1 -InstallersRoot dist/pack

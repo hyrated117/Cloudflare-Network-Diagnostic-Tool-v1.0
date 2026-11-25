@@ -15,12 +15,14 @@ entries have been removed. The first version in this repository is `1.0.0`.
 ### Added
 - `Tools/check-links.py` plus a CI step that fails the build on broken relative
   links and unsupported schemes (such as `ca://`) in the documentation
-- `Tools/check-package.py` and a CI packaging job that extract the release archive,
-  install from it with a temporary `HOME` and handshake with the packaged server
-- `Tools/check-package.ps1` and a matching Windows CI run that download the archive
-  built on Linux, verify its SHA-256, extract it and run the PowerShell installer
-  against the packaged files, so the Windows installers are exercised on every push
-  and both platforms test identical bytes
+- `Tools/check-archive.py`, the only place the archive's file list is written down:
+it checks the contents, verifies `SHA256SUMS` and extracts, on either platform
+- `--installers-root` / `-InstallersRoot` on the installer checks, so the packaged
+copy of an extracted archive can be installed and handshaked; their session now also
+asserts the protocol version, the five tool names and `ping`
+- A CI packaging job, plus a Windows job that downloads the same archive the Linux
+job built, so the Windows installers are exercised on every push against identical
+bytes
 - Windows CI job that parses `installers/*.ps1` and runs `Tools/check-installers.ps1`
 
 ### Changed

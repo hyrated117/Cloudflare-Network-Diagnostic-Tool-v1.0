@@ -78,13 +78,15 @@ python3 Tools/validate-json.py .
 python3 Tools/check-links.py
 python3 Tools/check-installers.py
 Tools/build-package.sh v0.0.0-ci
-python3 Tools/check-package.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz
-./Tools/check-package.ps1 -Archive dist/v0.0.0-ci/mcp-installer-pack.tar.gz  # Windows
+python3 Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract-to dist/pack
+python3 Tools/check-installers.py --installers-root dist/pack
+./Tools/check-installers.ps1 -InstallersRoot dist/pack   # Windows installers
 ```
 
-The last two build the release archive with the same script `release.yml` runs, then
-extract, install into a temporary `HOME` and handshake with the packaged server. If
-you change what the archive contains, or an installer, run them.
+The last three build the release archive with the same script `release.yml` runs,
+check its contents, then install from the extracted copy and handshake with the
+packaged server. The archive's file list lives only in `Tools/check-archive.py`; do
+not duplicate it in a workflow.
 
 `node --check` validates one file at a time, so list each file on its own line.
 

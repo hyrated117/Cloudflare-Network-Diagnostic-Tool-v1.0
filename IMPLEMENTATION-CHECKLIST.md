@@ -39,7 +39,7 @@ The repository ships two MCP stdio servers, their installers and documentation �
 ## 5. CI
 
 - [x] Linux job: syntax, smoke test, JSON, documentation links, installer configs **(automated)**
-- [x] Packaging jobs: build the release archive, install from the extracted tarball and handshake with the packaged server — `Tools/check-package.py` on Linux, `Tools/check-package.ps1` on Windows **(automated)**
+- [x] Packaging jobs: build the release archive, check its contents with `Tools/check-archive.py`, then install from the extracted tarball and handshake with the packaged server — `Tools/check-installers.py` on Linux, `Tools/check-installers.ps1 -InstallersRoot` on Windows **(automated)**
 - [x] Windows job: PowerShell parser, installer configs **(automated)**
 - [ ] CodeQL, dependency review and security scan green on the release commit
 

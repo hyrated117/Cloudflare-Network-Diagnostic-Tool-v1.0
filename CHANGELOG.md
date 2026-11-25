@@ -28,6 +28,9 @@ a released version. See [release/v1.0.1/release-notes.md](release/v1.0.1/release
   a real `trace_route` through the `tracert` path; its DoH cases are served by a
   loopback fixture at 64 KiB and 64 KiB + 1 byte, so the shared cap is asserted
   without contacting a DoH provider, and a CSV case covers CR, CRLF and quoting
+- `Tools/check-version.py`, which fails when any hand-maintained version string, the
+  changelog's newest release section and `release/v<version>/release-notes.md`
+  disagree, so a bump cannot land in only some of them
 - `Tools/check-archive.py`, the only place the archive's file list is written down:
 it checks the contents, verifies `SHA256SUMS` and extracts, on either platform
 - `--installers-root` / `-InstallersRoot` on the installer checks, so the packaged
@@ -62,7 +65,7 @@ bytes
   the whole body; Node stops reading at the cap, so neither server buffers a larger
   response
 - `export_results` CSV quotes a cell containing a carriage return in Node as well as
-  Python, so both servers emit byte-identical CSV instead of Node writing a bare CR
+  Python, so both servers quote it the same way instead of Node writing a bare CR
   that split the row for any reader that treats CR as a line ending
 - `trace_route` works on Windows: both servers run `tracert -d -h 15 -w 300` there
   instead of looking only for `traceroute`/`tracepath`, which Windows does not ship,

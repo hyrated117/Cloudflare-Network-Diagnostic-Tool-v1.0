@@ -1,8 +1,7 @@
 # Cloudflare Network Diagnostic Tool — Release Notes v1.0.1
 
 **Release date:** 2026-11-25
-**Status:** patch release; first version tagged in this repository (v1.0.0 was dated
-but never tagged)
+**Status:** patch release; v1.0.0 was dated but never tagged, and no tag exists yet
 
 ## Overview
 
@@ -19,9 +18,11 @@ the first commit. No tool was added or removed; the protocol surface is unchange
   `"status": "error"`, the endpoint's HTTP `statusCode` and the message
   `DoH response exceeded 64 KiB limit`. Previously Node buffered the whole body with
   no limit and Python turned the same condition into a JSON-RPC `-32602` error.
-- **CSV exports are byte-identical.** The Node CSV writer now quotes a cell that
-  contains a carriage return, as Python's `csv` module already did, so a value with
-  a bare CR no longer splits the row for readers that treat CR as a line ending.
+- **CSV quoting matches on carriage returns.** The Node CSV writer now quotes a
+  cell that contains a carriage return, as Python's `csv` module already did, so a
+  value with a bare CR no longer splits the row for readers that treat CR as a line
+  ending. Non-string cells still go through each runtime's JSON writer, so `1.0`
+  stays `1.0` in Python and becomes `1` in Node (see known issues).
 - **`trace_route` works on Windows.** Both servers run `tracert -d -h 15 -w 300`
   there instead of looking only for `traceroute`/`tracepath`, which Windows does not
   ship. Destinations starting with `-` are rejected in both servers.
@@ -52,12 +53,14 @@ the first commit. No tool was added or removed; the protocol surface is unchange
 - `Tools/check-links.py`, `Tools/check-archive.py` and the installer checks run in
   CI; the archive is built once on Linux and downloaded by the Windows job so both
   platforms exercise identical bytes, including a real `tracert` run.
+- `Tools/check-version.py` fails when a hand-maintained version string, the
+  changelog's newest release section and these notes disagree.
 - Documentation rewritten against the shipped code: `README.md`,
   `docs/Architecture.md`, `docs/Modules.md`, `docs/Export.md`,
   `docs/TROUBLESHOOTING.md`, `docs/Privacy.md`, `docs/AppMaker.md` (now a status
-  page), `docs/ROADMAP.md`, `ROADMAP.md`, `PERFORMANCE-GUIDE.md`, `SECURITY.md` and
-  `CONTRIBUTING.md`. The wider changes are listed in
-  [CHANGELOG.md](../../CHANGELOG.md).
+  page), `docs/PERFORMANCE-OPTIMIZATION.md`, `docs/ROADMAP.md`, `ROADMAP.md`,
+  `PERFORMANCE-GUIDE.md`, `SECURITY.md` and `CONTRIBUTING.md`. The wider changes are
+  listed in [CHANGELOG.md](../../CHANGELOG.md).
 
 ## Upgrade notes
 
@@ -70,7 +73,8 @@ the first commit. No tool was added or removed; the protocol surface is unchange
 ## Requirements
 
 - **Node.js** 18+ **or** **Python** 3.8+ (either runtime is enough)
-- **Windows** 10/11, **macOS**, or **Linux** with bash for the shell installers
+- **Windows** with PowerShell, **macOS**, or **Linux** with bash for the shell
+  installers
 - No third-party packages; nothing is published to npm or PyPI
 
 ## Known issues
@@ -80,11 +84,15 @@ the first commit. No tool was added or removed; the protocol surface is unchange
    (`https://host` becomes `https://host/`).
 3. `dns_check` returns the same addresses in a different order: sorted in Python,
    resolver order in Node.
-4. Neither server caps incoming request-line size; `export_results` has no output cap.
-5. DoH providers may rate limit (`403`/`429`); `doh_test` always sends `GET`.
-6. `health_score` is a single TCP probe and reports a fixed 95 or 64 — it is not a
+4. A CSV cell holding a non-string value is rendered by each runtime's JSON writer,
+   so `1.0` stays `1.0` in Python and becomes `1` in Node; Node also parses request
+   numbers as doubles, so an integer above 2^53 loses precision before any tool sees
+   it.
+5. Neither server caps incoming request-line size; `export_results` has no output cap.
+6. DoH providers may rate limit (`403`/`429`); `doh_test` always sends `GET`.
+7. `health_score` is a single TCP probe and reports a fixed 95 or 64 — it is not a
    composite score.
-7. There is no git tag for v1.0.0 in this repository; the notes in
+8. There is no git tag for v1.0.0 in this repository; the notes in
    [release/v1.0.0](../v1.0.0/release-notes.md) describe the original code and its
    known issues, including the DoH difference fixed here.
 

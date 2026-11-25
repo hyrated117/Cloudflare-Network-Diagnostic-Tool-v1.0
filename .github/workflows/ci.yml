@@ -41,6 +41,9 @@ jobs:
       - name: Compare the Python and Node servers
         run: python Tools/check-conformance.py
 
+      - name: Check version consistency
+        run: python Tools/check-version.py
+
       - name: Validate JSON files
         run: python Tools/validate-json.py .
 

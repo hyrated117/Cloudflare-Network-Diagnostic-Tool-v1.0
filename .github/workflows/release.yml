@@ -65,7 +65,7 @@ jobs:
           git log --pretty=format:'- %s' "$range" > generated_notes.md
           printf '\n' >> generated_notes.md
 
-          # Hand-written notes live beside the tag (release/v1.0.0/release-notes.md).
+          # Hand-written notes live beside the tag (release/v1.0.1/release-notes.md).
           # They are the release body; the generated commit list follows them.
           curated="release/${RELEASE_TAG}/release-notes.md"
           if [[ -s "$curated" ]]; then

@@ -30,7 +30,7 @@ const isDirectExecution = () => {
 
 class DiagnosticServer {
   constructor() {
-    this.version = '1.0.0';
+    this.version = '1.0.1';
     this.name = 'Cloudflare Network Diagnostic Tool';
     this.tools = {
       dns_check: {

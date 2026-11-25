@@ -93,7 +93,8 @@ Then point your MCP client at `config/mcp-server.json` inside the install direct
 ## Known issues
 
 1. DoH body handling differs: Python refuses bodies over 64 KiB, Node reads them in
-   full (truncating non-JSON bodies to 4096 characters).
+   full (truncating non-JSON bodies to 4096 characters). Fixed in v1.0.1: both
+   servers now cap the body at 64 KiB and return a tool result.
 2. Timestamps differ between implementations (`…Z` vs `…+00:00`), and `doh_test`
    echoes the URL as supplied in Python but normalised in Node.
 3. `dns_check` returns the same addresses in a different order: sorted in Python,

@@ -12,6 +12,14 @@ entries have been removed. The first version in this repository is `1.0.0`.
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [1.0.1] - 2026-11-25
+
+Patch release: the two servers now answer identically for the two remaining
+differences that were bugs rather than design, and the version strings finally match
+a released version. See [release/v1.0.1/release-notes.md](release/v1.0.1/release-notes.md).
+
 ### Added
 - `Tools/check-links.py` plus a CI step that fails the build on broken relative
   links and unsupported schemes (such as `ca://`) in the documentation
@@ -31,6 +39,10 @@ bytes
 - Windows CI job that parses `installers/*.ps1` and runs `Tools/check-installers.ps1`
 
 ### Changed
+- Version strings now report `1.0.1` in both servers (`initialize`), both
+  `package.json` files, `installers/cli.js`, `installers/install-mcp-server.py` and
+  the client configs written by the shell and PowerShell installers, so an installed
+  config and a running server agree with the release they came from
 - `ci.yml` replaced the checkout-only workflow with syntax, smoke test, JSON,
   documentation-link and installer checks on Linux
 - The release archive now ships `LICENSE` and `README.md` alongside `installers/`,

@@ -10,7 +10,7 @@ REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 echo "🚀 Cloudflare Network Diagnostic Tool - MCP Server Installer"
 echo "================================================="
 
-VERSION="1.0.0"
+VERSION="1.0.1"
 INSTALL_DIR="${HOME}/.local/cloudflare-mcp"
 LOG_FILE="${INSTALL_DIR}/install.log"
 

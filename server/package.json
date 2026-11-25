@@ -1,6 +1,6 @@
 {
   "name": "cloudflare-network-diagnostic-tool-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Node.js MCP server for Cloudflare Network Diagnostic Tool",
   "private": true,
   "type": "module",

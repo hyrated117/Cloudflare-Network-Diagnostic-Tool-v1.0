@@ -1,6 +1,6 @@
 {
   "name": "cloudflare-network-diagnostic-tool",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Installer CLI for the Cloudflare Network Diagnostic Tool MCP server",
   "private": true,
   "main": "cli.js",

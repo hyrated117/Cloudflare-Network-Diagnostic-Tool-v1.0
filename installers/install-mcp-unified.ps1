@@ -7,7 +7,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$version = "1.0.0"
+$version = "1.0.1"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $pythonSource = Join-Path $repoRoot "server\index.py"
 $nodeSource = Join-Path $repoRoot "server\index.js"

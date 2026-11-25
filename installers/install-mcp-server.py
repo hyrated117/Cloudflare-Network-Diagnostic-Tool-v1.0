@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 PROJECT_NAME = "Cloudflare Network Diagnostic Tool"
 
 

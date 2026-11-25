@@ -36,7 +36,7 @@ class DiagnosticServer:
     """MCP-style JSON-RPC stdio server with network diagnostic tools."""
 
     def __init__(self):
-        self.version = "1.0.0"
+        self.version = "1.0.1"
         self.name = "Cloudflare Network Diagnostic Tool"
         self.tools = {
             "dns_check": {

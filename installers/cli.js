@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const VERSION = '1.0.0';
+const VERSION = '1.0.1';
 const PROJECT_NAME = 'Cloudflare Network Diagnostic Tool';
 
 class MCPServerCLI {

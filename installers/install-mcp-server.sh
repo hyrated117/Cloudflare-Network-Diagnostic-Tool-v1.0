@@ -31,7 +31,7 @@ SCRIPT_JSON="$(json_escape "${SERVER_SCRIPT}")"
 cat > "${CONFIG_DIR}/mcp-server.json" <<EOF
 {
   "name": "Cloudflare Network Diagnostic Tool",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server for Cloudflare network diagnostics",
   "type": "stdio",
   "command": "${PYTHON_JSON}",
@@ -45,7 +45,7 @@ EOF
 cat > "${CONFIG_DIR}/mcp-client.json" <<EOF
 {
   "name": "Cloudflare Diagnostic Client",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP Client configuration for Cloudflare Network Diagnostic Tool",
   "servers": {
     "cloudflare-diagnostics": {

@@ -26,7 +26,7 @@ Copy-Item -LiteralPath $source -Destination $destination -Force
 $pythonCommand = $python.Source
 $serverConfig = @{
     name = "Cloudflare Network Diagnostic Tool"
-    version = "1.0.0"
+    version = "1.0.1"
     description = "MCP server for Cloudflare network diagnostics"
     type = "stdio"
     command = $pythonCommand
@@ -35,7 +35,7 @@ $serverConfig = @{
 }
 $clientConfig = @{
     name = "Cloudflare Diagnostic Client"
-    version = "1.0.0"
+    version = "1.0.1"
     description = "MCP Client configuration for Cloudflare Network Diagnostic Tool"
     servers = @{
         "cloudflare-diagnostics" = @{

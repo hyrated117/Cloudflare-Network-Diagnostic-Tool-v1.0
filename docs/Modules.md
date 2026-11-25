@@ -78,8 +78,9 @@ Linux/macOS, and `tracert -d -h 15 -w 300` on Windows.
   and must not start with `-`.
 - `status: "unavailable"` when the platform's utility is missing.
 
-Node returns the combined stdout text; Python returns `returnCode` plus stdout or
-stderr, and reports `status: "error"` for a non-zero exit.
+Node returns the tracer's stdout, and on failure puts the failure text in `error`
+with no `returnCode`. Python returns `returnCode` plus stdout, or stderr when stdout
+is empty, and reports `status: "error"` for a non-zero exit.
 
 ## health_score
 

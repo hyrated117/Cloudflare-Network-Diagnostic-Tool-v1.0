@@ -52,8 +52,10 @@ step.
 
 - `server/smoke_test.py` — JSON-RPC smoke test without network access
 - `Tools/validate-json.py`, `Tools/check-installers.py` / `.ps1`, `Tools/check-links.py`
-- `.github/workflows/ci.yml` — Linux job (syntax, smoke, JSON, docs links, installer
-  configs) and Windows job (PowerShell parser, installer configs)
+- `.github/workflows/ci.yml` — `validate` job (syntax, smoke test, Python/Node
+  conformance, JSON, docs links, installer configs), a `package` job for the release
+  archive, and a `windows` job (PowerShell parser, a real `tracert` trace, archive
+  install)
 - CodeQL, dependency review, security scan and release workflows
 
 ## Installation

@@ -12,7 +12,8 @@ documentation, and no `templates/` directory exists.
 ## What the repository actually provides
 
 - Two MCP stdio servers: `server/index.js` and `server/index.py`
-- Installers and a Node CLI (`cloudflare-mcp install|start|status`)
+- Installers and a Node CLI (`node installers/cli.js install|start|status`) — no
+  `cloudflare-mcp` executable is installed
 - Diagnostic tools: `dns_check`, `doh_test`, `trace_route`, `health_score`,
   `export_results`
 

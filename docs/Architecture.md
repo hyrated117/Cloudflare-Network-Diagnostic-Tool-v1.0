@@ -81,5 +81,7 @@ The Node server needs no dependencies; the unified installers write a
   temporary directory and confirm the generated config launches the server. Neither
   check runs `installers/install-mcp-server.py`.
 - `Tools/validate-json.py` — JSON syntax validation.
-- `.github/workflows/ci.yml` — Linux job (syntax, smoke, JSON, installers) and a
-  Windows job (PowerShell parser, Windows installer check).
+- `.github/workflows/ci.yml` — `validate` job (syntax, smoke test, conformance,
+  JSON, documentation links, installer configs), a `package` job (build the archive,
+  check it, install from the extracted copy) and a `windows` job (PowerShell parser,
+  a real `tracert` trace, and the same archive installed with the `.ps1` installers).

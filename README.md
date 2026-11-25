@@ -109,14 +109,18 @@ Arguments, result fields, statuses and timeouts are documented in
 
 ```bash
 python3 server/smoke_test.py        # protocol smoke test, no network access
+python3 Tools/check-conformance.py  # Python and Node answer identically
 python3 Tools/validate-json.py .    # JSON syntax
 python3 Tools/check-installers.py   # shell and CLI installers write launchable configs
 python3 Tools/check-links.py        # no broken relative links in the docs
 node --check server/index.js
 ```
 
-CI runs those on Linux, plus a Windows job that parses the PowerShell installers
-and runs `Tools/check-installers.ps1` — see `.github/workflows/ci.yml`.
+CI runs those on Linux together with `Tools/check-conformance.py`, which compares the
+two servers, plus a `package` job that builds the release archive and installs from
+the extracted copy. A Windows job parses the PowerShell installers, runs a real
+`trace_route` through `tracert`, and installs from the archive the Linux job built —
+see `.github/workflows/ci.yml`.
 
 ## Documentation
 

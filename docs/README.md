@@ -31,7 +31,7 @@ Planned project generator — not implemented.
 Common issues, error codes, and debugging tips.
 
 ### [PERFORMANCE-GUIDE.md](../PERFORMANCE-GUIDE.md)
-Performance objectives, benchmarks, and optimization strategies.
+Timeouts, payload bounds, sequential dispatch, and how to measure locally.
 
 ### [PERFORMANCE-OPTIMIZATION.md](./PERFORMANCE-OPTIMIZATION.md)
 Implementation notes: timeouts, sequential dispatch and payload bounds.

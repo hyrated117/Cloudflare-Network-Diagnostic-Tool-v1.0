@@ -80,6 +80,7 @@ node --check server/index.js
 node --check installers/cli.js
 python3 -m compileall -q server installers Tools
 python3 server/smoke_test.py
+python3 Tools/check-conformance.py
 python3 Tools/validate-json.py .
 python3 Tools/check-links.py
 python3 Tools/check-installers.py

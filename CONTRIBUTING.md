@@ -18,9 +18,10 @@ node --check server/index.js                      # JavaScript syntax
 node --check installers/cli.js
 python3 -m compileall -q server installers Tools  # Python syntax
 python3 server/smoke_test.py                      # JSON-RPC smoke test, no network
+python3 Tools/check-conformance.py                # Python and Node answer identically
 python3 Tools/validate-json.py .                  # JSON syntax
 python3 Tools/check-links.py                      # no broken relative doc links
-python3 Tools/check-installers.py                 # installers write launchable configs
+python3 Tools/check-installers.py                 # shell and CLI installers write launchable configs
 Tools/build-package.sh v0.0.0-ci                  # build the release archive
 python3 Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract-to dist/pack
 python3 Tools/check-installers.py --installers-root dist/pack
@@ -32,9 +33,11 @@ and handshake with the packaged server, so packaging breakage fails on a push ra
 than at tag time.
 
 A second job on Windows parses `installers/*.ps1` and runs
-`Tools/check-installers.ps1`. It then downloads the archive the Linux packaging job
-uploaded — the same bytes, not a second build — checks its SHA-256, extracts it and
-runs the packaged PowerShell installers against it:
+`Tools/check-installers.ps1`. It also runs a real `trace_route` through `tracert`
+(`Tools/check-conformance.py --live-trace 127.0.0.1`), so the Windows tracer path is
+exercised instead of only handshaked. It then downloads the archive the Linux
+packaging job uploaded — the same bytes, not a second build — checks its SHA-256,
+extracts it and runs the packaged PowerShell installers against it:
 
 ```powershell
 python Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract-to dist/pack --expect-checksum

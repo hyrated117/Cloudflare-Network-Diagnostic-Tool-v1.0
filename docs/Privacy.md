@@ -1,88 +1,56 @@
-# Privacy Policy
+# Privacy
 
-## Data Collection
+## What the tools send over the network
 
-The Cloudflare Network Diagnostic Tool collects the following data:
+The MCP servers are local processes. They transmit only what a tool call asks for:
 
-### Network Diagnostic Data
-- DNS query results
-- Network latency measurements
-- Traceroute information
-- ISP and ASN information
-- Geographic location (inferred from IP)
+| Tool | Network activity |
+|---|---|
+| `dns_check` | A/AAAA resolution for the supplied domain via the system resolver |
+| `doh_test` | A single GET to the supplied HTTP(S) DNS-over-HTTPS URL |
+| `trace_route` | The route probes performed by the system `traceroute`/`tracepath` |
+| `health_score` | A TCP connection to `1.1.1.1:443` |
+| `export_results` | none |
 
-### Application Data
-- App version and build number
-- Operating system version
-- Device model (macOS/iOS)
-- Diagnostic module performance metrics
+Anything the client passes in those arguments — domains, URLs, destinations — leaves
+the machine as part of that request and is visible to the resolver, the DoH endpoint
+or the network path. There is no other outbound traffic.
 
-## Data Usage
+## What is stored
 
-Collected data is used for:
-- Diagnosing network issues
-- Improving app performance
-- Generating reports and metrics
-- Anonymized analytics (optional)
+- **No telemetry, analytics or tracking.** Neither server phones home.
+- **No diagnostic history.** Results are returned to the client and not persisted.
+- **No IP addresses, personal data or result archives** are written by the servers.
+- **Logs** go to stderr for the lifetime of the process; set `PYTHONUNBUFFERED=1`
+  (the installers do) if your client needs immediate output.
 
-## Data Storage
+## Installer footprint
 
-### Local Storage
-- All diagnostic results stored locally on device
-- User has full control over data deletion
-- Optional cloud sync (when enabled)
+Installing writes only inside a user-scoped directory:
 
-### Cloud Storage (Optional)
-- Only when explicitly enabled by user
-- Encrypted in transit and at rest
-- Retained per user preferences
-- Can be deleted at any time
+- macOS/Linux: `~/.local/cloudflare-mcp/` (server copy, `config/mcp-server.json`,
+  `config/mcp-client.json`, plus an `install.log` written by the Python installer,
+  the Node CLI and the unified shell installer)
+- Windows: `%APPDATA%\Cloudflare-MCP\` (same layout)
 
-## Data Sharing
+No system directories are modified and no privileges are elevated. The generated
+configs contain absolute paths and, for Python, `PYTHONUNBUFFERED=1` — no secrets,
+tokens or identifiers.
 
-### What We Don't Do
-- Never sell or share personal data
-- Never share without explicit consent
-- Never track users across apps/devices without permission
+## Third parties
 
-### What We May Do
-- Share anonymized aggregate statistics
-- Comply with legal requests with proper authorization
-- Assist Cloudflare with network diagnostics (with consent)
+There is no third-party data sharing, because nothing is collected. If you point
+`doh_test` at a specific provider, that provider sees the request you chose to send;
+its own privacy policy applies.
 
-## Security
+## Planned (not implemented)
 
-- All data encrypted in transit (TLS 1.3+)
-- At-rest encryption for cloud storage
-- Regular security audits
-- Compliance with industry standards
+Earlier documentation described optional cloud sync, encrypted cloud storage,
+anonymised aggregate analytics, device metadata collection and a GDPR portal. None
+of these features exist in this repository — there is no account system, no backend
+and no data upload path.
 
-## User Rights
+## Reporting a concern
 
-Users have the right to:
-- Access their data
-- Delete their data
-- Export their data
-- Opt out of analytics
-- Control cloud sync settings
-
-## GDPR Compliance
-
-For EU users:
-- Right to access personal data
-- Right to rectification
-- Right to erasure ("right to be forgotten")
-- Data portability
-- Right to object to processing
-
-## Contact
-
-For privacy concerns or data requests:
-- Email: privacy@example.com
-- GitHub Issues: [Report Privacy Concern](https://github.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0/issues)
-
-## Changes to Privacy Policy
-
-We may update this policy periodically. Users will be notified of significant changes through in-app notifications or email.
-
-Last Updated: June 2024
+Use [GitHub private vulnerability reporting](https://github.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0/security/advisories/new)
+as described in [SECURITY.md](../SECURITY.md).

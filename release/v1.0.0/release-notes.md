@@ -1,154 +1,136 @@
-# Cloudflare Network Diagnostic Tool - Release Notes v1.0.0
+# Cloudflare Network Diagnostic Tool — Release Notes v1.0.0
 
-**Release Date**: June 18, 2024
-**Status**: Stable Release
+**Release date:** 2026-06-19 (date of the first server commit in this repository; no git tag exists yet)
+**Status:** initial release
 
 ## Overview
 
-The Cloudflare Network Diagnostic Tool v1.0.0 is the first stable release of a comprehensive, modular diagnostic suite designed for network analysis and Cloudflare service health monitoring.
+v1.0.0 provides network diagnostics over the Model Context Protocol: two stdio
+servers — Node.js and Python — that expose the same five tools, installers that put
+a server and a ready-to-use client config in a user-scoped directory, and the
+documentation to run them.
 
-## What's New in v1.0.0
+## What's in this release
 
-### Core Features ✨
+### MCP servers
 
-- **SwiftUI Diagnostic Application**
-  - Modern, responsive user interface
-  - Real-time diagnostic execution
-  - Results visualization and analysis
-  - Dark mode and light mode support
+- `server/index.js` — Node.js 18+, ES module, no runtime dependencies
+- `server/index.py` — Python 3.8+, standard library only
+- JSON-RPC 2.0 over stdio, one message per line, protocol version `2024-11-05`
+- Methods: `initialize`, `notifications/initialized`, `ping`, `tools/list`, `tools/call`
+- Results carry `content[0].text`, `structuredContent` and `isError`
 
-- **Six Diagnostic Modules**
-  - DNS Resolution (A, AAAA, MX, NS, SOA records)
-  - DNS-over-HTTPS (DoH) Testing
-  - Network Traceroute Analysis
-  - Cloudflare WARP Health Monitoring
-  - Resolver Performance Benchmarking
-  - Network Health Scoring
+### Tools (identical on both servers)
 
-- **MCP Server Integration**
-  - Python-based MCP server
-  - Node.js-based MCP server
-  - Unified installation mechanism
-  - API endpoint exposure for tools
+| Tool | What it does | Bound |
+|---|---|---|
+| `dns_check` | A/AAAA resolution for a domain | resolver default |
+| `doh_test` | GET to a DNS-over-HTTPS endpoint | 5 s |
+| `trace_route` | system `traceroute` / `tracepath` | 20 s |
+| `health_score` | TCP probe to `1.1.1.1:443` | 3 s |
+| `export_results` | format a result object as JSON or CSV | none |
 
-- **AppMaker Generator**
-  - Generate custom SwiftUI applications
-  - Module injection and configuration
-  - Project scaffolding automation
-  - Output compression and packaging
+Details, schemas and failure modes: [docs/Modules.md](../../docs/Modules.md).
 
-- **Export Functionality**
-  - JSON export (structured data)
-  - CSV export (spreadsheet analysis)
-  - PDF export (professional reports)
-  - Data compression and encryption
+### Installers
 
-- **Cross-Platform Installers**
-  - macOS/Linux unified shell installer
-  - Windows PowerShell installer
-  - Python package installer
-  - NPM global installer
+| Installer | Platform | Installs |
+|---|---|---|
+| `installers/install-mcp-server.sh` | macOS/Linux | Python server |
+| `installers/install-mcp-unified.sh` | macOS/Linux | Python and/or Node |
+| `installers/install-mcp-server.ps1` | Windows | Python server |
+| `installers/install-mcp-unified.ps1` | Windows | Python and/or Node |
+| `installers/install-mcp-server.py` | any | Python server |
+| `installers/cli.js` | any | Node server, with `install` / `status` / `start` |
 
-### Documentation 📚
+Install directories are `~/.local/cloudflare-mcp` (macOS/Linux) and
+`%APPDATA%\Cloudflare-MCP` (Windows). Generated configs use absolute paths, and the
+Node install needs only a `{"type": "module"}` manifest — there is no `npm install`
+step.
 
-- Complete architecture documentation
-- Module-specific usage guides
-- Performance optimization guides
-- Troubleshooting and FAQ
-- Privacy and security policies
-- API documentation
-- Developer contribution guidelines
+### Validation and CI
 
-### Developer Tools 🛠️
-
-- Icon resizer utility
-- JSON validator utility
-- Log cleanup utility
-- Build and deployment scripts
-- CI/CD workflow configurations
+- `server/smoke_test.py` — JSON-RPC smoke test without network access
+- `Tools/validate-json.py`, `Tools/check-installers.py` / `.ps1`, `Tools/check-links.py`
+- `.github/workflows/ci.yml` — Linux job (syntax, smoke, JSON, docs links, installer
+  configs) and Windows job (PowerShell parser, installer configs)
+- CodeQL, dependency review, security scan and release workflows
 
 ## Installation
 
-### Quick Start (macOS/Linux)
+Run the installers **from a checkout**. They locate the server sources relative to
+themselves, so piping a script from a URL does not work.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0/main/installers/install-mcp-unified.sh | bash
+git clone https://github.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0.git
+cd Cloudflare-Network-Diagnostic-Tool-v1.0
+bash installers/install-mcp-unified.sh
 ```
-
-### Windows PowerShell
 
 ```powershell
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0/main/installers/install-mcp-unified.ps1" -OutFile "install.ps1"
-.\install.ps1
+git clone https://github.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0.git
+cd Cloudflare-Network-Diagnostic-Tool-v1.0
+.\installers\install-mcp-unified.ps1
 ```
 
-### Python Package
+Node CLI instead of an installer:
 
 ```bash
-pip install cloudflare-network-diagnostic-tool
+node installers/cli.js install
+node installers/cli.js status
 ```
 
-## System Requirements
+Then point your MCP client at `config/mcp-server.json` inside the install directory.
 
-- **macOS**: 13.0+
-- **Linux**: Ubuntu 20.04+, CentOS 8+
-- **Windows**: Windows 10/11
-- **Python**: 3.8+
-- **Node.js**: 18+
-- **Swift**: 5.5+ (for app compilation)
+## Requirements
 
-## Known Issues
+- **Node.js** 18+ **or** **Python** 3.8+ (either runtime is enough)
+- **Windows** 10/11, **macOS**, or **Linux** with bash for the shell installers
+- No third-party packages; nothing is published to npm or PyPI for this release
 
-1. **DoH Endpoint Rate Limiting**: Some DoH providers may rate limit rapid requests. Implement backoff strategies.
+## Known issues
 
-2. **Windows Firewall**: Some network diagnostic features may require firewall exceptions on Windows.
+1. `trace_route` returns `"unavailable"` on Windows — the servers invoke
+   `traceroute`/`tracepath`, not `tracert`.
+2. Python rejects unexpected tool arguments; Node ignores them.
+3. DoH body handling differs: Python refuses bodies over 64 KiB, Node reads them in
+   full (truncating non-JSON bodies to 4096 characters).
+4. Timestamps differ between implementations (`…Z` vs `…+00:00`).
+5. Neither server caps incoming request-line size; `export_results` has no output cap.
+6. DoH providers may rate limit (`403`/`429`); the tool always sends `GET`.
+7. `health_score` is a single TCP probe and reports a fixed 95 or 64 — it is not a
+   composite score.
+8. There is no git tag for v1.0.0 in this repository.
 
-3. **macOS Gatekeeper**: Unsigned builds may trigger security warnings. Sign the app before distribution.
+## Not in this release
 
-## Fixed Issues (from alpha/beta)
+Earlier drafts of these notes listed features that do not exist in the repository
+and never shipped: a SwiftUI application, an AppMaker generator, WARP diagnostics,
+resolver benchmarking, DNSSEC and MX/NS/SOA lookups, PDF export, a Cloudflare API
+client, a `cndt` CLI, a plugin system, and pip/npm packages. Planned work is tracked
+in [ROADMAP.md](../../ROADMAP.md).
 
-- ✓ Memory leaks in long-running diagnostics
-- ✓ CSV export encoding issues
-- ✓ WARP module connection instability
-- ✓ PDF export formatting on Windows
-- ✓ Concurrent module execution race conditions
+## Performance
 
-## Performance Improvements
-
-- 40% faster DNS resolution (result caching)
-- 30% reduction in memory footprint
-- Concurrent module execution (5-7s full diagnostic)
-- Optimized network operations
-
-## Breaking Changes
-
-None - this is the first stable release.
-
-## Migration Guide
-
-N/A for v1.0.0 initial release.
+No benchmarks are recorded for this release. Both servers handle one request at a
+time, so a `trace_route` call can hold a session for up to 20 seconds; see
+[PERFORMANCE-GUIDE.md](../../PERFORMANCE-GUIDE.md) for the timeouts, payload bounds
+and how to measure locally.
 
 ## Support
 
-- **Documentation**: [GitHub Wiki](https://github.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0/wiki)
-- **Issues**: [GitHub Issues](https://github.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0/issues)
-- **Security**: See [SECURITY.md](../SECURITY.md)
-- **Contributing**: See [CONTRIBUTING.md](../CONTRIBUTING.md)
+- **Documentation:** [docs/](../../docs/)
+- **Issues:** [GitHub Issues](https://github.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0/issues)
+- **Security:** [SECURITY.md](../../SECURITY.md)
+- **Contributing:** [CONTRIBUTING.md](../../CONTRIBUTING.md)
 
 ## Credits
 
-Developed by: **hyrated117**
-License: Other (See LICENSE file)
+Developed by **hyrated117**. Licensing: [LICENSE](../../LICENSE) — personal,
+non-commercial use.
 
-## Next Steps
+## Next steps
 
-- Report bugs and issues on GitHub
-- Contribute improvements via pull requests
-- Follow the roadmap for upcoming features
-- Share feedback and use cases
-
----
-
-**Thank you for using Cloudflare Network Diagnostic Tool!**
-
-For detailed information about features and modules, visit the [documentation](../docs/).
+- Report bugs and protocol edge cases on GitHub
+- Contribute improvements via pull requests (see [CONTRIBUTING.md](../../CONTRIBUTING.md))
+- Follow [ROADMAP.md](../../ROADMAP.md) for planned tools and packaging

@@ -1,67 +1,76 @@
 # 🗺️ Project Roadmap  
-Cloudflare Network Diagnostic Tool • MCP Server • AppMaker Generator
+MCP Server • Installers • Documentation
 
-This roadmap outlines upcoming features, improvements, and long-term goals.
+This roadmap covers the components that exist: the two MCP stdio servers
+(`server/index.js`, `server/index.py`), their installers and the documentation.
+It replaces an earlier version that described a SwiftUI app and an AppMaker
+generator as current work.
 
----
-
-# 🚀 Q3 2026 — Near-Term Goals
-
-### SwiftUI App
-- Add packet loss visualization  
-- Add resolver comparison charts  
-- Add offline mode  
-
-### MCP Server
-- Add streaming diagnostics  
-- Add multi-format export (CSV, YAML)  
-- Add plugin system  
-
-### AppMaker
-- Add UI theme generator  
-- Add module marketplace  
-- Add Swift macros for templates  
+**Today:** five tools (`dns_check`, `doh_test`, `trace_route`, `health_score`,
+`export_results`) over JSON-RPC on stdio, macOS/Linux and Windows installers, and
+CI on both platforms. See [Modules](./Modules.md) for the tool reference and
+[Architecture](./Architecture.md) for the design.
 
 ---
 
-# 🔧 Q4 2026 — Mid-Term Goals
+# 🚀 Near term
 
-### SwiftUI App
-- Add WARP routing map  
-- Add traceroute visualization  
-- Add advanced DNSSEC tests  
+### Servers
+- Full behavioural parity between the Node and Python implementations
+  (extra-argument rejection, DoH body size limits, timestamp format)
+- Conformance tests per tool, including malformed input and offline behaviour, run
+  in CI on both platforms
+- Documented handling of unknown methods and unsupported protocol versions (both
+  servers currently report `2024-11-05`)
 
-### MCP Server
-- Add caching layer  
-- Add parallel diagnostics  
-- Add remote execution mode  
+### Installers
+- One config shape across all six installers, verified by the existing
+  `Tools/check-installers.py` / `.ps1` checks
+- Optional uninstall path and clearer `status` output in the Node CLI
 
-### AppMaker
-- Add multiplatform templates (iOS/macOS)  
-- Add SwiftData integration  
-- Add automated UI tests  
-
----
-
-# 🌐 2027 — Long-Term Vision
-
-- Full Cloudflare ecosystem diagnostics  
-- AI-assisted troubleshooting  
-- Cloudflare Radar integration  
-- Multi-device sync  
-- Enterprise reporting mode  
+### Documentation
+- Keep every page matched to the code; remove remaining references to features
+  that do not exist
+- Publish a short migration note for clients moving from the old config layout
 
 ---
 
-# 🧩 Community Goals
+# 🔧 Mid term
 
-- More templates  
-- More modules  
-- More diagnostics  
-- More exporters  
+### New diagnostics
+- MX/NS/SOA record lookups alongside the existing A/AAAA resolution
+- DNSSEC validation against a DoH resolver
+- Resolver benchmarking across a configurable resolver list
+- A composite `health_score` built from DNS, DoH and trace results
+
+### Output
+- Optional file output for `export_results` (today it returns text only)
+- Structured CSV for nested results instead of JSON-in-cell
+
+### Distribution
+- npm and PyPI packages for the dependency-free servers
+- Example client configurations (Claude Desktop, VS Code, generic stdio)
+
+---
+
+# 🌐 Longer term — exploratory
+
+- **Desktop application:** the SwiftUI UI that earlier docs described is not
+  started and has no code in this repository.
+- **AppMaker generator:** project scaffolding for the above — also not started;
+  see [AppMaker](./AppMaker.md).
+- **Cloudflare API integration:** zone, WAF and analytics checks (requires
+  credentials and a design for their safe storage — not started).
+
+---
+
+# 🧩 Community
+
+- More tools and installers, as long as each ships with tests
+- Bug reports and protocol edge cases are welcome
 
 ---
 
 # ❤️ Contributions Welcome
 
-See: [Contributing Guide](ca://s?q=Open_CONTRIBUTING_Guide)
+See the [Contributing Guide](../CONTRIBUTING.md).

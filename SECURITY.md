@@ -28,11 +28,9 @@ You will receive an acknowledgment within **48 hours** and a full response withi
 
 Security coverage applies to:
 
-- **SwiftUI Diagnostic App**
-- **Python MCP Server**
-- **Node MCP Server**
-- **AppMaker Generator**
-- **Installer Pack (macOS/Linux/Windows/NPM)**
+- **Python MCP Server** (`server/index.py`)
+- **Node MCP Server** (`server/index.js`)
+- **Installer Pack** (shell, PowerShell, Python, Node CLI)
 - **Templates, Docs, and Tools**
 
 ---
@@ -41,23 +39,30 @@ Security coverage applies to:
 
 The MCP server is designed with a **restricted execution model**:
 
-### ✔ Sandboxed Execution  
-- No network access beyond diagnostic endpoints  
-- No arbitrary file system writes outside allowed directories  
+### ✔ Limited Execution Surface  
+- Network access happens only through the tools below: DNS resolution, the
+  caller-supplied DoH URL, a TCP connect to `1.1.1.1:443`, and the system trace utility  
+- No arbitrary file system writes  
 - No privileged system calls  
-- No remote code execution pathways  
+- No remote code execution pathways (no shell, no `eval`, no dynamic imports)  
 
 ### ✔ Tools Are Explicitly Whitelisted  
-Only the following tools are exposed:
+Only the tools implemented in `server/index.py` and `server/index.js` are exposed:
 
-- `runDiagnostics`
-- `runEngine`
-- `exportResults`
-- `generateProject`
-- `injectModule`
+- `dns_check` — resolves IPv4/IPv6 addresses for a caller-supplied domain  
+- `doh_test` — sends a request to a caller-supplied HTTP(S) DNS-over-HTTPS URL  
+- `trace_route` — runs the system `traceroute` or `tracepath` for a host or IP  
+- `health_score` — TCP connectivity check against `1.1.1.1:443`  
+- `export_results` — formats a caller-supplied result object as JSON or CSV  
 
-### ✔ Resource Access Is Read‑Only  
-`templates/`, `docs/`, and `tools/` are exposed as **read‑only resources**.
+Every tool validates its arguments (types, required keys, no whitespace in
+destinations, no credentials in URLs), and every network or process operation
+has an explicit timeout.
+
+### ✔ No Resource or Prompt Access  
+The servers expose tools only. No MCP resources, prompts, or file templates are
+served, and `trace_route` invokes its utility with an argv array rather than a
+shell.
 
 ### ✔ No User Data Retention  
 The MCP server does **not** store:
@@ -69,26 +74,14 @@ The MCP server does **not** store:
 
 ---
 
-## 📱 SwiftUI App Security
-
-The diagnostic app:
-
-- Performs **local‑only** operations  
-- Does **not** transmit data to external servers  
-- Uses **no analytics**, **no telemetry**, **no tracking**  
-- Stores no persistent logs unless explicitly exported  
-- Uses Swift’s type‑safe APIs to prevent injection vulnerabilities  
-
----
-
 ## 🧰 Installer Security
 
-All installers (shell, PowerShell, Python, NPM):
+All installers (shell, PowerShell, Python, Node CLI):
 
 - Perform **local installation only**  
 - Do **not** elevate privileges  
 - Do **not** modify system files  
-- Verify required dependencies (Swift, Python)  
+- Verify required dependencies (Python 3, Node.js)  
 - Register MCP configs in user‑scoped directories only  
 
 ### Integrity Verification  
@@ -101,3 +94,4 @@ Users should verify:
 
 ```bash
 sha256sum -c SHA256SUMS
+```

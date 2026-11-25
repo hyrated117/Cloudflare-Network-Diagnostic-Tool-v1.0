@@ -1,155 +1,133 @@
-# Troubleshooting Guide
+# Troubleshooting
 
-## Common Issues and Solutions
+Everything here applies to the two MCP stdio servers (`server/index.js`,
+`server/index.py`), their installers and the Node CLI. Tool behaviour is documented
+in [Modules](./Modules.md); install and usage steps are in the
+[README](../README.md).
 
-### DNS Module
+## First checks
 
-**Issue**: DNS queries timing out
+```bash
+# Does the server answer a handshake at all? (no network needed)
+python3 server/smoke_test.py
 
-**Solutions**:
-1. Check internet connectivity
-2. Verify DNS server configuration
-3. Increase timeout value
-4. Try alternative DNS resolver
+# Is a config pointing at a script that exists and runs?
+python3 Tools/check-installers.py          # macOS/Linux
+./Tools/check-installers.ps1               # Windows
 
-**Code**:
-```swift
-let config = ModuleConfig(
-    enabled: true,
-    timeout: 10000, // Increase timeout
-    retryCount: 3
-)
+# Send one frame by hand and read stdout
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
+  | python3 server/index.py
 ```
 
-### DoH Module
+If the handshake above prints a `serverInfo` object, the server is fine and the
+problem is in the client configuration.
 
-**Issue**: DoH endpoint returns 403 Forbidden
+## The server does not start
 
-**Causes**:
-- Rate limiting
-- Invalid query format
-- Endpoint authentication required
+| Symptom | Cause | Fix |
+|---|---|---|
+| `can't open file '…/index.py'` or `Cannot find module` | config `args[0]` is a relative path | use an absolute path; re-run an installer to regenerate the config |
+| `python3: command not found` / `node: not found` | runtime missing for the configured `command` | install Python 3.8+ or Node 18+, or regenerate with the other runtime |
+| `SyntaxError: Cannot use import statement outside a module` | `index.js` copied without a `{"type": "module"}` manifest beside it | let an installer copy it, or add that manifest |
+| Nothing on stdout, client says "server exited" | messages written to stderr instead of protocol frames | check stderr; only JSON-RPC frames belong on stdout |
+| Windows: `running scripts is disabled on this system` | PowerShell execution policy | `powershell -ExecutionPolicy Bypass -File .\installers\install-mcp-unified.ps1` |
 
-**Solutions**:
-1. Implement backoff strategy
-2. Verify query format compliance
-3. Check endpoint documentation
-4. Contact endpoint provider
+Clients resolve `args` against their **own** working directory, not the config
+file's directory — that is why every installer writes absolute paths.
 
-### Trace Module
+## Protocol errors
 
-**Issue**: Traceroute incomplete or hanging
+The servers speak JSON-RPC 2.0, one message per line:
 
-**Common Causes**:
-- Firewall blocking ICMP
-- TTL limit too low
-- Network unreachable
+| Code | Message | Usual cause |
+|---|---|---|
+| `-32700` | Parse error | not valid JSON, or a frame split across lines |
+| `-32600` | Invalid Request | missing `"jsonrpc": "2.0"` or a non-string `method` |
+| `-32601` | Method not found | only `initialize`, `ping`, `tools/list`, `tools/call` exist |
+| `-32602` | Invalid params | missing required argument, unexpected argument (Python), malformed URL, wrong `format` |
 
-**Solutions**:
-```swift
-let config = TraceConfig(
-    maxHops: 30,
-    timeout: 3000,
-    useTCP: true // Try TCP if ICMP blocked
-)
-```
+Notifications (messages without `id`) never get a reply — that is expected, so do
+not wait for one.
 
-### WARP Module
+## Tool errors
 
-**Issue**: WARP not connecting
+A tool that completes but fails returns a normal result with
+`"status": "error"` and `isError: true`.
 
-**Solutions**:
-1. Check WARP installation
-2. Verify network connectivity
-3. Check firewall rules
-4. Review WARP logs
+### dns_check
 
-### Export Issues
+- `status: "error"` with a resolver message means the name did not resolve
+  (typo, NXDOMAIN, or no connectivity). Only A/AAAA lookups are made.
+- Node resolves IPv4 and IPv6 independently, so a host with only A records still
+  reports `ok`.
+- There is no configurable timeout for resolution — it follows the system resolver.
 
-**Issue**: PDF export failing
+### doh_test
 
-**Solutions**:
-1. Check available disk space
-2. Verify file permissions
-3. Reduce data size
-4. Update PDFKit
+- `403`/`429` usually means rate limiting or a provider that expects `POST`; this
+  tool always sends `GET` with `Accept: application/dns-json`.
+- `status: "error"` also covers TLS failures and the 5 second timeout.
+- Non-JSON bodies come back as `{"raw": …}`; Node keeps the first 4096 characters,
+  while Python returns a JSON-RPC error if the body exceeds 64 KiB.
+- URLs with embedded credentials are rejected before any request is made.
 
-**Code**:
-```swift
-do {
-    let pdfData = try exporter.exportAsPDF(results)
-} catch let error as ExportError {
-    switch error {
-    case .insufficientSpace:
-        // Handle space issue
-    case .permissionDenied:
-        // Handle permission issue
-    default:
-        break
-    }
-}
-```
+### trace_route
 
-## Logging and Diagnostics
+- `status: "unavailable"` means neither `traceroute` nor `tracepath` is on `PATH`.
+  This is the normal result on **Windows**, which ships `tracert` instead — the
+  servers do not invoke it.
+- Install one on Linux/macOS (`traceroute` or `iputils-tracepath`) to get results.
+- The command is bounded at 20 seconds; a slow path returns `status: "error"` with
+  the timeout message. Because Node runs it synchronously, later requests in the
+  same session wait for it.
 
-### Enable Debug Logging
+### health_score
 
-```swift
-LogService.setLevel(.debug)
-LogService.enableFileLogging()
-```
+- `degraded` with `reachable: false` means the TCP connect to `1.1.1.1:443` failed
+  (blocked by firewall, offline, or 1.1.1.1 unreachable from that network).
+- The score is a fixed pair (95 / 64); it is not a measurement of latency or
+  quality, and it does not include DNS, DoH or trace results.
 
-### Access Logs
+### export_results
 
-```swift
-let logFile = LogService.getLogFilePath()
-print("Logs available at: \(logFile)")
-```
+- `results` must be a JSON object — arrays produce `-32602`.
+- `format` must be `json` or `csv`.
+- Very large inputs produce a very large single response frame; there is no output
+  size limit.
 
-## Performance Issues
+## Logging
 
-### Slow Diagnostics
+- Servers log to **stderr** only. To see it while driving a server by hand, do not
+  discard stderr (`2>/dev/null` hides the useful half).
+- `server/index.py` emits timestamped log records; set `PYTHONUNBUFFERED=1` (the
+  installers already do) so they appear immediately.
+- Installers that log write `install.log` in the install directory
+  (`~/.local/cloudflare-mcp/install.log`, `%APPDATA%\Cloudflare-MCP\install.log`).
 
-**Causes**:
-- Network congestion
-- High concurrency
-- Large dataset processing
+## Performance
 
-**Solutions**:
-1. Reduce module count
-2. Lower concurrency
-3. Enable caching
-4. Check network connectivity
+- Requests are handled one at a time per process; a 20 second `trace_route` blocks
+  the queue. Start a second server process if you need parallelism.
+- No results are cached or retained between calls, so repeated runs repeat the
+  network work.
+- Node buffers a whole DoH response in memory; Python caps it at 64 KiB.
 
-### High Memory Usage
+## Node and Python differences
 
-**Solutions**:
-1. Reduce batch size
-2. Enable result streaming
-3. Clear cache periodically
-4. Monitor with Instruments
+| Behaviour | Node | Python |
+|---|---|---|
+| Unexpected arguments | ignored | `-32602` |
+| DoH body limit | none (4096-char truncation for non-JSON) | 64 KiB, else JSON-RPC error |
+| Timestamps | `…Z` | `…+00:00` |
 
-## Getting Help
+If a client validates result payloads strictly, run the same check against both
+servers before filing a bug.
 
-1. **Check existing issues**: [GitHub Issues](https://github.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0/issues)
-2. **Review documentation**: [Docs](./)
-3. **File new issue**: Provide logs and reproduction steps
-4. **Contact support**: See SECURITY.md for contact methods
+## Getting help
 
-## Error Codes
-
-| Code | Meaning | Solution |
-|------|---------|----------|
-| ERR_001 | Network timeout | Increase timeout, check connectivity |
-| ERR_002 | DNS resolution failed | Check DNS configuration |
-| ERR_003 | Permission denied | Check file/network permissions |
-| ERR_004 | Invalid configuration | Review config file syntax |
-| ERR_005 | Resource unavailable | Check disk space, memory |
-
-## Debugging Tips
-
-1. **Use Xcode Debugger**: Set breakpoints and inspect state
-2. **Enable Console Logging**: View real-time output
-3. **Check Network Tab**: Inspect HTTP requests
-4. **Profile Memory**: Use Instruments for memory leaks
-5. **Review Logs**: Check application logs for errors
+1. Search [existing issues](https://github.com/hyrated117/Cloudflare-Network-Diagnostic-Tool-v1.0/issues).
+2. Review [Architecture](./Architecture.md) and [Modules](./Modules.md).
+3. Open an issue with the request frame, the response (or stderr) and your
+   runtime versions.
+4. Security problems: follow [SECURITY.md](../SECURITY.md) instead of a public issue.

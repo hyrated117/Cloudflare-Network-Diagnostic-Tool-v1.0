@@ -1,128 +1,53 @@
-# Export Functionality
+# Export
 
-The Cloudflare Network Diagnostic Tool supports multiple export formats for diagnostic results.
+The only export feature in this repository is the `export_results` MCP tool. It
+formats a result object the caller passes in and returns the text — it does not
+write, compress or encrypt files.
 
-## Supported Formats
+Two formats are supported: `json` and `csv`.
 
-### JSON Export
+## JSON
 
-**Format**: Standard JSON with nested structure
+`format: "json"` (the default) pretty-prints the object with two-space indentation.
 
-**Features**:
-- Lossless data preservation
-- Machine-readable format
-- Schema validation
-- Compression support
-
-**Example**:
 ```json
-{
-  "diagnostic_run": {
-    "timestamp": "2024-06-18T20:30:00Z",
-    "version": "1.0.0",
-    "modules": {
-      "dns": { /* results */ },
-      "doh": { /* results */ }
-    }
-  }
-}
+{"jsonrpc":"2.0","id":2,"method":"tools/call",
+ "params":{"name":"export_results","arguments":{"format":"json","results":{"ok":true}}}}
 ```
 
-### CSV Export
-
-**Format**: Comma-separated values for spreadsheet analysis
-
-**Features**:
-- Excel/Sheets compatibility
-- Flattened structure
-- Header row with field names
-- Special character handling
-
-**Use Cases**:
-- Data analysis in spreadsheets
-- Bulk reporting
-- Historical comparison
-
-### PDF Export
-
-**Format**: Professional report with formatting
-
-**Features**:
-- Executive summary
-- Visual charts and graphs
-- Detailed findings
-- Recommendations
-- Branding customization
-
-**Sections**:
-1. Executive Summary
-2. Diagnostic Results
-3. Performance Metrics
-4. Health Score
-5. Recommendations
-6. Appendix (Raw Data)
-
-## Export API
-
-```swift
-let exporter = ExportService()
-
-// JSON export
-let jsonData = try exporter.exportAsJSON(results)
-
-// CSV export
-let csvString = try exporter.exportAsCSV(results)
-
-// PDF export
-let pdfData = try exporter.exportAsPDF(results, options: pdfOptions)
+```json
+{"tool":"export_results","format":"json","status":"ok",
+ "content":"{\n  \"ok\": true\n}","timestamp":"…"}
 ```
 
-## Options and Customization
+## CSV
 
-### General Options
+`format: "csv"` writes a `name,value` table, one row per top-level key. Objects and
+arrays are JSON-encoded inside the cell.
 
-```swift
-struct ExportOptions {
-    let format: ExportFormat
-    let includeRawData: Bool
-    let compression: CompressionType
-    let filename: String?
-    let includeMetadata: Bool
-}
+```json
+{"name":"export_results","arguments":{"format":"csv","results":{"dns":"ok","trace":2}}}
 ```
 
-### PDF-Specific Options
-
-```swift
-struct PDFExportOptions {
-    let pageSize: PDFPageSize
-    let orientation: PDFOrientation
-    let includeCharts: Bool
-    let branding: BrandingInfo?
-    let headerFooter: Bool
-}
+```csv
+name,value
+dns,ok
+trace,2
 ```
 
-## Data Privacy in Exports
+Node builds the CSV by hand (quoting `"` as `""`); Python uses the `csv` module.
+Both flatten only the top level, so nested structures arrive as JSON text in a
+single cell.
 
-- Sensitive data can be redacted
-- PII handling configurable
-- Encryption support for sensitive exports
-- GDPR compliance features
+## Constraints
 
-## Best Practices
+- `results` must be a JSON object (arrays are rejected).
+- `format` must be `json` or `csv`; any other value returns a `-32602` error.
+- Nothing is written to disk and no size limit is applied to the formatted output.
 
-1. **Choose appropriate format**:
-   - JSON for data integration
-   - CSV for analysis
-   - PDF for sharing/documentation
+## Planned (not implemented)
 
-2. **Secure sensitive exports**:
-   - Use encryption for confidential data
-   - Store securely
-   - Set appropriate access controls
-
-3. **Regular exports**:
-   - Schedule periodic exports
-   - Archive historical data
-   - Monitor trends over time
+Earlier documentation described PDF reports, compression, encryption, scheduled
+exports and a SwiftUI `ExportService`/`ExportOptions` API. None of that exists in
+this repository — there is no PDF code path and no export service outside the
+`export_results` tool.

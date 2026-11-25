@@ -27,11 +27,12 @@ jobs:
     env:
       RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
+      # VERSION is MAJOR.MINOR.PATCH, so suffixes would only fail later.
       - name: Validate release tag
         shell: bash
         run: |
-          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([+-][0-9A-Za-z.-]+)?$ ]]; then
-            echo "Invalid release tag: $RELEASE_TAG (expected vMAJOR.MINOR.PATCH)" >&2
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid release tag: $RELEASE_TAG (expected vMAJOR.MINOR.PATCH with no suffix)" >&2
             exit 1
           fi
 
@@ -72,6 +73,13 @@ jobs:
           fi
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           echo "Tag and VERSION agree on ${version}"
+
+      # The stamping guard: a tag and VERSION can agree while a site was missed.
+      # Only the sites are checked here, so a version with no curated notes still
+      # releases via the fallback below.
+      - name: Check the stamped sites against VERSION
+        shell: bash
+        run: python3 Tools/check-version.py --sites-only
 
       - name: Generate release notes
         id: notes

@@ -9,10 +9,13 @@ difference except the volatile fields (timestamps, and the text copy of a tool
 result, which the runtimes serialize with different whitespace; its payload is
 compared instead).
 
-Every request is answered without network access: the arguments are rejected
-before a lookup, or PATH is emptied so trace_route reports that no traceroute
-tool exists. `--live-trace DEST` adds one real trace and asserts it succeeds on
-both servers, which is how Windows CI exercises the tracert path.
+Every request but `health_score` is answered without network access: the arguments
+are rejected before a lookup, or PATH is emptied so trace_route reports that no
+traceroute tool exists. `health_score` opens the same TCP connection to
+1.1.1.1:443 in both servers, so both must report the same `reachable` and `score`
+whether the probe succeeds or is blocked. `--live-trace DEST` adds one real trace
+and asserts it succeeds on both servers, which is how Windows CI exercises the
+tracert path.
 """
 
 import argparse
@@ -54,6 +57,8 @@ REQUESTS = [
     {"jsonrpc": "2.0", "id": 20, "method": "tools/call", "params": {"name": "export_results", "arguments": "not an object"}},
     {"jsonrpc": "2.0", "id": 21, "method": "does/not/exist", "params": {}},
     {"jsonrpc": "2.0", "id": 22, "method": "ping", "params": None},
+    # The one real network call: both servers probe 1.1.1.1:443 and must agree.
+    {"jsonrpc": "2.0", "id": 23, "method": "tools/call", "params": {"name": "health_score", "arguments": {}}},
     {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
 ]
 MALFORMED_LINE = "{not json"

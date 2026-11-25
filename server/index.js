@@ -34,17 +34,17 @@ class DiagnosticServer {
     this.tools = {
       dns_check: {
         description: 'Resolve IPv4 and IPv6 addresses for a domain.',
-        inputSchema: { type: 'object', properties: { domain: { type: 'string' } }, required: ['domain'], additionalProperties: false },
+        inputSchema: { type: 'object', properties: { domain: { type: 'string', description: 'Domain name to resolve' } }, required: ['domain'], additionalProperties: false },
         run: (args) => this.dnsCheck(args.domain),
       },
       doh_test: {
         description: 'Send a request to a DNS-over-HTTPS endpoint.',
-        inputSchema: { type: 'object', properties: { url: { type: 'string', format: 'uri' } }, required: ['url'], additionalProperties: false },
+        inputSchema: { type: 'object', properties: { url: { type: 'string', format: 'uri', description: 'HTTP(S) DoH endpoint URL' } }, required: ['url'], additionalProperties: false },
         run: (args) => this.dohTest(args.url),
       },
       trace_route: {
         description: 'Run traceroute or tracepath to a destination when available.',
-        inputSchema: { type: 'object', properties: { destination: { type: 'string' } }, required: ['destination'], additionalProperties: false },
+        inputSchema: { type: 'object', properties: { destination: { type: 'string', description: 'Host or IP address' } }, required: ['destination'], additionalProperties: false },
         run: (args) => this.traceRoute(args.destination),
       },
       health_score: {
@@ -54,7 +54,7 @@ class DiagnosticServer {
       },
       export_results: {
         description: 'Format diagnostic results as JSON or CSV.',
-        inputSchema: { type: 'object', properties: { format: { type: 'string', enum: ['json', 'csv'] }, results: { type: 'object' } }, additionalProperties: false },
+        inputSchema: { type: 'object', properties: { format: { type: 'string', enum: ['json', 'csv'] }, results: { type: 'object', description: 'Diagnostic payload to export' } }, additionalProperties: false },
         run: (args) => this.exportResults(args.format, args.results),
       },
     };
@@ -130,8 +130,12 @@ class DiagnosticServer {
     if (format === 'json') {
       content = JSON.stringify(results, null, 2);
     } else {
-      const escape = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
-      content = ['name,value', ...Object.entries(results).map(([key, value]) => `${escape(key)},${escape(typeof value === 'object' ? JSON.stringify(value) : value)}`)].join('\n');
+      // Strings verbatim, every other value as compact JSON, matching the Python server.
+      const cell = (value) => {
+        const text = typeof value === 'string' ? value : JSON.stringify(value);
+        return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+      };
+      content = ['name,value', ...Object.entries(results).map(([key, value]) => `${cell(key)},${cell(value)}`)].join('\n');
     }
     return { tool: 'export_results', format, status: 'ok', content, timestamp: timestamp() };
   }
@@ -143,6 +147,9 @@ class DiagnosticServer {
     for (const key of tool.inputSchema.required || []) {
       if (!(key in args)) throw new TypeError(`Missing required argument '${key}'`);
     }
+    const allowed = new Set(Object.keys(tool.inputSchema.properties ?? {}));
+    const unexpected = Object.keys(args).filter((key) => !allowed.has(key)).sort();
+    if (unexpected.length) throw new TypeError(`Unexpected argument '${unexpected[0]}'`);
     return tool.run(args);
   }
 
@@ -152,7 +159,7 @@ class DiagnosticServer {
     }
     const notification = !Object.hasOwn(message, 'id');
     const id = message.id ?? null;
-    const params = message.params ?? {};
+    const params = message.params === undefined ? {} : message.params;
     if (params === null || typeof params !== 'object' || Array.isArray(params)) {
       return notification ? null : { jsonrpc: '2.0', id, error: { code: -32602, message: 'params must be an object' } };
     }

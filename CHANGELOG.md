@@ -20,6 +20,8 @@ entries have been removed. The first version in this repository is `1.0.0`.
 ### Changed
 - `ci.yml` replaced the checkout-only workflow with syntax, smoke test, JSON,
   documentation-link and installer checks on Linux
+- The release archive now ships `LICENSE` and `README.md` alongside `installers/`,
+  `server/` and `docs/`
 - Documentation rewritten to match the shipped code: `README.md`,
   `docs/Architecture.md`, `docs/Modules.md`, `docs/Export.md`, `docs/Privacy.md`,
   `docs/AppMaker.md` (now a status page), `docs/TROUBLESHOOTING.md`,

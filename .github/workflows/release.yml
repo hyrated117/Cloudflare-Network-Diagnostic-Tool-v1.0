@@ -69,7 +69,7 @@ jobs:
         run: |
           version="${RELEASE_TAG#v}"
           mkdir -p "dist/v${version}"
-          tar -czf "dist/v${version}/mcp-installer-pack.tar.gz" installers server docs
+          tar -czf "dist/v${version}/mcp-installer-pack.tar.gz" installers server docs LICENSE README.md
           tar -tzf "dist/v${version}/mcp-installer-pack.tar.gz" >/dev/null
           (
             cd "dist/v${version}"

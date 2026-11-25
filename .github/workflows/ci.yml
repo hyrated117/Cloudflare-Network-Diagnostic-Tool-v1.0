@@ -37,6 +37,10 @@ jobs:
       - name: Run Python MCP smoke test
         run: python server/smoke_test.py
 
+      # Both servers implement one MCP surface; this fails when they diverge.
+      - name: Compare the Python and Node servers
+        run: python Tools/check-conformance.py
+
       - name: Validate JSON files
         run: python Tools/validate-json.py .
 
@@ -110,6 +114,11 @@ jobs:
             }
           }
           if ($failed) { exit 1 }
+
+      # A real trace, so the tracert path is exercised instead of only handshaked.
+      - name: Trace a route with tracert
+        shell: pwsh
+        run: python Tools/check-conformance.py --live-trace 127.0.0.1
 
       - name: Check installer MCP configs
         shell: pwsh

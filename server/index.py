@@ -22,6 +22,15 @@ def now():
     return datetime.now(timezone.utc).isoformat()
 
 
+def trace_candidates():
+    """Commands to try, in order, as (executable, fixed arguments) pairs."""
+    if sys.platform.startswith("win"):
+        # Windows ships tracert rather than traceroute. -d skips reverse DNS and
+        # -h/-w bound a full run well inside the 20 second timeout.
+        return [("tracert", ["-d", "-h", "15", "-w", "300"])]
+    return [("traceroute", []), ("tracepath", [])]
+
+
 class DiagnosticServer:
     """MCP-style JSON-RPC stdio server with network diagnostic tools."""
 
@@ -69,8 +78,13 @@ class DiagnosticServer:
     def doh_test(self, url):
         if not isinstance(url, str):
             raise ValueError("url must be a valid HTTP(S) URL")
-        parsed = urllib.parse.urlsplit(url)
-        if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password:
+        try:
+            parsed = urllib.parse.urlsplit(url)
+        except ValueError as exc:
+            raise ValueError("url must be a valid HTTP(S) URL") from exc
+        if not parsed.netloc:
+            raise ValueError("url must be a valid HTTP(S) URL")
+        if parsed.scheme not in ("http", "https") or parsed.username or parsed.password:
             raise ValueError("url must use HTTP or HTTPS and must not contain credentials")
         request = urllib.request.Request(url, headers={"Accept": "application/dns-json", "User-Agent": "Cloudflare-Diagnostic-Tool/1.0"})
         try:
@@ -88,19 +102,19 @@ class DiagnosticServer:
             return {"tool": "doh_test", "url": url, "status": "error", "error": str(exc), "timestamp": now()}
 
     def trace_route(self, destination):
-        if not isinstance(destination, str) or not destination.strip() or any(ch.isspace() for ch in destination):
-            raise ValueError("destination must be a non-empty host or IP without whitespace")
+        if not isinstance(destination, str) or not destination.strip() or any(ch.isspace() for ch in destination) or destination.strip().startswith("-"):
+            raise ValueError("destination must be a non-empty host or IP without whitespace and must not start with '-'")
         destination = destination.strip()
-        for command in ("traceroute", "tracepath"):
+        for command, fixed_args in trace_candidates():
             try:
-                completed = subprocess.run([command, destination], capture_output=True, text=True, timeout=20, check=False)
+                completed = subprocess.run([command, *fixed_args, destination], capture_output=True, text=True, errors="replace", timeout=20, check=False)
             except FileNotFoundError:
                 continue
             except subprocess.TimeoutExpired as exc:
                 return {"tool": "trace_route", "destination": destination, "status": "error", "error": str(exc), "timestamp": now()}
             output = completed.stdout.strip() or completed.stderr.strip() or "No output captured"
             return {"tool": "trace_route", "destination": destination, "status": "ok" if completed.returncode == 0 else "error", "returnCode": completed.returncode, "output": output, "timestamp": now()}
-        return {"tool": "trace_route", "destination": destination, "status": "unavailable", "message": "No traceroute or tracepath utility available on this system.", "timestamp": now()}
+        return {"tool": "trace_route", "destination": destination, "status": "unavailable", "message": "No traceroute, tracepath or tracert utility available on this system.", "timestamp": now()}
 
     def health_score(self):
         try:
@@ -121,11 +135,13 @@ class DiagnosticServer:
             content = json.dumps(results, indent=2)
         else:
             output = io.StringIO(newline="")
-            writer = csv.writer(output)
+            writer = csv.writer(output, lineterminator="\n")
             writer.writerow(["name", "value"])
             for key, value in results.items():
-                writer.writerow([key, json.dumps(value, ensure_ascii=False) if isinstance(value, (dict, list)) else value])
-            content = output.getvalue().rstrip("\r\n")
+                # Strings verbatim, every other value as compact JSON, matching the Node server.
+                cell = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+                writer.writerow([key, cell])
+            content = output.getvalue().rstrip("\n")
         return {"tool": "export_results", "format": format, "status": "ok", "content": content, "timestamp": now()}
 
     def list_tools(self):

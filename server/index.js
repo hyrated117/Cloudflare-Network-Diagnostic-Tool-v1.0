@@ -7,8 +7,15 @@ import net from 'node:net';
 import { pathToFileURL } from 'node:url';
 
 const PROTOCOL_VERSION = '2024-11-05';
+const TRACE_TIMEOUT_MS = 20000;
 const timestamp = () => new Date().toISOString();
 const log = (...args) => console.error(...args);
+
+// Windows ships tracert rather than traceroute. -d skips reverse DNS and -h/-w
+// bound a full run well inside the timeout.
+const traceCandidates = (platform = process.platform) => (platform === 'win32'
+  ? [['tracert', ['-d', '-h', '15', '-w', '300']]]
+  : [['traceroute', []], ['tracepath', []]]);
 
 const isDirectExecution = () => {
   const argv1 = process.argv[1];
@@ -27,17 +34,17 @@ class DiagnosticServer {
     this.tools = {
       dns_check: {
         description: 'Resolve IPv4 and IPv6 addresses for a domain.',
-        inputSchema: { type: 'object', properties: { domain: { type: 'string' } }, required: ['domain'], additionalProperties: false },
+        inputSchema: { type: 'object', properties: { domain: { type: 'string', description: 'Domain name to resolve' } }, required: ['domain'], additionalProperties: false },
         run: (args) => this.dnsCheck(args.domain),
       },
       doh_test: {
         description: 'Send a request to a DNS-over-HTTPS endpoint.',
-        inputSchema: { type: 'object', properties: { url: { type: 'string', format: 'uri' } }, required: ['url'], additionalProperties: false },
+        inputSchema: { type: 'object', properties: { url: { type: 'string', format: 'uri', description: 'HTTP(S) DoH endpoint URL' } }, required: ['url'], additionalProperties: false },
         run: (args) => this.dohTest(args.url),
       },
       trace_route: {
         description: 'Run traceroute or tracepath to a destination when available.',
-        inputSchema: { type: 'object', properties: { destination: { type: 'string' } }, required: ['destination'], additionalProperties: false },
+        inputSchema: { type: 'object', properties: { destination: { type: 'string', description: 'Host or IP address' } }, required: ['destination'], additionalProperties: false },
         run: (args) => this.traceRoute(args.destination),
       },
       health_score: {
@@ -47,7 +54,7 @@ class DiagnosticServer {
       },
       export_results: {
         description: 'Format diagnostic results as JSON or CSV.',
-        inputSchema: { type: 'object', properties: { format: { type: 'string', enum: ['json', 'csv'] }, results: { type: 'object' } }, additionalProperties: false },
+        inputSchema: { type: 'object', properties: { format: { type: 'string', enum: ['json', 'csv'] }, results: { type: 'object', description: 'Diagnostic payload to export' } }, additionalProperties: false },
         run: (args) => this.exportResults(args.format, args.results),
       },
     };
@@ -90,19 +97,20 @@ class DiagnosticServer {
   }
 
   async traceRoute(destination) {
-    if (typeof destination !== 'string' || !destination.trim() || /[\s\0]/.test(destination)) {
-      throw new TypeError('destination must be a non-empty host or IP without whitespace');
+    if (typeof destination !== 'string' || !destination.trim() || /[\s\0]/.test(destination) || destination.trim().startsWith('-')) {
+      throw new TypeError("destination must be a non-empty host or IP without whitespace and must not start with '-'");
     }
-    for (const command of ['traceroute', 'tracepath']) {
+    const target = destination.trim();
+    for (const [command, fixedArgs] of traceCandidates()) {
       try {
-        const output = execFileSync(command, [destination], { encoding: 'utf8', timeout: 20000, stdio: ['ignore', 'pipe', 'pipe'] });
-        return { tool: 'trace_route', destination, status: 'ok', output: output.trim(), timestamp: timestamp() };
+        const output = execFileSync(command, [...fixedArgs, target], { encoding: 'utf8', timeout: TRACE_TIMEOUT_MS, stdio: ['ignore', 'pipe', 'pipe'] });
+        return { tool: 'trace_route', destination: target, status: 'ok', output: output.trim(), timestamp: timestamp() };
       } catch (error) {
         if (error?.code === 'ENOENT') continue;
-        return { tool: 'trace_route', destination, status: 'error', error: error?.stderr?.toString().trim() || error?.message, timestamp: timestamp() };
+        return { tool: 'trace_route', destination: target, status: 'error', error: error?.stderr?.toString().trim() || error?.message, timestamp: timestamp() };
       }
     }
-    return { tool: 'trace_route', destination, status: 'unavailable', message: 'No traceroute or tracepath utility available on this system.', timestamp: timestamp() };
+    return { tool: 'trace_route', destination: target, status: 'unavailable', message: 'No traceroute, tracepath or tracert utility available on this system.', timestamp: timestamp() };
   }
 
   async healthScore() {
@@ -122,8 +130,12 @@ class DiagnosticServer {
     if (format === 'json') {
       content = JSON.stringify(results, null, 2);
     } else {
-      const escape = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
-      content = ['name,value', ...Object.entries(results).map(([key, value]) => `${escape(key)},${escape(typeof value === 'object' ? JSON.stringify(value) : value)}`)].join('\n');
+      // Strings verbatim, every other value as compact JSON, matching the Python server.
+      const cell = (value) => {
+        const text = typeof value === 'string' ? value : JSON.stringify(value);
+        return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+      };
+      content = ['name,value', ...Object.entries(results).map(([key, value]) => `${cell(key)},${cell(value)}`)].join('\n');
     }
     return { tool: 'export_results', format, status: 'ok', content, timestamp: timestamp() };
   }
@@ -135,6 +147,9 @@ class DiagnosticServer {
     for (const key of tool.inputSchema.required || []) {
       if (!(key in args)) throw new TypeError(`Missing required argument '${key}'`);
     }
+    const allowed = new Set(Object.keys(tool.inputSchema.properties ?? {}));
+    const unexpected = Object.keys(args).filter((key) => !allowed.has(key)).sort();
+    if (unexpected.length) throw new TypeError(`Unexpected argument '${unexpected[0]}'`);
     return tool.run(args);
   }
 
@@ -144,7 +159,7 @@ class DiagnosticServer {
     }
     const notification = !Object.hasOwn(message, 'id');
     const id = message.id ?? null;
-    const params = message.params ?? {};
+    const params = message.params === undefined ? {} : message.params;
     if (params === null || typeof params !== 'object' || Array.isArray(params)) {
       return notification ? null : { jsonrpc: '2.0', id, error: { code: -32602, message: 'params must be an object' } };
     }

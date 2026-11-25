@@ -20,9 +20,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
 
 ### Changed
 - `release.yml` refuses a tag that disagrees with `VERSION` (including suffixes such as
-  `-rc1`), builds `dist/v<version>` from `VERSION` and runs
-  `check-version.py --sites-only` before packaging, so a release cannot publish a pack
-  whose name and stamped sites disagree
+  `-rc1`), builds `dist/v<version>` from `VERSION`, runs
+  `check-version.py --sites-only` before packaging and `check-archive.py` on the built
+  pack before uploading, so a release cannot publish a pack whose name and stamped
+  sites disagree
 - The release archive ships `VERSION`, and `Tools/check-archive.py` fails when it
   disagrees with the version stamped into the servers, installers and `package.json`
   files the pack carries, so an archive cannot be published under a stale version

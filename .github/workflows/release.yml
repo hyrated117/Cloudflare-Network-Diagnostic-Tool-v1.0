@@ -115,6 +115,13 @@ jobs:
           Tools/build-package.sh "${VERSION}" "${PWD}/dist"
           cat "dist/v${VERSION}/SHA256SUMS"
 
+      # The same contract CI's package job applies to the same script's output, so a
+      # release cannot publish a pack CI would reject.
+      - name: Check the archive before publishing
+        shell: bash
+        run: |
+          python3 Tools/check-archive.py "dist/v${VERSION}/mcp-installer-pack.tar.gz" --expect-checksum
+
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:

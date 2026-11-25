@@ -11,11 +11,13 @@ compared instead).
 
 Every request but `health_score` is answered without network access: the arguments
 are rejected before a lookup, or PATH is emptied so trace_route reports that no
-traceroute tool exists. `health_score` opens the same TCP connection to
-1.1.1.1:443 in both servers, so both must report the same `reachable` and `score`
-whether the probe succeeds or is blocked. `--live-trace DEST` adds one real trace
-and asserts it succeeds on both servers, which is how Windows CI exercises the
-tracert path.
+traceroute tool exists. `health_score` makes the one real network call: each
+server probes 1.1.1.1:443 itself, so on an unreliable network the probe can
+succeed for one run and fail for the other. The check therefore asserts that each
+result is one of the two documented pairs (reachable: 95/healthy, blocked:
+64/degraded) and compares everything else, ignoring which way the probe went.
+`--live-trace DEST` adds one real trace and asserts it succeeds on both servers,
+which is how Windows CI exercises the tracert path.
 """
 
 import argparse
@@ -57,11 +59,14 @@ REQUESTS = [
     {"jsonrpc": "2.0", "id": 20, "method": "tools/call", "params": {"name": "export_results", "arguments": "not an object"}},
     {"jsonrpc": "2.0", "id": 21, "method": "does/not/exist", "params": {}},
     {"jsonrpc": "2.0", "id": 22, "method": "ping", "params": None},
-    # The one real network call: both servers probe 1.1.1.1:443 and must agree.
+    # The one real network call: each server probes 1.1.1.1:443 itself, so the
+    # probe outcome is normalized and only the score mapping is compared.
     {"jsonrpc": "2.0", "id": 23, "method": "tools/call", "params": {"name": "health_score", "arguments": {}}},
     {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
 ]
 MALFORMED_LINE = "{not json"
+HEALTH_SCORE_STATES = {(True, 95, "healthy"), (False, 64, "degraded")}
+PROBE_OUTCOME = "<probe-outcome>"
 LIVE_TRACE_REQUESTS = [
     {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
 ]
@@ -70,6 +75,8 @@ failures = []
 
 
 def fail(message):
+    if message in failures:
+        return
     print(f"FAIL: {message}", file=sys.stderr)
     failures.append(message)
 
@@ -87,6 +94,21 @@ def responses(completed):
     return [json.loads(line) for line in completed.stdout.splitlines() if line.strip()]
 
 
+def stabilize_health_score(normalized):
+    """Mask the fields that depend on whether this run reached 1.1.1.1:443.
+
+    Each server probes the network on its own, so a probe that succeeds in one
+    run and fails in the other must not fail the comparison. Both copies of the
+    result (structuredContent and the content text payload) are masked, but only
+    after checking the values are still one of the two documented pairs.
+    """
+    state = (normalized.get("reachable"), normalized.get("score"), normalized.get("status"))
+    if state not in HEALTH_SCORE_STATES:
+        fail(f"health_score returned an unexpected reachable/score/status: {state}")
+        return normalized
+    return {**normalized, "reachable": PROBE_OUTCOME, "score": PROBE_OUTCOME, "status": PROBE_OUTCOME}
+
+
 def normalize(value):
     if isinstance(value, dict):
         normalized = {}
@@ -94,6 +116,8 @@ def normalize(value):
             if key == "timestamp":
                 continue
             normalized[key] = [normalize_content(entry) for entry in item] if key == "content" and isinstance(item, list) else normalize(item)
+        if normalized.get("tool") == "health_score":
+            normalized = stabilize_health_score(normalized)
         return normalized
     if isinstance(value, list):
         return [normalize(item) for item in value]
@@ -122,7 +146,8 @@ def compare(expected, actual):
     for index, (left, right) in enumerate(zip(expected, actual)):
         if left != right:
             return fail(f"response {index + 1} (id {left.get('id')}) differs\n{diff_text(left, right)}")
-    print(f"ok {len(expected)} responses match")
+    if not failures:
+        print(f"ok {len(expected)} responses match")
 
 
 def live_trace(destination):

@@ -58,11 +58,25 @@ jobs:
         run: |
           previous_tag="$(git tag --merged "$RELEASE_TAG" --sort=-version:refname | grep -Fxv -- "$RELEASE_TAG" | head -n 1 || true)"
           if [[ -n "$previous_tag" ]]; then
-            git log --pretty=format:'- %s' "${previous_tag}..${RELEASE_TAG}" > release_notes.md
+            range="${previous_tag}..${RELEASE_TAG}"
           else
-            git log --pretty=format:'- %s' "${RELEASE_TAG}" > release_notes.md
+            range="${RELEASE_TAG}"
           fi
-          printf '\n' >> release_notes.md
+          git log --pretty=format:'- %s' "$range" > generated_notes.md
+          printf '\n' >> generated_notes.md
+
+          # Hand-written notes live beside the tag (release/v1.0.0/release-notes.md).
+          # They are the release body; the generated commit list follows them.
+          curated="release/${RELEASE_TAG}/release-notes.md"
+          if [[ -s "$curated" ]]; then
+            cat "$curated" > release_notes.md
+            printf '\n## Commits\n\n' >> release_notes.md
+            echo "Release body: $curated, followed by the generated commit list"
+          else
+            : > release_notes.md
+            echo "::warning::$curated not found or empty, publishing the generated commit list only"
+          fi
+          cat generated_notes.md >> release_notes.md
 
       - name: Build distribution archive
         shell: bash

@@ -70,8 +70,17 @@ jobs:
       - name: Extract, install and handshake with the packaged server
         run: python Tools/check-package.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz
 
+      - name: Upload the archive for the Windows job
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-installer-pack
+          path: dist/v0.0.0-ci/
+          if-no-files-found: error
+          retention-days: 7
+
   windows:
     name: Validate Windows installers
+    needs: package
     runs-on: windows-latest
     steps:
       - name: Checkout repository
@@ -106,10 +115,12 @@ jobs:
         shell: pwsh
         run: ./Tools/check-installers.ps1
 
-      # Same script release.yml runs, so the archive tested here is the one a tag ships.
-      - name: Build release archive
-        shell: bash
-        run: bash Tools/build-package.sh v0.0.0-ci
+      # Test the bytes the Linux job built, not a second build of the same sources.
+      - name: Download the release archive built on Linux
+        uses: actions/download-artifact@v4
+        with:
+          name: mcp-installer-pack
+          path: dist/v0.0.0-ci
 
       - name: Extract, install and handshake from the archive
         shell: pwsh

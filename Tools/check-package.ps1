@@ -113,6 +113,19 @@ if (-not (Test-Path -LiteralPath $Archive -PathType Leaf)) {
 }
 $archivePath = (Resolve-Path -LiteralPath $Archive).Path
 
+# When the archive comes from the Linux packaging job, prove these are its bytes.
+$checksumFile = Join-Path (Split-Path -Parent $archivePath) "SHA256SUMS"
+if (Test-Path -LiteralPath $checksumFile -PathType Leaf) {
+    $expected = ((Get-Content -LiteralPath $checksumFile -TotalCount 1) -split '\s+')[0]
+    $actual = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash
+    if ($actual.ToLower() -ne $expected.ToLower()) {
+        Fail "checksum mismatch: archive is $($actual.ToLower()), SHA256SUMS says $($expected.ToLower())"
+    }
+    else {
+        Write-Host "checksum: matches SHA256SUMS" -ForegroundColor Green
+    }
+}
+
 $entries = & tar -tzf $archivePath
 if ($LASTEXITCODE -ne 0) {
     Write-Host "FAIL: tar could not read $archivePath" -ForegroundColor Red

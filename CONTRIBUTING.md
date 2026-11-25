@@ -30,12 +30,12 @@ script `release.yml` uses — then extract it, install with a temporary `HOME` a
 handshake with the packaged server, so packaging breakage fails on a push rather
 than at tag time.
 
-A second job on Windows parses `installers/*.ps1`, runs
-`Tools/check-installers.ps1`, then repeats the packaging check with the PowerShell
-installers against the same archive:
+A second job on Windows parses `installers/*.ps1` and runs
+`Tools/check-installers.ps1`. It then downloads the archive the Linux packaging job
+uploaded — the same bytes, not a second build — and runs the PowerShell installers
+against it, verifying its SHA-256 first:
 
 ```powershell
-bash Tools/build-package.sh v0.0.0-ci
 ./Tools/check-package.ps1 -Archive dist/v0.0.0-ci/mcp-installer-pack.tar.gz
 ```
 

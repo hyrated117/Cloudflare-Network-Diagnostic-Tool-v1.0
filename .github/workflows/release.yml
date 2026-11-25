@@ -52,6 +52,27 @@ jobs:
             exit 1
           fi
 
+      # VERSION, not the tag, names the archive: this refuses to publish a pack
+      # whose directory says one thing and whose files say another.
+      - name: Check the tag against VERSION
+        shell: bash
+        run: |
+          if [[ ! -s VERSION ]]; then
+            echo "::error::VERSION is missing or empty; it names the release archive" >&2
+            exit 1
+          fi
+          version="$(tr -d '[:space:]' < VERSION)"
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::VERSION (${version}) is not MAJOR.MINOR.PATCH" >&2
+            exit 1
+          fi
+          if [[ "${RELEASE_TAG#v}" != "$version" ]]; then
+            echo "::error::tag ${RELEASE_TAG} disagrees with VERSION (${version}); bump VERSION or re-tag" >&2
+            exit 1
+          fi
+          echo "VERSION=${version}" >> "$GITHUB_ENV"
+          echo "Tag and VERSION agree on ${version}"
+
       - name: Generate release notes
         id: notes
         shell: bash
@@ -67,7 +88,7 @@ jobs:
 
           # Hand-written notes live beside the tag (release/v1.0.1/release-notes.md).
           # They are the release body; the generated commit list follows them.
-          curated="release/${RELEASE_TAG}/release-notes.md"
+          curated="release/v${VERSION}/release-notes.md"
           if [[ -s "$curated" ]]; then
             cat "$curated" > release_notes.md
             printf '\n## Commits\n\n' >> release_notes.md
@@ -81,9 +102,10 @@ jobs:
       - name: Build distribution archive
         shell: bash
         run: |
-          # Shared with the packaging CI job so both build the same archive.
-          Tools/build-package.sh "${RELEASE_TAG}" "${PWD}/dist"
-          cat "dist/${RELEASE_TAG}/SHA256SUMS"
+          # Shared with the packaging CI job so both build the same archive. The
+          # version comes from VERSION, which the previous step matched to the tag.
+          Tools/build-package.sh "${VERSION}" "${PWD}/dist"
+          cat "dist/v${VERSION}/SHA256SUMS"
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
@@ -92,5 +114,5 @@ jobs:
           name: ${{ env.RELEASE_TAG }}
           body_path: release_notes.md
           files: |
-            dist/${{ env.RELEASE_TAG }}/mcp-installer-pack.tar.gz
-            dist/${{ env.RELEASE_TAG }}/SHA256SUMS
+            dist/v${{ env.VERSION }}/mcp-installer-pack.tar.gz
+            dist/v${{ env.VERSION }}/SHA256SUMS

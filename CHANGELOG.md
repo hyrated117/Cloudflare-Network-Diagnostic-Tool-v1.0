@@ -39,6 +39,8 @@ entries have been removed. The first version in this repository is `1.0.0`.
   analysis job runs on Linux only
 - The bug report template asks for OS, runtime and MCP client instead of Windows and
   PowerShell only
+- Deleted the shadowed lowercase `issue_template/bug_report.md` duplicate, which
+  asked for a Swift version and a v1.1.0 release that never existed
 - Broken relative links in `docs/README.md` and `release/v1.0.0/release-notes.md`,
   and leftover `ca://` links in `docs/Architecture.md` and `docs/ROADMAP.md`
 

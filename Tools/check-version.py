@@ -9,10 +9,6 @@ fails when any of those sites drifts from `VERSION`, when the sites disagree wit
 other, when `CHANGELOG.md`'s newest dated release section names a different version, or
 when `release/v<version>/release-notes.md` is missing or its title does not name that
 version — that file is the release body `release.yml` publishes.
-
-`--sites-only` checks just VERSION and the twelve sites. `release.yml` uses it so a
-release still works when a version has no curated notes: that workflow warns and
-falls back to the generated commit list.
 """
 
 import re
@@ -24,18 +20,10 @@ CHANGELOG = sites.REPO_ROOT / "CHANGELOG.md"
 RELEASE_HEADING = re.compile(r"^## \[(\d+\.\d+\.\d+)\] - (\d{4}-\d{2}-\d{2})$", re.MULTILINE)
 
 
-def report(problems):
-    for problem in problems:
-        print(f"FAIL: {problem}", file=sys.stderr)
-    return 1
-
-
 def main(argv):
-    unknown = sorted(set(argv) - {"--sites-only"})
-    if unknown:
-        print(f"usage: check-version.py [--sites-only] (unknown: {', '.join(unknown)})", file=sys.stderr)
+    if argv:
+        print(f"usage: check-version.py takes no arguments (got: {' '.join(argv)})", file=sys.stderr)
         return 2
-    sites_only = "--sites-only" in argv
 
     version, problems = sites.read_version()
     found, site_problems = sites.collect()
@@ -60,13 +48,6 @@ def main(argv):
         if not sites.SEMVER.match(version):
             problems.append(f'version "{version}" is not MAJOR.MINOR.PATCH')
 
-    if sites_only:
-        if problems:
-            return report(problems)
-        total = sum(len(values) for values in found.values())
-        print(f"ok {total} version strings and VERSION [{version}] agree (changelog and release notes not checked)")
-        return 0
-
     if not CHANGELOG.is_file():
         problems.append("CHANGELOG.md is missing")
     else:
@@ -77,7 +58,7 @@ def main(argv):
         if not headings:
             problems.append("CHANGELOG.md has no dated release section")
         else:
-            newest, date = headings[0]
+            newest = headings[0][0]
             if version is not None and newest != version:
                 problems.append(
                     f"CHANGELOG.md's newest release is {newest}, but VERSION says {version}"
@@ -91,7 +72,9 @@ def main(argv):
                     problems.append(f"{notes.relative_to(sites.REPO_ROOT)}: title does not name v{newest}")
 
     if problems:
-        return report(problems)
+        for problem in problems:
+            print(f"FAIL: {problem}", file=sys.stderr)
+        return 1
     total = sum(len(values) for values in found.values())
     print(f"ok {total} version strings, VERSION and CHANGELOG.md [{version}] agree")
     return 0

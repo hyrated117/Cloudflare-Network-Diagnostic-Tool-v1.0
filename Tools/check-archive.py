@@ -6,19 +6,16 @@ extracted tree then installs is checked by Tools/check-installers.py (POSIX) or
 Tools/check-installers.ps1 (Windows), which take the tree root as an argument.
 
 The archive also ships `VERSION`, and this check requires it to match the version
-stamped into every file the pack carries, so a pack built from a half-bumped tree
-cannot be published under either version.
+stamped into the server and the unified installer the pack carries, so a pack built
+from a half-bumped tree cannot be published under either version.
 """
 
 import argparse
 import hashlib
-import json
 import re
 import sys
 import tarfile
 from pathlib import Path
-
-import version_sites
 
 REQUIRED = (
     "LICENSE",
@@ -33,6 +30,13 @@ REQUIRED = (
     "installers/install-mcp-unified.ps1",
 )
 JUNK = ("__pycache__/", "node_modules/", ".git/", ".DS_Store")
+# The two entry points a user actually launches, not every stamped site: the whole set
+# is checked in the repository by Tools/check-version.py before anything is packaged.
+VERSION_SITES = {
+    "server/index.js": r"this\.version\s*=\s*'([^']+)'",
+    "installers/install-mcp-unified.sh": r"^VERSION=\"([^\"]+)\"",
+}
+SEMVER = re.compile(r"^\d+\.\d+\.\d+$")
 
 
 def digest(path):
@@ -80,43 +84,26 @@ def contents(archive):
 
 
 def version(archive):
-    """Require the pack's VERSION to match every stamped file it ships."""
+    """Require the pack's VERSION to match the server and installer it ships."""
     with tarfile.open(archive) as tar:
-        names = set(tar.getnames())
         raw = tar.extractfile("VERSION").read().decode("utf-8")
         words = raw.split()
-        if len(words) != 1 or not version_sites.SEMVER.match(words[0]):
+        if len(words) != 1 or not SEMVER.match(words[0]):
             print(f"FAIL: VERSION in the archive is not MAJOR.MINOR.PATCH: {raw.strip()!r}", file=sys.stderr)
             return False
         expected = words[0]
         ok = True
-        for name, (pattern, count) in version_sites.STRING_SITES.items():
-            if name not in names:
-                print(f"FAIL: archive is missing {name}", file=sys.stderr)
-                ok = False
-                continue
+        for name, pattern in VERSION_SITES.items():
             found = re.findall(pattern, tar.extractfile(name).read().decode("utf-8"), re.MULTILINE)
-            if len(found) != count:
-                print(
-                    f"FAIL: {name} in the archive has {len(found)} version string(s), expected {count}",
-                    file=sys.stderr,
-                )
+            if len(found) != 1:
+                print(f"FAIL: {name} in the archive has {len(found)} version string(s), expected 1", file=sys.stderr)
                 ok = False
             for value in found:
                 if value != expected:
                     print(f"FAIL: VERSION in the archive says {expected}, but {name} says {value}", file=sys.stderr)
                     ok = False
-        for name in version_sites.JSON_SITES:
-            if name not in names:
-                print(f"FAIL: archive is missing {name}", file=sys.stderr)
-                ok = False
-                continue
-            value = json.loads(tar.extractfile(name).read().decode("utf-8")).get("version")
-            if value != expected:
-                print(f"FAIL: VERSION in the archive says {expected}, but {name} says {value}", file=sys.stderr)
-                ok = False
     if ok:
-        print(f"version: VERSION {expected} matches every stamped file in the archive")
+        print(f"version: VERSION {expected} matches the packaged server and installer")
     return ok
 
 

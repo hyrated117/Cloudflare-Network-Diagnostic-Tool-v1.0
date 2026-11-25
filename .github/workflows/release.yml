@@ -27,15 +27,6 @@ jobs:
     env:
       RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
-      # VERSION is MAJOR.MINOR.PATCH, so suffixes would only fail later.
-      - name: Validate release tag
-        shell: bash
-        run: |
-          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Invalid release tag: $RELEASE_TAG (expected vMAJOR.MINOR.PATCH with no suffix)" >&2
-            exit 1
-          fi
-
       - name: Checkout release tag
         uses: actions/checkout@v4
         with:
@@ -54,10 +45,15 @@ jobs:
           fi
 
       # VERSION, not the tag, names the archive: this refuses to publish a pack
-      # whose directory says one thing and whose files say another.
+      # whose directory says one thing and whose files say another. The tag is checked
+      # here, not in a step of its own, because VERSION only exists after checkout.
       - name: Check the tag against VERSION
         shell: bash
         run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid release tag: ${RELEASE_TAG} (expected vMAJOR.MINOR.PATCH with no suffix)" >&2
+            exit 1
+          fi
           if [[ ! -s VERSION ]]; then
             echo "::error::VERSION is missing or empty; it names the release archive" >&2
             exit 1
@@ -74,12 +70,12 @@ jobs:
           echo "VERSION=${version}" >> "$GITHUB_ENV"
           echo "Tag and VERSION agree on ${version}"
 
-      # The stamping guard: a tag and VERSION can agree while a site was missed.
-      # Only the sites are checked here, so a version with no curated notes still
-      # releases via the fallback below.
-      - name: Check the stamped sites against VERSION
+      # The stamping guard: the tag and VERSION can agree while a site was missed. This
+      # also requires the changelog section and the curated release notes, because the
+      # notes are the release body the next step publishes.
+      - name: Check the version everywhere
         shell: bash
-        run: python3 Tools/check-version.py --sites-only
+        run: python3 Tools/check-version.py
 
       - name: Generate release notes
         id: notes
@@ -95,16 +91,12 @@ jobs:
           printf '\n' >> generated_notes.md
 
           # Hand-written notes live beside the tag (release/v1.0.1/release-notes.md).
-          # They are the release body; the generated commit list follows them.
+          # They are the release body; the generated commit list follows them. The step
+          # above has already required the file to exist.
           curated="release/v${VERSION}/release-notes.md"
-          if [[ -s "$curated" ]]; then
-            cat "$curated" > release_notes.md
-            printf '\n## Commits\n\n' >> release_notes.md
-            echo "Release body: $curated, followed by the generated commit list"
-          else
-            : > release_notes.md
-            echo "::warning::$curated not found or empty, publishing the generated commit list only"
-          fi
+          cat "$curated" > release_notes.md
+          printf '\n## Commits\n\n' >> release_notes.md
+          echo "Release body: $curated, followed by the generated commit list"
           cat generated_notes.md >> release_notes.md
 
       - name: Build distribution archive

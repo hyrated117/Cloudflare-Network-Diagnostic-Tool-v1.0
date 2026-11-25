@@ -60,7 +60,7 @@ into all of them. To bump:
    release body.
 4. Tag `v1.0.2` and push the tag. `release.yml` refuses a tag that disagrees with
    `VERSION` (suffixes such as `-rc1` included), builds `dist/v<version>` from
-   `VERSION`, and runs `check-version.py --sites-only` before packaging.
+   `VERSION`, and runs `check-version.py` before packaging.
 
 `python3 Tools/check-version.py` checks all of it locally: it fails when a site
 drifts from `VERSION`, when the changelog's newest dated section names another

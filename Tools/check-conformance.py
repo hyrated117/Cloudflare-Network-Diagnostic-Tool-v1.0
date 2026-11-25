@@ -9,9 +9,11 @@ difference except the volatile fields (timestamps, and the text copy of a tool
 result, which the runtimes serialize with different whitespace; its payload is
 compared instead).
 
-Every request except `health_score` is answered without network access: the
-arguments are rejected before a lookup, or PATH is emptied so trace_route reports
-that no traceroute tool exists. `health_score` probes 1.1.1.1:443, so the check
+No request reaches the internet. Everything except `health_score` and the two
+`doh_test` cases is answered without any network access at all: the arguments are
+rejected before a lookup, or PATH is emptied so trace_route reports that no
+traceroute tool exists. The `doh_test` cases talk only to the loopback fixture this
+script starts for itself (see below). `health_score` probes 1.1.1.1:443, so the check
 replaces that connect() in both runtimes (a sitecustomize stub for Python, a
 --require stub for Node) and asks twice. The stubs answer the first probe as
 reachable and the second as blocked, so the documented mapping is asserted in both

@@ -41,11 +41,11 @@
   statuses aligned.
 - Both servers reject unknown tools, missing required arguments and unexpected
   arguments with `-32602`; keep it that way on both sides.
-- Known differences, which must stay deliberate and documented: Python caps DoH
-  bodies at 64 KiB while Node buffers the whole body (truncating non-JSON text to
-  4096 characters); timestamps differ (`Z` vs `+00:00`); `doh_test` echoes the URL as
-  supplied in Python and normalised in Node; `dns_check` sorts addresses in Python
-  and keeps resolver order in Node.
+- Both servers cap DoH bodies at 64 KiB and return a tool-level `status: "error"` for a
+  larger body (Node keeps only the first 4096 characters of a non-JSON body within the
+  cap). Known differences, which must stay deliberate and documented: timestamps differ
+  (`Z` vs `+00:00`); `doh_test` echoes the URL as supplied in Python and normalised in
+  Node; `dns_check` sorts addresses in Python and keeps resolver order in Node.
 - Use the standard library only. Do not add dependencies to either server.
 
 ## Installers

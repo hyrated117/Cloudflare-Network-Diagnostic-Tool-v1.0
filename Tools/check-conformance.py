@@ -21,6 +21,10 @@ and the check counts those markers, so a changed probe target fails instead of
 silently falling back to the network.
 `--live-trace DEST` adds one real trace and asserts it succeeds on both servers,
 which is how Windows CI exercises the tracert path.
+
+The DoH cases are served by a loopback HTTP fixture listening on 127.0.0.1:0: it
+returns JSON bodies of exactly 64 KiB and one byte more, so the shared body cap is
+asserted at and just over the limit without contacting a DoH provider.
 """
 
 import argparse
@@ -31,12 +35,22 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PYTHON_SERVER = [sys.executable, str(REPO_ROOT / "server" / "index.py")]
 NODE = shutil.which("node")
 NODE_SERVER = [NODE, str(REPO_ROOT / "server" / "index.js")] if NODE else None
+
+# Sizes served by the loopback DoH fixture: exactly the cap, and one byte over it.
+DOH_CAP = 65536
+DOH_BODIES = (DOH_CAP, DOH_CAP + 1)
+DOH_PORT_PLACEHOLDER = "DOH_PORT"
+DOH_AT_CAP_ID = 26
+DOH_OVER_CAP_ID = 27
+EXPECTED_DOH_OVER_CAP = {"status": "error", "statusCode": 200, "error": "DoH response exceeded 64 KiB limit"}
 
 REQUESTS = [
     {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
@@ -66,6 +80,12 @@ REQUESTS = [
     # so both documented score/status pairs are asserted.
     {"jsonrpc": "2.0", "id": 23, "method": "tools/call", "params": {"name": "health_score", "arguments": {}}},
     {"jsonrpc": "2.0", "id": 24, "method": "tools/call", "params": {"name": "health_score", "arguments": {}}},
+    # Carriage returns must be quoted like every other CSV special, or the row
+    # splits when the export is read back.
+    {"jsonrpc": "2.0", "id": 25, "method": "tools/call", "params": {"name": "export_results", "arguments": {"format": "csv", "results": {"note": "a\rb", "crlf": "a\r\nb", "comma": "a, b", "quote": "a \"b\"", "count": 2}}}},
+    # Served by the loopback fixture in main(); the port is filled in by payload().
+    {"jsonrpc": "2.0", "id": 26, "method": "tools/call", "params": {"name": "doh_test", "arguments": {"url": f"http://127.0.0.1:{DOH_PORT_PLACEHOLDER}/doh/{DOH_CAP}"}}},
+    {"jsonrpc": "2.0", "id": 27, "method": "tools/call", "params": {"name": "doh_test", "arguments": {"url": f"http://127.0.0.1:{DOH_PORT_PLACEHOLDER}/doh/{DOH_CAP + 1}"}}},
     {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
 ]
 MALFORMED_LINE = "{not json"
@@ -142,9 +162,10 @@ def fail(message):
     failures.append(message)
 
 
-def payload():
+def payload(doh_port):
+    """The stdin every server gets; the fixture's ephemeral port is filled in here."""
     lines = [json.dumps(request) for request in REQUESTS] + [MALFORMED_LINE]
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines).replace(DOH_PORT_PLACEHOLDER, str(doh_port)) + "\n"
 
 
 def run(command, env, stdin):
@@ -198,6 +219,8 @@ def build_env(workdir):
     """Empty PATH (so trace_route finds no tool) plus the probe stubs."""
     env = {**os.environ}
     env["PATH"] = str(workdir / "empty")
+    # The DoH fixture is loopback; never let a proxy setting intercept it.
+    env["NO_PROXY"] = env["no_proxy"] = "127.0.0.1"
     env["PYTHONPATH"] = os.pathsep.join(filter(None, (str(workdir / "python"), env.get("PYTHONPATH"))))
     env["NODE_OPTIONS"] = " ".join(filter(None, (env.get("NODE_OPTIONS"), f'--require "{workdir / "node-probe-stub.cjs"}"')))
     return env
@@ -226,11 +249,63 @@ def check_health_scores(label, normalized):
             fail(f"{label}: health_score probe {index} returned {actual}, expected {expected}")
 
 
-def run_server(command, workdir, label):
-    completed = run(command, build_env(workdir), payload())
+class DohFixtureHandler(BaseHTTPRequestHandler):
+    """Answer `/doh/<bytes>` with a JSON body of exactly that many bytes."""
+
+    def do_GET(self):
+        try:
+            size = int(self.path.rsplit("/", 1)[-1])
+        except ValueError:
+            return self.send_error(404)
+        if size not in DOH_BODIES:
+            return self.send_error(404)
+        prefix, suffix = b'{"pad":"', b'"}'
+        body = prefix + b"a" * (size - len(prefix) - len(suffix)) + suffix
+        self.send_response(200)
+        self.send_header("Content-Type", "application/dns-json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *args):
+        pass
+
+
+def start_doh_fixture():
+    server = ThreadingHTTPServer(("127.0.0.1", 0), DohFixtureHandler)
+    server.daemon_threads = True
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server
+
+
+def check_doh_cap(label, normalized):
+    """Both sizes must be handled as documented, not merely identically."""
+    results = {response.get("id"): response for response in normalized}
+    at_cap = (results.get(DOH_AT_CAP_ID) or {}).get("result") or {}
+    structured = at_cap.get("structuredContent") or {}
+    pad = (structured.get("response") or {}).get("pad")
+    expected_pad = DOH_CAP - len(b'{"pad":""}')
+    if structured.get("status") != "ok" or not isinstance(pad, str) or len(pad) != expected_pad:
+        size = len(pad) if isinstance(pad, str) else "no"
+        fail(f"{label}: the {DOH_CAP} byte DoH body was not accepted (status {structured.get('status')!r}, {size} pad characters, expected {expected_pad})")
+    over_cap = results.get(DOH_OVER_CAP_ID) or {}
+    result = over_cap.get("result")
+    if not isinstance(result, dict):
+        return fail(f"{label}: the {DOH_CAP + 1} byte DoH body returned a JSON-RPC error, not a tool result: {over_cap.get('error')}")
+    structured = result.get("structuredContent") or {}
+    actual = {key: structured.get(key) for key in EXPECTED_DOH_OVER_CAP}
+    if actual != EXPECTED_DOH_OVER_CAP:
+        fail(f"{label}: the {DOH_CAP + 1} byte DoH body returned {actual}, expected {EXPECTED_DOH_OVER_CAP}")
+    elif not result.get("isError"):
+        fail(f"{label}: the {DOH_CAP + 1} byte DoH body is not marked isError")
+
+
+def run_server(command, workdir, label, doh_port):
+    completed = run(command, build_env(workdir), payload(doh_port))
     normalized = normalize(responses(completed))
     check_probe_stub(label, completed.stderr)
     check_health_scores(label, normalized)
+    check_doh_cap(label, normalized)
     return normalized
 
 
@@ -266,18 +341,24 @@ def main():
     parser.add_argument("--live-trace", metavar="DESTINATION", help="also assert a real trace succeeds on both servers (Windows CI uses 127.0.0.1)")
     args = parser.parse_args()
 
-    with tempfile.TemporaryDirectory() as temporary:
-        workdir = Path(temporary)
-        (workdir / "empty").mkdir()
-        (workdir / "python").mkdir()
-        (workdir / "python" / "sitecustomize.py").write_text(PYTHON_PROBE_STUB, encoding="utf-8")
-        (workdir / "node-probe-stub.cjs").write_text(NODE_PROBE_STUB, encoding="utf-8")
+    doh_fixture = start_doh_fixture()
+    try:
+        with tempfile.TemporaryDirectory() as temporary:
+            workdir = Path(temporary)
+            (workdir / "empty").mkdir()
+            (workdir / "python").mkdir()
+            (workdir / "python" / "sitecustomize.py").write_text(PYTHON_PROBE_STUB, encoding="utf-8")
+            (workdir / "node-probe-stub.cjs").write_text(NODE_PROBE_STUB, encoding="utf-8")
+            doh_port = doh_fixture.server_address[1]
 
-        expected = run_server(PYTHON_SERVER, workdir, "server/index.py")
-        if NODE_SERVER is None:
-            fail("node was not found on PATH")
-        else:
-            compare(expected, run_server(NODE_SERVER, workdir, "server/index.js"))
+            expected = run_server(PYTHON_SERVER, workdir, "server/index.py", doh_port)
+            if NODE_SERVER is None:
+                fail("node was not found on PATH")
+            else:
+                compare(expected, run_server(NODE_SERVER, workdir, "server/index.js", doh_port))
+    finally:
+        doh_fixture.shutdown()
+        doh_fixture.server_close()
 
     if args.live_trace:
         live_trace(args.live_trace)

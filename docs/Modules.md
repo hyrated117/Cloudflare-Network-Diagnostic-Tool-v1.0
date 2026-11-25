@@ -57,9 +57,11 @@ Sends a GET request to a caller-supplied DNS-over-HTTPS endpoint.
 - Accepts `http` and `https` only; URLs containing credentials are rejected.
 - Sends `Accept: application/dns-json` and `User-Agent: Cloudflare-Diagnostic-Tool/1.0`.
 - 5 second timeout. The body is parsed as JSON; non-JSON bodies are returned as a
-  `raw` string.
-- **Python** refuses bodies larger than 64 KiB; **Node** returns the first 4096
-  characters of a non-JSON body.
+  `raw` string (Node keeps at most the first 4096 characters, Python the whole body).
+- Both servers stop reading at 64 KiB. A larger body returns a normal result with
+  `"status": "error"`, the HTTP `statusCode` and the message
+  `DoH response exceeded 64 KiB limit` — a tool result rather than a JSON-RPC error,
+  because the body size is the remote endpoint's choice.
 
 ```json
 {"name":"doh_test","arguments":{"url":"https://cloudflare-dns.com/dns-query?name=example.com&type=A"}}
@@ -109,7 +111,6 @@ with `-32602`. These differences remain:
 
 | Area | Node | Python |
 |---|---|---|
-| DoH response size | whole body buffered; non-JSON text truncated to 4096 characters | 64 KiB limit; a larger body is rejected with `-32602` |
 | `trace_route` failure | `error` with the failure text, no `returnCode` | `error` with `returnCode` and the captured output |
 | Timestamp format | `…Z` | `…+00:00` |
 | `doh_test` echoed `url` | normalised (`https://host` becomes `https://host/`) | exactly as supplied |

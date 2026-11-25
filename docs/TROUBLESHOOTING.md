@@ -68,8 +68,9 @@ A tool that completes but fails returns a normal result with
 - `403`/`429` usually means rate limiting or a provider that expects `POST`; this
   tool always sends `GET` with `Accept: application/dns-json`.
 - `status: "error"` also covers TLS failures and the 5 second timeout.
-- Non-JSON bodies come back as `{"raw": …}`; Node keeps the first 4096 characters,
-  while Python returns a JSON-RPC error if the body exceeds 64 KiB.
+- Non-JSON bodies come back as `{"raw": …}` (Node keeps the first 4096 characters,
+  Python the whole body). Both servers stop reading at 64 KiB and return
+  `status: "error"` with the HTTP `statusCode` for a larger body.
 - URLs with embedded credentials are rejected before any request is made.
 
 ### trace_route
@@ -119,13 +120,12 @@ A tool that completes but fails returns a normal result with
   the queue. Start a second server process if you need parallelism.
 - No results are cached or retained between calls, so repeated runs repeat the
   network work.
-- Node buffers a whole DoH response in memory; Python caps it at 64 KiB.
+- Both servers cap a DoH response at 64 KiB and do not buffer a larger body.
 
 ## Node and Python differences
 
 | Behaviour | Node | Python |
 |---|---|---|
-| DoH body limit | none; non-JSON text truncated to 4096 characters | 64 KiB, else JSON-RPC error |
 | Timestamps | `…Z` | `…+00:00` |
 | `doh_test` echoed `url` | normalised (`https://host` becomes `https://host/`) | as supplied |
 | `dns_check` address order | resolver order | sorted |

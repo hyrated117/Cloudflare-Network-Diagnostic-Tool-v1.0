@@ -17,7 +17,9 @@ entries have been removed. The first version in this repository is `1.0.0`.
   links and unsupported schemes (such as `ca://`) in the documentation
 - `Tools/check-conformance.py`, which sends the same requests to both servers and
   fails on any difference, plus a `--live-trace` mode the Windows CI job uses to run
-  a real `trace_route` through the `tracert` path
+  a real `trace_route` through the `tracert` path; its DoH cases are served by a
+  loopback fixture at 64 KiB and 64 KiB + 1 byte, so the shared cap is asserted
+  without contacting a DoH provider, and a CSV case covers CR, CRLF and quoting
 - `Tools/check-archive.py`, the only place the archive's file list is written down:
 it checks the contents, verifies `SHA256SUMS` and extracts, on either platform
 - `--installers-root` / `-InstallersRoot` on the installer checks, so the packaged
@@ -42,6 +44,14 @@ bytes
   `CONTRIBUTING.md`
 
 ### Fixed
+- `doh_test` applies the same 64 KiB response cap in both servers: a larger body now
+  returns a normal result with `status: "error"`, the HTTP `statusCode` and
+  `DoH response exceeded 64 KiB limit` instead of Python's `-32602` and Node reading
+  the whole body; Node stops reading at the cap, so neither server buffers a larger
+  response
+- `export_results` CSV quotes a cell containing a carriage return in Node as well as
+  Python, so both servers emit byte-identical CSV instead of Node writing a bare CR
+  that split the row for any reader that treats CR as a line ending
 - `trace_route` works on Windows: both servers run `tracert -d -h 15 -w 300` there
   instead of looking only for `traceroute`/`tracepath`, which Windows does not ship,
   so the tool no longer always returns `unavailable`; destinations starting with `-`

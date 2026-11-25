@@ -57,9 +57,11 @@ Clients that need parallel diagnostics should start more than one server process
 
 - Frames are newline-delimited JSON: one response per request, nothing streamed or
   chunked.
-- `doh_test` is the one place a large response costs memory. Node reads the whole
-  body and keeps the first 4096 characters when it is not JSON; Python refuses
-  bodies larger than 64 KiB.
+- `doh_test` is the one place a large response would cost memory. Both servers stop
+  reading at 64 KiB and return `status: "error"` for a larger body, so a hostile or
+  misconfigured endpoint cannot make either process buffer an unbounded response.
+  (Node keeps only the first 4096 characters of a non-JSON body; Python keeps the
+  whole body up to the cap.)
 - `export_results` has no output limit — the formatted string goes out in a single
   frame, so a large input produces a large frame on stdout.
 - No size cap is applied to incoming request lines in either server.

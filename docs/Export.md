@@ -35,9 +35,10 @@ dns,ok
 trace,2
 ```
 
-Node builds the CSV by hand (quoting `"` as `""`); Python uses the `csv` module.
-Both flatten only the top level, so nested structures arrive as JSON text in a
-single cell.
+Node builds the CSV by hand, quoting `"` as `""`; Python uses the `csv` module. Both
+quote a cell containing a comma, a double quote, LF or CR, so the two servers produce
+byte-identical CSV. Both flatten only the top level, so nested structures arrive as
+JSON text in a single cell.
 
 ## Constraints
 

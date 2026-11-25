@@ -30,8 +30,9 @@ session each, rather than multiplexing through one connection.
 ## Payload and memory
 
 - There is no caching layer: every call repeats its network work.
-- DoH bodies: Python rejects a body over 64 KiB; Node reads the whole body and keeps only
-  the first 4096 characters when the response is not JSON.
+- DoH bodies: both servers stop reading at 64 KiB and return a `status: "error"` result
+  for a larger body, so neither buffers it. Node keeps only the first 4096 characters when
+  the response is not JSON.
 - JSON and CSV exports are assembled as a single string in memory. Results are small, so
   there is no streaming path — and no cap on `export_results` output either.
 

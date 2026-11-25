@@ -15,8 +15,11 @@ entries have been removed. The first version in this repository is `1.0.0`.
 ### Added
 - `VERSION` at the repository root as the one place the version is written, plus
   `Tools/stamp-version.py`, which stamps it into all twelve hand-maintained sites in
-  ten files; `Tools/check-version.py` now fails when any site drifts from
-  `VERSION`, so a bump is one edit and one command instead of twelve edits
+  ten files;   `Tools/check-version.py` now fails when any site drifts from `VERSION`,
+  so a bump is one edit and one command instead of twelve edits
+- A `lint` CI job that runs `actionlint` over the workflows — its image bundles
+  `shellcheck`, so the shell inside every `run:` block is checked — and
+  `shellcheck --severity=error` over the installer and tool scripts
 
 ### Changed
 - `release.yml` refuses a tag that disagrees with `VERSION` (including suffixes such as

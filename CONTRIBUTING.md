@@ -45,6 +45,10 @@ python Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract
 ./Tools/check-installers.ps1 -InstallersRoot dist/pack
 ```
 
+A `lint` job runs `actionlint` over the workflows — its image bundles `shellcheck`, so
+the shell inside every `run:` block is checked, including the release steps — and
+`shellcheck --severity=error` over `installers/*.sh` and `Tools/*.sh`.
+
 ## Version bumps
 
 `VERSION` at the repository root holds the version. The installers are copied to a

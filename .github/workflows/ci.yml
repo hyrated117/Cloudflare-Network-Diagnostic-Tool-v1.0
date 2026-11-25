@@ -144,3 +144,18 @@ jobs:
       - name: Install from the extracted archive and handshake
         shell: pwsh
         run: ./Tools/check-installers.ps1 -InstallersRoot dist/pack
+
+  lint:
+    name: Lint workflows and shell
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # The actionlint image bundles shellcheck, so the shell inside every `run:`
+      # block is checked too, including the release workflow's steps.
+      - name: Lint GitHub Actions workflows
+        uses: docker://rhysd/actionlint:latest
+
+      - name: Lint shell scripts
+        run: shellcheck --severity=error installers/*.sh Tools/*.sh

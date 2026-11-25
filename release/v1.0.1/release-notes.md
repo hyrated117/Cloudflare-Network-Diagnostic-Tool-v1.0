@@ -1,7 +1,7 @@
 # Cloudflare Network Diagnostic Tool — Release Notes v1.0.1
 
 **Release date:** 2026-11-25
-**Status:** patch release; v1.0.0 was dated but never tagged, and no tag exists yet
+**Status:** patch release; v1.0.0 was dated in the changelog but never tagged
 
 ## Overview
 

@@ -133,7 +133,7 @@ class DiagnosticServer {
       // Strings verbatim, every other value as compact JSON, matching the Python server.
       const cell = (value) => {
         const text = typeof value === 'string' ? value : JSON.stringify(value);
-        return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+        return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
       };
       content = ['name,value', ...Object.entries(results).map(([key, value]) => `${cell(key)},${cell(value)}`)].join('\n');
     }

@@ -44,6 +44,27 @@ python Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract
 ./Tools/check-installers.ps1 -InstallersRoot dist/pack
 ```
 
+## Version bumps
+
+`VERSION` at the repository root holds the version. The installers are copied to a
+user's machine as loose files and the servers are launched directly, so the twelve
+literals in ten files cannot read it at runtime; `Tools/stamp-version.py` writes it
+into all of them. To bump:
+
+1. Edit `VERSION` (for example `1.0.2`).
+2. Run `python3 Tools/stamp-version.py` and commit the result; `--dry-run` lists what
+   would change instead of writing.
+3. Name the version in `CHANGELOG.md` — a dated `## [1.0.2] - YYYY-MM-DD` section below
+   `## [Unreleased]` — and add `release/v1.0.2/release-notes.md`, which becomes the
+   release body.
+4. Tag `v1.0.2` and push the tag. `release.yml` refuses a tag that disagrees with
+   `VERSION` (suffixes such as `-rc1` included), builds `dist/v<version>` from
+   `VERSION`, and runs `check-version.py --sites-only` before packaging.
+
+`python3 Tools/check-version.py` checks all of it locally: it fails when a site
+drifts from `VERSION`, when the changelog's newest dated section names another
+version, or when that version's release notes are missing or mis-titled.
+
 ## Conventions
 
 - Keep the Node (`server/index.js`) and Python (`server/index.py`) servers

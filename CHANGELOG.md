@@ -61,8 +61,8 @@ bytes
   and leftover `ca://` links in `docs/Architecture.md` and `docs/ROADMAP.md`
 
 ### Removed
-- `docs/Troubleshooting.md`, a duplicate performance guide that differed from
-  `docs/TROUBLESHOOTING.md` only by case
+- `docs/Troubleshooting.md`, a mislabeled Swift performance guide whose name
+  collided with `docs/TROUBLESHOOTING.md` on case-insensitive filesystems
 - `server/mcp-server.json` and `server/mcp-client.json`, the static config templates
   that carried the relative path
 - `installers/ish-gh-installer.sh`, an unrelated Alpine script that built the GitHub

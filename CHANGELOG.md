@@ -35,6 +35,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
 - `installers/package.json` no longer points `main`, `start` and `dev` at an
   `index.js` that does not exist; it points at `cli.js` and declares no
   dependencies (unused `express`, `dotenv` and `eslint` removed)
+- CodeQL no longer analyses Swift, which the repository does not contain, so the
+  analysis job runs on Linux only
+- The bug report template asks for OS, runtime and MCP client instead of Windows and
+  PowerShell only
 - Broken relative links in `docs/README.md` and `release/v1.0.0/release-notes.md`,
   and leftover `ca://` links in `docs/Architecture.md` and `docs/ROADMAP.md`
 

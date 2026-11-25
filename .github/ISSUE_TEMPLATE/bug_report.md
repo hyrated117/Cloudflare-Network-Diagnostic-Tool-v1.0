@@ -26,9 +26,11 @@ Describe what happened instead.
 
 ## Environment
 
-- Windows Version:
-- PowerShell Version:
-- Tool Version:
+- OS and version (macOS / Linux / Windows):
+- Server used (Node or Python) and its version (`node --version` / `python3 --version`):
+- MCP client and how the server is configured:
+- How it was installed (shell, PowerShell, Python installer or `node installers/cli.js`):
+- Version (`node installers/cli.js --version`):
 
 ## Logs / Screenshots
 

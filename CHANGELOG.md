@@ -15,6 +15,9 @@ entries have been removed. The first version in this repository is `1.0.0`.
 ### Added
 - `Tools/check-links.py` plus a CI step that fails the build on broken relative
   links and unsupported schemes (such as `ca://`) in the documentation
+- `Tools/check-conformance.py`, which sends the same requests to both servers and
+  fails on any difference, plus a `--live-trace` mode the Windows CI job uses to run
+  a real `trace_route` through the `tracert` path
 - `Tools/check-archive.py`, the only place the archive's file list is written down:
 it checks the contents, verifies `SHA256SUMS` and extracts, on either platform
 - `--installers-root` / `-InstallersRoot` on the installer checks, so the packaged

@@ -19,6 +19,7 @@ node --check installers/cli.js
 python3 -m compileall -q server installers Tools  # Python syntax
 python3 server/smoke_test.py                      # JSON-RPC smoke test, no network
 python3 Tools/check-conformance.py                # Python and Node answer identically
+python3 Tools/check-version.py                    # version sites, VERSION and changelog agree
 python3 Tools/validate-json.py .                  # JSON syntax
 python3 Tools/check-links.py                      # no broken relative doc links
 python3 Tools/check-installers.py                 # shell and CLI installers write launchable configs

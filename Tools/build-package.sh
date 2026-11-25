@@ -17,7 +17,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUTPUT_ROOT="${2:-${REPO_ROOT}/dist}"
 DEST="${OUTPUT_ROOT}/v${VERSION}"
 ARCHIVE="${DEST}/mcp-installer-pack.tar.gz"
-CONTENTS=(installers server docs LICENSE README.md)
+CONTENTS=(installers server docs LICENSE README.md VERSION)
 
 for entry in "${CONTENTS[@]}"; do
     if [ ! -e "${REPO_ROOT}/${entry}" ]; then

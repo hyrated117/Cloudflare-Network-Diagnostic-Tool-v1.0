@@ -26,14 +26,26 @@ REQUIRED = (
 JUNK = ("__pycache__/", "node_modules/", ".git/", ".DS_Store")
 
 
+def digest(path):
+    sha = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1 << 20), b""):
+            sha.update(chunk)
+    return sha.hexdigest()
+
+
 def checksum(archive, checksum_file, required):
     if not checksum_file.is_file():
         if required:
             print(f"FAIL: no SHA256SUMS next to {archive}", file=sys.stderr)
             return False
         return True
-    expected = checksum_file.read_text(encoding="utf-8").split()[0].lower()
-    actual = hashlib.sha256(archive.read_bytes()).hexdigest()
+    fields = checksum_file.read_text(encoding="utf-8").split()
+    expected, name = fields[0].lower(), fields[-1].lstrip("*")
+    if name != archive.name:
+        print(f"FAIL: SHA256SUMS covers {name}, not {archive.name}", file=sys.stderr)
+        return False
+    actual = digest(archive)
     if actual != expected:
         print(f"FAIL: checksum mismatch: archive is {actual}, SHA256SUMS says {expected}", file=sys.stderr)
         return False

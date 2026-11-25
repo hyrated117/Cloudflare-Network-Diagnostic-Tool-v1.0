@@ -45,7 +45,7 @@ SESSION = "".join(
     )
 )
 
-root = REPO_ROOT
+tree_root = REPO_ROOT
 failures = []
 
 
@@ -108,7 +108,7 @@ def run_installer(label, command, workdir, client_config=True):
     home.mkdir()
     completed = subprocess.run(
         command,
-        cwd=root,
+        cwd=tree_root,
         env={**os.environ, "HOME": str(home)},
         capture_output=True,
         text=True,
@@ -123,7 +123,7 @@ def run_installer(label, command, workdir, client_config=True):
 
 
 def main():
-    global root
+    global tree_root
 
     parser = argparse.ArgumentParser(description="Check that the installers write launchable configs.")
     parser.add_argument(
@@ -134,10 +134,11 @@ def main():
     args = parser.parse_args()
 
     if args.installers_root:
-        root = Path(args.installers_root).resolve()
-    if not (root / "installers").is_dir():
-        return fail(f"{root} has no installers directory") or 1
-    print(f"checking installers in {root}")
+        tree_root = Path(args.installers_root).resolve()
+    if not (tree_root / "installers").is_dir():
+        print(f"FAIL: {tree_root} has no installers directory", file=sys.stderr)
+        return 1
+    print(f"checking installers in {tree_root}")
 
     with tempfile.TemporaryDirectory() as tmp:
         workdir = Path(tmp)
@@ -148,10 +149,11 @@ def main():
             run_installer("cli.js", [node, "installers/cli.js", "install"], workdir, client_config=False)
 
     if failures:
-        return f"{len(failures)} installer check(s) failed"
+        print(f"{len(failures)} installer check(s) failed", file=sys.stderr)
+        return 1
     print("All installer configs point at a launchable server")
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main() or 0)
+    sys.exit(main())

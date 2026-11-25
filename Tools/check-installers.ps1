@@ -16,11 +16,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$root = if ($InstallersRoot) { (Resolve-Path -LiteralPath $InstallersRoot).Path } else { $repoRoot }
+$root = if ($InstallersRoot) { (Resolve-Path -LiteralPath $InstallersRoot).Path } else { (Resolve-Path (Join-Path $PSScriptRoot "..")).Path }
 $installersDir = Join-Path $root "installers"
 $failures = @()
-$expectedTools = @("dns_check", "doh_test", "export_results", "health_score", "trace_route")
+$expectedTools = @("dns_check", "doh_test", "export_results", "health_score", "trace_route" | Sort-Object)
 $protocolVersion = "2024-11-05"
 
 function Fail {
@@ -82,9 +81,8 @@ function Invoke-Session {
         $line = $process.StandardOutput.ReadLine()
         if (-not $line) { throw "no reply to tools/list" }
         $actual = @(($line | ConvertFrom-Json).result.tools | ForEach-Object { $_.name } | Sort-Object)
-        $expected = @($expectedTools | Sort-Object)
-        if (($actual -join ",") -ne ($expected -join ",")) {
-            throw "tools/list returned '$($actual -join ', ')', expected '$($expected -join ', ')'"
+        if (($actual -join ",") -ne ($expectedTools -join ",")) {
+            throw "tools/list returned '$($actual -join ', ')', expected '$($expectedTools -join ', ')'"
         }
 
         $process.StandardInput.WriteLine('{"jsonrpc":"2.0","id":3,"method":"ping"}')

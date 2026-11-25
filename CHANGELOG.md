@@ -69,6 +69,12 @@ bytes
   CLI from source and had no connection to this project
 - `.devcontainer/`, a corrupted directory holding a stray feature file and no
   `devcontainer.json`
+- `reference/`, five optimisation write-ups for the SwiftUI app that never existed
+  (four Swift files and a `.cflog` logging design the servers do not use)
+- `.setup-github-agent.ps1`, a scaffold that regenerated the Copilot instructions,
+  issue templates, `CONTRIBUTING.md` and `ci.yml` with Windows-first content
+- `Tools/icon-resizer.sh` (iOS/macOS icon sizes; the repository has no icons) and
+  `Tools/cleanup-logs.sh` (a generic `*.log` vacuum; nothing here writes `*.log`)
 
 ---
 

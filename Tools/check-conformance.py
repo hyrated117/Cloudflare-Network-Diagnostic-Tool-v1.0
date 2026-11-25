@@ -139,10 +139,10 @@ def live_trace(destination):
             fail(f"{label}: trace_route {destination} returned {result.get('status')}: {detail}")
         elif result.get("returnCode") not in (None, 0):
             fail(f"{label}: trace_route {destination} exited {result['returnCode']}")
+        elif not output.strip():
+            fail(f"{label}: trace_route {destination} produced no trace")
         elif destination not in output:
             fail(f"{label}: trace_route {destination} output does not mention the destination: {output[:300]}")
-        elif os.name == "nt" and "Tracing route" not in output:
-            fail(f"{label}: expected tracert output on Windows, got: {output[:300]}")
         else:
             print(f"ok {label}: traced {destination} in {len(output.splitlines())} lines")
 

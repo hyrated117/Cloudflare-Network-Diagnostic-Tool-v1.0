@@ -1,9 +1,10 @@
 # Stacked PRs — paste-ready descriptions
 
 All five branches are pushed, and branches 1–4 still end at the commits below. PR 5
-is two commits ahead of `fd72604`: one adds this file and corrects the
-`CONTRIBUTING.md` sentence about release-tag suffixes, the other pins the release
-job's Python, so its own diff is larger than the row below says.
+is three commits ahead of `fd72604`: one adds this file and corrects the
+`CONTRIBUTING.md` sentence about release-tag suffixes, one pins the release job's
+Python, and one pins its actions and adds Dependabot, so its own diff is larger
+than the row below says.
 
 | PR | Head branch | Tip | Base branch | Commits | Files | Lines |
 | -- | ----------- | --- | ----------- | ------- | ----- | ----- |
@@ -345,9 +346,14 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
   `check-version.py` must pass, before anything is built.
 - `Tools/check-archive.py --expect-checksum` runs on the built archive before the
   upload step.
-- The release job runs on a pinned Python 3.12 (`actions/setup-python@v5`) instead of
+- The release job runs on a pinned Python 3.12 (`actions/setup-python`) instead of
   the runner image's `python3`, the way `ci.yml` pins Node and Python and the lint job
   pins actionlint and shellcheck, so tag day does not depend on the image.
+- Every action in `release.yml` is pinned to a commit SHA with its release in a
+  comment (`actions/checkout` v4.4.0, `actions/setup-python` v5.6.0,
+  `softprops/action-gh-release` v2.6.2), so a re-tagged or moved action cannot change
+  what an already cut tag runs. A new `.github/dependabot.yml` opens a weekly
+  `github-actions` PR that moves the SHA and the comment together.
 - The release body is the curated notes. `## Commits` is appended only when an
   earlier tag exists, so 1.0.1 does not list the entire history; with no earlier
   tag the body is just the notes and the step logs a `::notice::` saying so.
@@ -372,7 +378,8 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
   how to suppress a shellcheck finding (a `# shellcheck disable=SCXXXX` comment
   plus a reason), and the version bump flow. Its tag step no longer implies a
   `-rc1` tag is accepted: the workflow and `VERSION` both require a bare
-  `MAJOR.MINOR.PATCH`.
+  `MAJOR.MINOR.PATCH`. It also records that the release actions are SHA-pinned and
+  that Dependabot's weekly PR is how a pin moves.
 - `CHANGELOG.md`, `release/v1.0.1/release-notes.md`,
   `IMPLEMENTATION-CHECKLIST.md`, `release/v1.0.0/release-notes.md` and
   `.github/copilot-instructions.md` reflect the above, and the time-bound "no tag

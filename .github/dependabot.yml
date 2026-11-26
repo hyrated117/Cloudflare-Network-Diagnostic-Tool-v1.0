@@ -1,0 +1,10 @@
+# Keeps the actions in .github/workflows current. release.yml pins each action to a
+# commit SHA with its release in a comment, so an update has to move both; Dependabot
+# rewrites the SHA and the comment together, which is why its PRs are the only
+# sanctioned way to change a pin.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

@@ -34,8 +34,12 @@ jobs:
     env:
       RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
+      # Every action here is pinned to a commit SHA, with the release it came from in
+      # a comment: a re-tagged or moved action would otherwise change what an already
+      # cut tag does on its next run. Dependabot (.github/dependabot.yml) moves the SHA
+      # and the comment together, so review its PRs rather than editing a pin by hand.
       - name: Checkout release tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ env.RELEASE_TAG }}
           fetch-depth: 0
@@ -46,7 +50,7 @@ jobs:
       # and argparse behaviour, so it is pinned here the way ci.yml pins Node and
       # Python, and the way the lint job pins actionlint and shellcheck.
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.12'
 
@@ -135,7 +139,7 @@ jobs:
           python3 Tools/check-archive.py "dist/v${VERSION}/mcp-installer-pack.tar.gz" --expect-checksum
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: ${{ env.RELEASE_TAG }}

@@ -4,9 +4,9 @@ All five branches are pushed, and each row describes the tip it names — for PR
 is `e560454`. Its 26 commits are everything added after `fd72604`: the PR bodies in
 this file and the `CONTRIBUTING.md` tag-suffix fix, the release job's Python pin, the
 action SHA pins with Dependabot, the `ci.yml` pins and the three security workflows.
-This file, the CI trigger/concurrency/timeout fix, the Dependabot check and three more
-ignore entries land after `e560454`, so the branch head is later than the row; none of
-them changes what the row counts.
+This file, the CI trigger/concurrency/timeout fix, the Dependabot check, the committed
+npm lockfiles and three more ignore entries land after `e560454`, so the branch head
+is later than the row; none of them changes what the row counts.
 
 | PR | Head branch | Tip | Base branch | Commits | Files | Lines |
 | -- | ----------- | --- | ----------- | ------- | ----- | ----- |
@@ -379,6 +379,18 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
 - `Tools/check-links.py` now checks git-tracked files only (falling back to a
   directory walk when git is unavailable), so ignored build output and untracked
   scratch files cannot fail a release.
+
+## Dependency lockfiles
+
+- `installers/package-lock.json` and `server/package-lock.json` are committed. Neither
+  package declares a dependency today — `README.md` already says no `npm install` is
+  needed — so each lockfile lists only the package itself. They are here so the tree is
+  pinned the moment a dependency is added, not to change what installs now.
+- `security-scan.yml` runs `npm ci --ignore-scripts` before `npm audit`, so the audit
+  covers the committed tree instead of a lockfile generated per run, and a dependency
+  edit that forgets its lockfile fails the job rather than being audited anyway.
+- `.github/dependabot.yml` gains a weekly `npm` entry for `/installers` and `/server`
+  beside the `github-actions` entry; it stays quiet until a dependency exists.
 
 ## Dependabot check
 

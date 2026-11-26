@@ -24,6 +24,11 @@ entries have been removed. The first version in this repository is `1.0.0`.
   Unrecognized keys are warnings, not failures, since GitHub adds keys this check will
   not know about. GitHub reads that file only from the default branch and reports
   nothing when it is wrong, so a typo would silently stop the updates
+- `installers/package-lock.json` and `server/package-lock.json`. Neither package
+  declares a dependency today, so each lockfile lists only the package itself; they
+  are committed so the tree is pinned the moment a dependency is added, `npm ci` can
+  enforce that a manifest edit carries its lockfile, and Dependabot has something to
+  update
 - A `lint` CI job that runs `actionlint` (pinned to `1.7.12`) over the workflows —
   its image bundles `shellcheck`, so the shell inside every `run:` block is checked —
   and `shellcheck` 0.11.0 at its default severity over the installer and tool scripts,
@@ -40,6 +45,12 @@ entries have been removed. The first version in this repository is `1.0.0`.
   still runs each check once, through `release.yml`'s `checks` job. `workflow_dispatch`
   covers a branch that has no pull request yet, which the narrower `push` trigger would
   otherwise leave unchecked
+- `security-scan.yml` installs from the committed lockfile with `npm ci
+  --ignore-scripts` before `npm audit`, instead of generating a throwaway lockfile per
+  run, so the audit covers the tree the repository ships rather than one resolved at
+  audit time, and a dependency edit without its lockfile fails the job
+- `.github/dependabot.yml` also tracks `npm` for `/installers` and `/server`, weekly,
+  beside the `github-actions` entry; it stays quiet until a dependency exists
 - `ci.yml` cancels a superseded pull request run (a `concurrency` group per ref, with
   `cancel-in-progress` limited to pull requests so `release.yml`'s `checks` job and a
   `main` push are never interrupted), and every CI job now has a `timeout-minutes`

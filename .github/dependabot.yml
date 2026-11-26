@@ -8,3 +8,13 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+
+  # Neither package.json has a dependency today, but both lockfiles are committed, so
+  # this is where a dependency would be added or bumped, and where an advisory would
+  # arrive as a PR rather than as a red audit job with no commit to blame.
+  - package-ecosystem: "npm"
+    directories:
+      - "/installers"
+      - "/server"
+    schedule:
+      interval: "weekly"

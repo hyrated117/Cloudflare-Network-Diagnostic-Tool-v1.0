@@ -32,8 +32,15 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Generate lockfile and audit dependencies
+      # The lockfile is committed, so this audits the tree the repository actually
+      # ships instead of one resolved fresh at audit time, which could report an
+      # advisory against a version no commit ever contained. `npm ci` also fails when
+      # the lockfile and package.json disagree, so a dependency edit cannot land
+      # without the lockfile that goes with it.
+      - name: Install from the committed lockfile
         working-directory: ${{ matrix.directory }}
-        run: |
-          npm install --package-lock-only --ignore-scripts
-          npm audit --audit-level=moderate
+        run: npm ci --ignore-scripts
+
+      - name: Audit dependencies
+        working-directory: ${{ matrix.directory }}
+        run: npm audit --audit-level=moderate

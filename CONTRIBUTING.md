@@ -21,12 +21,20 @@ python3 server/smoke_test.py                      # JSON-RPC smoke test, no netw
 python3 Tools/check-conformance.py                # Python and Node answer identically
 python3 Tools/check-version.py                    # version sites, VERSION and changelog agree
 python3 Tools/validate-json.py .                  # JSON syntax
+python3 Tools/check-dependabot.py                 # .github/dependabot.yml parses and Dependabot would accept it
 python3 Tools/check-links.py                      # no broken relative doc links
 python3 Tools/check-installers.py                 # shell and CLI installers write launchable configs
 Tools/build-package.sh v0.0.0-ci                  # build the release archive
 python3 Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract-to dist/pack
 python3 Tools/check-installers.py --installers-root dist/pack
 ```
+
+`check-dependabot.py` is the one check that needs a package: `python3 -m pip install
+pyyaml==6.0.4`. CI installs that pinned version before running it, and every other tool
+here is stdlib-only. It checks the keys Dependabot needs and reports unrecognized ones
+as warnings rather than failures (GitHub keeps adding keys), and it exists because
+GitHub reads `dependabot.yml` only from the default branch and says nothing when the
+file is malformed, so a typo would silently stop the action updates.
 
 The last three build the release tarball with `Tools/build-package.sh` — the same
 script `release.yml` uses — check its contents, then install from the extracted copy

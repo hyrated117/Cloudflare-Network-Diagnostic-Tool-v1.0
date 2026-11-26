@@ -17,6 +17,13 @@ entries have been removed. The first version in this repository is `1.0.0`.
   `Tools/stamp-version.py`, which stamps it into all twelve hand-maintained sites in
   ten files;   `Tools/check-version.py` now fails when any site drifts from `VERSION`,
   so a bump is one edit and one command instead of twelve edits
+- `Tools/check-dependabot.py` plus a `Validate` step that parse
+  `.github/dependabot.yml` and assert the parts that matter: `version: 2`, a
+  `package-ecosystem`, exactly one of `directory` or `directories`, a known `schedule`
+  interval, and a `github-actions` entry at `/` whenever the workflows use actions.
+  Unrecognized keys are warnings, not failures, since GitHub adds keys this check will
+  not know about. GitHub reads that file only from the default branch and reports
+  nothing when it is wrong, so a typo would silently stop the updates
 - A `lint` CI job that runs `actionlint` (pinned to `1.7.12`) over the workflows —
   its image bundles `shellcheck`, so the shell inside every `run:` block is checked —
   and `shellcheck` 0.11.0 at its default severity over the installer and tool scripts,

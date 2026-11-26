@@ -4,8 +4,8 @@ All five branches are pushed, and each row describes the tip it names — for PR
 is `e560454`. Its 26 commits are everything added after `fd72604`: the PR bodies in
 this file and the `CONTRIBUTING.md` tag-suffix fix, the release job's Python pin, the
 action SHA pins with Dependabot, the `ci.yml` pins and the three security workflows.
-This file and the `ci.yml` trigger fix land after `e560454`, so the branch head is
-later than the row; neither changes what the row counts.
+This file, the `ci.yml` trigger fix and the Dependabot check land after `e560454`, so
+the branch head is later than the row; none of them changes what the row counts.
 
 | PR | Head branch | Tip | Base branch | Commits | Files | Lines |
 | -- | ----------- | --- | ----------- | ------- | ----- | ----- |
@@ -371,6 +371,18 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
 - `Tools/check-links.py` now checks git-tracked files only (falling back to a
   directory walk when git is unavailable), so ignored build output and untracked
   scratch files cannot fail a release.
+
+## Dependabot check
+
+- `Tools/check-dependabot.py` parses `.github/dependabot.yml` and asserts only what
+  Dependabot needs: `version: 2`, a `package-ecosystem`, exactly one of `directory` or
+  `directories`, a known `schedule` interval (plus `cronjob` when it is `cron`), and a
+  `github-actions` entry at `/` while the workflows use actions. Unrecognized keys are
+  warnings, not failures, so a new GitHub key cannot fail a sound config. The
+  `Validate` job installs PyYAML 6.0.4 for it, pinned like everything else; the other
+  tools stay stdlib-only. GitHub reads the file only from the default branch and
+  reports nothing when it is malformed, so without this a typo would silently stop the
+  action updates.
 
 ## Lint
 

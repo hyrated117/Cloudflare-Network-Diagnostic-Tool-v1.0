@@ -92,7 +92,7 @@ the first commit. No tool was added or removed; the protocol surface is unchange
 6. DoH providers may rate limit (`403`/`429`); `doh_test` always sends `GET`.
 7. `health_score` is a single TCP probe and reports a fixed 95 or 64 — it is not a
    composite score.
-8. There is no git tag for v1.0.0 in this repository; the notes in
+8. v1.0.0 was dated in the changelog but never tagged; its notes in
    [release/v1.0.0](../v1.0.0/release-notes.md) describe the original code and its
    known issues, including the DoH difference fixed here.
 

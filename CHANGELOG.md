@@ -17,9 +17,9 @@ entries have been removed. The first version in this repository is `1.0.0`.
   `Tools/stamp-version.py`, which stamps it into all twelve hand-maintained sites in
   ten files;   `Tools/check-version.py` now fails when any site drifts from `VERSION`,
   so a bump is one edit and one command instead of twelve edits
-- A `lint` CI job that runs `actionlint` over the workflows — its image bundles
-  `shellcheck`, so the shell inside every `run:` block is checked — and
-  `shellcheck --severity=error` over the installer and tool scripts
+- A `lint` CI job that runs `actionlint` (pinned to `1.7.12`) over the workflows —
+  its image bundles `shellcheck`, so the shell inside every `run:` block is checked —
+  and `shellcheck --severity=error` over the installer and tool scripts
 
 ### Changed
 - `release.yml` refuses a tag that disagrees with `VERSION` (including suffixes such as
@@ -36,6 +36,9 @@ entries have been removed. The first version in this repository is `1.0.0`.
   logged, and otherwise only the commits since that tag are listed
 - `Tools/check-links.py` checks the Markdown files git tracks, so ignored build output
   and untracked scratch trees no longer fail the link check or change its count
+- The release documentation no longer claims that no tag exists: the v1.0.1 notes, the
+  v1.0.0 notes header, the 1.0.0 entry below and the release checklist record that
+  v1.0.0 was never tagged, so publishing v1.0.1 cannot make them false
 
 ## [1.0.1] - 2026-11-25
 
@@ -135,7 +138,7 @@ bytes
 
 ## [1.0.0] - 2026-06-19
 
-First version committed to this repository (no git tag exists yet).
+First version committed to this repository (v1.0.0 was never tagged).
 
 ### Added
 - Node.js MCP stdio server (`server/index.js`), ES module, no runtime dependencies

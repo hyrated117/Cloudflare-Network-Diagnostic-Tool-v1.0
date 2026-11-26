@@ -47,7 +47,7 @@ The repository ships two MCP stdio servers, their installers and documentation â
 
 - [ ] `CHANGELOG.md` has an entry for the version being released
 - [ ] Version bumped in `server/package.json` and `installers/package.json`
-- [ ] Tag `vX.Y.Z` created and pushed (no tag exists yet)
+- [ ] Tag `vX.Y.Z` created and pushed
 - [ ] Release workflow built `mcp-installer-pack.tar.gz` and `SHA256SUMS`
 - [ ] Checksums verified after download
 

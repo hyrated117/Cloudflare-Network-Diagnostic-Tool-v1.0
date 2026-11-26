@@ -1,6 +1,6 @@
 # Cloudflare Network Diagnostic Tool — Release Notes v1.0.0
 
-**Release date:** 2026-06-19 (date of the first server commit in this repository; no git tag exists yet)
+**Release date:** 2026-06-19 (date of the first server commit in this repository; v1.0.0 itself was never tagged)
 **Status:** initial release
 
 ## Overview
@@ -103,7 +103,7 @@ Then point your MCP client at `config/mcp-server.json` inside the install direct
 5. DoH providers may rate limit (`403`/`429`); the tool always sends `GET`.
 6. `health_score` is a single TCP probe and reports a fixed 95 or 64 — it is not a
    composite score.
-7. There is no git tag for v1.0.0 in this repository.
+7. v1.0.0 was never tagged in this repository.
 
 ## Not in this release
 

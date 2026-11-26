@@ -155,7 +155,7 @@ jobs:
       # The actionlint image bundles shellcheck, so the shell inside every `run:`
       # block is checked too, including the release workflow's steps.
       - name: Lint GitHub Actions workflows
-        uses: docker://rhysd/actionlint:latest
+        uses: docker://rhysd/actionlint:1.7.12
 
       - name: Lint shell scripts
         run: shellcheck --severity=error installers/*.sh Tools/*.sh

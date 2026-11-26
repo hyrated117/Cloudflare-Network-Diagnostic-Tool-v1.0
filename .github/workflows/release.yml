@@ -29,6 +29,9 @@ jobs:
     name: Build and publish release
     needs: checks
     runs-on: ubuntu-latest
+    # The CI jobs have timeouts of their own; without one here a stalled upload or
+    # archive build would hold the runner for the six-hour default on tag day.
+    timeout-minutes: 20
     permissions:
       contents: write
     env:

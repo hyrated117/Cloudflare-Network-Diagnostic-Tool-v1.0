@@ -4,9 +4,9 @@ All five branches are pushed, and each row describes the tip it names — for PR
 is `e560454`. Its 26 commits are everything added after `fd72604`: the PR bodies in
 this file and the `CONTRIBUTING.md` tag-suffix fix, the release job's Python pin, the
 action SHA pins with Dependabot, the `ci.yml` pins and the three security workflows.
-This file, the `ci.yml` trigger fix, the Dependabot check and three more ignore
-entries land after `e560454`, so the branch head is later than the row; none of them
-changes what the row counts.
+This file, the CI trigger/concurrency/timeout fix, the Dependabot check and three more
+ignore entries land after `e560454`, so the branch head is later than the row; none of
+them changes what the row counts.
 
 | PR | Head branch | Tip | Base branch | Commits | Files | Lines |
 | -- | ----------- | --- | ----------- | ------- | ----- | ----- |
@@ -367,8 +367,15 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
 - `release.yml` now gates publishing on CI: `ci.yml` gains `workflow_call:`, and
   `release.yml` runs it as a `checks` job with `release: needs: checks`. Validate,
   package, lint and the Windows job all have to pass before a tag can publish.
-  `ci.yml`'s own `push` trigger is limited to branches, so a tag does not also start
-  the workflow directly and run every check twice.
+  `ci.yml` triggers on `main` pushes and pull requests rather than every branch push,
+  so a branch commit is checked once instead of once by `push` and again by
+  `pull_request`, and a tag still runs each check once through the `checks` job.
+  `workflow_dispatch` keeps a branch without a pull request checkable by hand.
+- `ci.yml` cancels a superseded pull request run via a `concurrency` group per ref
+  (`cancel-in-progress` only for pull requests, so a release's `checks` job and a
+  `main` push always finish), and every job has a `timeout-minutes` — 15, 30 for the
+  Windows job with the live trace — so a hung download or trace fails the job instead
+  of holding a runner for six hours. The release job has one too.
 - `Tools/check-links.py` now checks git-tracked files only (falling back to a
   directory walk when git is unavailable), so ignored build output and untracked
   scratch files cannot fail a release.

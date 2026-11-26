@@ -1,16 +1,29 @@
 name: CI
 
 on:
-  # Branch pushes only: a tag already runs every job below through release.yml's
-  # `checks` job, so an unfiltered `push` trigger would run each check twice on tag day.
+  # Main only: a pull request already runs every job below for its branch, so triggering
+  # on every branch push ran each check twice for the same commit. A tag runs them once,
+  # through release.yml's `checks` job, and is not covered by either trigger.
   push:
-    branches: [ '**' ]
+    branches: [ main ]
   pull_request:
+  # A branch without a pull request yet (before the PR exists, or a maintenance branch)
+  # can still be checked from the Actions tab with "Run workflow".
+  workflow_dispatch:
   # release.yml calls this workflow so a tag cannot publish a commit CI has not passed.
   workflow_call:
 
 permissions:
   contents: read
+
+# A newer push to the same pull request cancels the run it superseded instead of paying
+# for both. Push and dispatch runs are left alone, and so is release.yml's `checks` job
+# (which calls this workflow on a tag), so a release cannot be interrupted by a second
+# event. Every job below also has a timeout: without one a hung download or network
+# trace holds a runner for the six-hour default.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Actions are pinned to commit SHAs with their release in a trailing comment, so a
 # moved or re-tagged action cannot change what runs here. .github/dependabot.yml opens
@@ -20,6 +33,7 @@ jobs:
   validate:
     name: Validate
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -73,6 +87,7 @@ jobs:
   package:
     name: Validate release package
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -109,6 +124,8 @@ jobs:
     name: Validate Windows installers
     needs: package
     runs-on: windows-latest
+    # The longest job: it runs a live tracert, which is the step most likely to hang.
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -165,6 +182,7 @@ jobs:
   lint:
     name: Lint workflows and shell
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0

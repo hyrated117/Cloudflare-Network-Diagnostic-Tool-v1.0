@@ -35,8 +35,16 @@ entries have been removed. The first version in this repository is `1.0.0`.
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,
   so a tag whose commit fails the smoke test, the Node/Python conformance comparison,
   lint or the packaging checks cannot create a release; the jobs are called, not copied
-- `ci.yml`'s `push` trigger is limited to branches, so a tag runs each check once —
-  through `release.yml`'s `checks` job — instead of also starting the workflow directly
+- `ci.yml` triggers on `main` pushes and on pull requests, so a branch push is checked
+  once instead of once by `push` and again by `pull_request` for the same commit; a tag
+  still runs each check once, through `release.yml`'s `checks` job. `workflow_dispatch`
+  covers a branch that has no pull request yet, which the narrower `push` trigger would
+  otherwise leave unchecked
+- `ci.yml` cancels a superseded pull request run (a `concurrency` group per ref, with
+  `cancel-in-progress` limited to pull requests so `release.yml`'s `checks` job and a
+  `main` push are never interrupted), and every CI job now has a `timeout-minutes`
+  (15, and 30 for the Windows job, which runs the live trace) instead of the six-hour
+  default; `release.yml`'s release job has one too
 - `release.yml` refuses a tag that disagrees with `VERSION`, and both must be a bare
   `MAJOR.MINOR.PATCH` (a `-rc1` suffix is rejected), builds `dist/v<version>` from
   `VERSION`, runs `check-version.py` before packaging and `check-archive.py` on the

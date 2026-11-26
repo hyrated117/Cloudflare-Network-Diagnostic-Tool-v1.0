@@ -1,7 +1,10 @@
 name: CI
 
 on:
+  # Branch pushes only: a tag already runs every job below through release.yml's
+  # `checks` job, so an unfiltered `push` trigger would run each check twice on tag day.
   push:
+    branches: [ '**' ]
   pull_request:
   # release.yml calls this workflow so a tag cannot publish a commit CI has not passed.
   workflow_call:

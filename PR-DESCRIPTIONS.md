@@ -4,8 +4,8 @@ All five branches are pushed, and each row describes the tip it names — for PR
 is `e560454`. Its 26 commits are everything added after `fd72604`: the PR bodies in
 this file and the `CONTRIBUTING.md` tag-suffix fix, the release job's Python pin, the
 action SHA pins with Dependabot, the `ci.yml` pins and the three security workflows.
-This file is committed one commit after `e560454`, so the branch ends one commit and
-+4 lines past the row, changing only this file.
+This file and the `ci.yml` trigger fix land after `e560454`, so the branch head is
+later than the row; neither changes what the row counts.
 
 | PR | Head branch | Tip | Base branch | Commits | Files | Lines |
 | -- | ----------- | --- | ----------- | ------- | ----- | ----- |
@@ -366,6 +366,8 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
 - `release.yml` now gates publishing on CI: `ci.yml` gains `workflow_call:`, and
   `release.yml` runs it as a `checks` job with `release: needs: checks`. Validate,
   package, lint and the Windows job all have to pass before a tag can publish.
+  `ci.yml`'s own `push` trigger is limited to branches, so a tag does not also start
+  the workflow directly and run every check twice.
 - `Tools/check-links.py` now checks git-tracked files only (falling back to a
   directory walk when git is unavailable), so ignored build output and untracked
   scratch files cannot fail a release.

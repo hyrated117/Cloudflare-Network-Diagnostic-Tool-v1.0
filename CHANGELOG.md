@@ -28,6 +28,8 @@ entries have been removed. The first version in this repository is `1.0.0`.
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,
   so a tag whose commit fails the smoke test, the Node/Python conformance comparison,
   lint or the packaging checks cannot create a release; the jobs are called, not copied
+- `ci.yml`'s `push` trigger is limited to branches, so a tag runs each check once —
+  through `release.yml`'s `checks` job — instead of also starting the workflow directly
 - `release.yml` refuses a tag that disagrees with `VERSION`, and both must be a bare
   `MAJOR.MINOR.PATCH` (a `-rc1` suffix is rejected), builds `dist/v<version>` from
   `VERSION`, runs `check-version.py` before packaging and `check-archive.py` on the

@@ -36,13 +36,14 @@ entries have been removed. The first version in this repository is `1.0.0`.
 - `release.yml` runs the release job on a pinned Python 3.12 (`actions/setup-python`)
   instead of the image's `python3`, so the version check, the archive builder and
   `check-archive.py` behave on tag day the way they do in CI
-- Every action in both workflows is pinned to a commit SHA with its release in a
-  comment — `actions/checkout` v4.4.0, `actions/setup-node` v4.4.0,
-  `actions/setup-python` v5.6.0, `actions/upload-artifact` v4.6.2,
-  `actions/download-artifact` v4.3.0 and `softprops/action-gh-release` v2.6.2 — and a
-  new `.github/dependabot.yml` opens a weekly `github-actions` PR that moves the SHA
-  and the comment together, so a re-tagged action cannot change what an already cut
-  tag runs
+- Every action in every workflow is pinned to a commit SHA with its release in a
+  comment — `actions/checkout` v4.4.0 (v7.0.1 in the CodeQL workflow),
+  `actions/setup-node` v4.4.0, `actions/setup-python` v5.6.0,
+  `actions/upload-artifact` v4.6.2, `actions/download-artifact` v4.3.0,
+  `actions/dependency-review-action` v4.9.0, `github/codeql-action` v4.39.5 and
+  `softprops/action-gh-release` v2.6.2 — and a new `.github/dependabot.yml` opens a
+  weekly `github-actions` PR that moves the SHA and the comment together, so a
+  re-tagged action cannot change what an already cut tag runs
 - The release archive ships `VERSION`, and `Tools/check-archive.py` fails when it
   disagrees with the version in the packaged server and unified installer, so an
   archive cannot be published under a stale version

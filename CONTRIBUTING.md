@@ -58,7 +58,7 @@ clean today, so a finding there is something you just introduced; suppress it wi
 `# shellcheck disable=SCXXXX` comment and a reason only when the warning is genuinely
 wrong.
 
-The actions in both workflows are pinned to commit SHAs, with the release they came
+The actions in every workflow are pinned to commit SHAs, with the release they came
 from in a comment. `.github/dependabot.yml` raises a weekly `github-actions` pull
 request that moves the SHA and its comment together: take those, rather than editing
 a pin by hand or pointing it back at a tag, so an already cut tag keeps running the

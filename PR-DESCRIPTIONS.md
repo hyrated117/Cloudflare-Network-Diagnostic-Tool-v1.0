@@ -1,10 +1,11 @@
 # Stacked PRs — paste-ready descriptions
 
 All five branches are pushed, and branches 1–4 still end at the commits below. PR 5
-is four commits ahead of `fd72604`: one adds this file and corrects the
+is five commits ahead of `fd72604`: one adds this file and corrects the
 `CONTRIBUTING.md` sentence about release-tag suffixes, one pins the release job's
-Python, one pins the release actions and adds Dependabot, and one pins the `ci.yml`
-actions too, so its own diff is larger than the row below says.
+Python, one pins the release actions and adds Dependabot, one pins the `ci.yml`
+actions too, and one pins the three security workflows, so its own diff is larger
+than the row below says.
 
 | PR | Head branch | Tip | Base branch | Commits | Files | Lines |
 | -- | ----------- | --- | ----------- | ------- | ----- | ----- |
@@ -349,12 +350,14 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
 - The release job runs on a pinned Python 3.12 (`actions/setup-python`) instead of
   the runner image's `python3`, the way `ci.yml` pins Node and Python and the lint job
   pins actionlint and shellcheck, so tag day does not depend on the image.
-- Every action in both workflows is pinned to a commit SHA with its release in a
-  comment (`actions/checkout` v4.4.0, `actions/setup-node` v4.4.0,
-  `actions/setup-python` v5.6.0, `actions/upload-artifact` v4.6.2,
-  `actions/download-artifact` v4.3.0, `softprops/action-gh-release` v2.6.2), so a
-  re-tagged or moved action cannot change what runs. A new `.github/dependabot.yml`
-  opens a weekly `github-actions` PR that moves the SHA and the comment together.
+- Every action in every workflow is pinned to a commit SHA with its release in a
+  comment (`actions/checkout` v4.4.0, and v7.0.1 in the CodeQL workflow,
+  `actions/setup-node` v4.4.0, `actions/setup-python` v5.6.0,
+  `actions/upload-artifact` v4.6.2, `actions/download-artifact` v4.3.0,
+  `actions/dependency-review-action` v4.9.0, `github/codeql-action` v4.39.5,
+  `softprops/action-gh-release` v2.6.2), so a re-tagged or moved action cannot change
+  what runs. A new `.github/dependabot.yml` opens a weekly `github-actions` PR that
+  moves the SHA and the comment together.
 - The release body is the curated notes. `## Commits` is appended only when an
   earlier tag exists, so 1.0.1 does not list the entire history; with no earlier
   tag the body is just the notes and the step logs a `::notice::` saying so.

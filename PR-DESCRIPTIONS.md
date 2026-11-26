@@ -1,11 +1,11 @@
 # Stacked PRs — paste-ready descriptions
 
-All five branches are pushed, and branches 1–4 still end at the commits below. PR 5
-is five commits ahead of `fd72604`: one adds this file and corrects the
-`CONTRIBUTING.md` sentence about release-tag suffixes, one pins the release job's
-Python, one pins the release actions and adds Dependabot, one pins the `ci.yml`
-actions too, and one pins the three security workflows, so its own diff is larger
-than the row below says.
+All five branches are pushed, and each row describes the tip it names — for PR 5 that
+is `e560454`. Its 26 commits are everything added after `fd72604`: the PR bodies in
+this file and the `CONTRIBUTING.md` tag-suffix fix, the release job's Python pin, the
+action SHA pins with Dependabot, the `ci.yml` pins and the three security workflows.
+This file is committed one commit after `e560454`, so the branch ends one commit and
++4 lines past the row, changing only this file.
 
 | PR | Head branch | Tip | Base branch | Commits | Files | Lines |
 | -- | ----------- | --- | ----------- | ------- | ----- | ----- |
@@ -13,12 +13,14 @@ than the row below says.
 | 2 | `fix/windows-trace-route-v2` | `441b3d9` | `pr/installer-ci` | 7 | 4 | +357 −25 |
 | 3 | `ci/packaging` | `ede5140` | `fix/windows-trace-route-v2` | 9 (3 own + 6 merges) | 20 | +456 −1891 |
 | 4 | `docs/rewrite` | `4acfbee` | `ci/packaging` | 10 (7 own + 3 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `fd72604` | `docs/rewrite` | 21 | 31 | +797 −95 |
+| 5 | `fix/doh-cap-csv-cr` | `e560454` | `docs/rewrite` | 26 | 36 | +1319 −115 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when
-the merge target is the branch you merged into). Merge one at a time; PR 3–5 were
-built on top of the earlier branches, so a squash or a rewritten base will conflict.
+the merge target is the branch you merged into). Measured at the tip: merging the
+five in order reproduces the branch tree exactly, while squashing them onto `main`
+in order conflicts at PR 2 in `.github/workflows/ci.yml` (PR 1 alone applies
+cleanly).
 
 PR 5 is the only branch that contains any of the version/release tooling: PRs 1–4
 are deliberately untouched since they were pushed, so `VERSION` does not exist
@@ -430,8 +432,9 @@ was written. Corrections made in this pass:
 Previously established by running the jobs, not re-run in this pass:
 
 - Dry run of every job in `ci.yml` and `release.yml`, one clean checkout per job,
-  with a throwaway local `v1.0.1` tag, first at `fd72604` and re-run at `da8707a`
-  after the release workflow changed: `validate`, `package` and `lint` all passed,
+  with a throwaway local `v1.0.1` tag, first at `fd72604`, re-run at `da8707a` after
+  the release workflow changed and again at `e560454`: `validate`, `package` and
+  `lint` all passed,
   actionlint reported no findings, and the `release` job passed after the gate — tag
   and `VERSION` agree on 1.0.1, `check-version.py` green, release body 5747 bytes
   from the curated notes with no `## Commits` section, `release archive: shippable`.
@@ -440,8 +443,9 @@ Previously established by running the jobs, not re-run in this pass:
 - The lint job's meaningfulness: a probe copy with an SC2086 finding fails at
   default severity while `bash -n` and `--severity=error` both pass it. All three
   shell scripts are clean at default severity.
-- Merging the stack 1→5 and then squashing the whole stack both reproduce the
-  branch tree exactly.
+- Merging the stack 1→5 with merge commits reproduces the tip tree exactly, and one
+  squash of the whole stack onto `main` lands on that same tree; squashing the five
+  branches onto `main` one at a time conflicts at PR 2 (`.github/workflows/ci.yml`).
 
 Not checked (and cannot be from here): GitHub Actions on the remote — there is no
 `gh` auth in this environment. The Windows `tracert` path is only proven by the

@@ -25,6 +25,9 @@ entries have been removed. The first version in this repository is `1.0.0`.
   runner image cannot move it
 
 ### Changed
+- `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,
+  so a tag whose commit fails the smoke test, the Node/Python conformance comparison,
+  lint or the packaging checks cannot create a release; the jobs are called, not copied
 - `release.yml` refuses a tag that disagrees with `VERSION` (including suffixes such as
   `-rc1`), builds `dist/v<version>` from `VERSION`, runs `check-version.py` before
   packaging and `check-archive.py` on the built pack before uploading, so a release

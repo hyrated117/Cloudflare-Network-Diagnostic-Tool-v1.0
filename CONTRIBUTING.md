@@ -45,6 +45,9 @@ python Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract
 ./Tools/check-installers.ps1 -InstallersRoot dist/pack
 ```
 
+`release.yml` calls this workflow as its `checks` job and gates the publishing job on
+it, so a tag whose commit fails any of the above cannot release anything.
+
 A `lint` job runs `actionlint` over the workflows — its image bundles `shellcheck`, so
 the shell inside every `run:` block is checked, including the release steps — and
 `shellcheck` 0.11.0 at its default severity over `installers/*.sh` and `Tools/*.sh`.

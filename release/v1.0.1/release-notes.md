@@ -55,6 +55,10 @@ the first commit. No tool was added or removed; the protocol surface is unchange
   platforms exercise identical bytes, including a real `tracert` run.
 - `Tools/check-version.py` fails when a hand-maintained version string, the
   changelog's newest release section and these notes disagree.
+- The workflow files and shell scripts are linted with `actionlint` and a pinned
+  `shellcheck` 0.11.0, and `release.yml` runs this same CI workflow as a `checks` job
+  before it publishes, so a tag cannot release a commit that fails the tests, the
+  version checks or lint.
 - Documentation rewritten against the shipped code: `README.md`,
   `docs/Architecture.md`, `docs/Modules.md`, `docs/Export.md`,
   `docs/TROUBLESHOOTING.md`, `docs/Privacy.md`, `docs/AppMaker.md` (now a status

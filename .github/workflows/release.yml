@@ -19,8 +19,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # The jobs that gate every push, called rather than copied: a tag cannot publish a
+  # commit that fails the smoke test, the conformance comparison, lint, or packaging.
+  checks:
+    name: CI checks for the release commit
+    uses: ./.github/workflows/ci.yml
+
   release:
     name: Build and publish release
+    needs: checks
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -88,11 +95,16 @@ jobs:
           # when an earlier tag exists: `git log` on the first tag would list the whole
           # history instead of a release's commits. The step above requires the notes.
           curated="release/v${VERSION}/release-notes.md"
-          cat "$curated" > release_notes.md
+          # One redirect for the whole body: appending piece by piece trips SC2129.
+          {
+            cat "$curated"
+            if [[ -n "$previous_tag" ]]; then
+              printf '\n## Commits\n\n'
+              git log --pretty=format:'- %s' "${previous_tag}..${RELEASE_TAG}"
+              printf '\n'
+            fi
+          } > release_notes.md
           if [[ -n "$previous_tag" ]]; then
-            printf '\n## Commits\n\n' >> release_notes.md
-            git log --pretty=format:'- %s' "${previous_tag}..${RELEASE_TAG}" >> release_notes.md
-            printf '\n' >> release_notes.md
             echo "Release body: $curated, followed by commits since $previous_tag"
           else
             echo "::notice::No earlier tag, so the body is $curated with no generated commit list"

@@ -73,7 +73,8 @@ into all of them. To bump:
    release body.
 4. Tag `v1.0.2` and push the tag. `release.yml` refuses a tag that disagrees with
    `VERSION`, and both must be exactly `MAJOR.MINOR.PATCH` with no suffix: a
-   `v1.0.2-rc1` tag is rejected, so tag the final version directly. It builds
+   `v1.0.2-rc1` tag is rejected, so tag the final version directly. It runs on a
+   pinned Python 3.12 rather than the runner image's `python3`, builds
    `dist/v<version>` from `VERSION` and runs `check-version.py` before packaging.
 
 `python3 Tools/check-version.py` checks all of it locally: it fails when a site

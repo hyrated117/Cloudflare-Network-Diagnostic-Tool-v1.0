@@ -28,10 +28,14 @@ entries have been removed. The first version in this repository is `1.0.0`.
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,
   so a tag whose commit fails the smoke test, the Node/Python conformance comparison,
   lint or the packaging checks cannot create a release; the jobs are called, not copied
-- `release.yml` refuses a tag that disagrees with `VERSION` (including suffixes such as
-  `-rc1`), builds `dist/v<version>` from `VERSION`, runs `check-version.py` before
-  packaging and `check-archive.py` on the built pack before uploading, so a release
-  cannot publish a pack whose name and stamped sites disagree
+- `release.yml` refuses a tag that disagrees with `VERSION`, and both must be a bare
+  `MAJOR.MINOR.PATCH` (a `-rc1` suffix is rejected), builds `dist/v<version>` from
+  `VERSION`, runs `check-version.py` before packaging and `check-archive.py` on the
+  built pack before uploading, so a release cannot publish a pack whose name and
+  stamped sites disagree
+- `release.yml` runs the release job on a pinned Python 3.12 (`actions/setup-python`)
+  instead of the image's `python3`, so the version check, the archive builder and
+  `check-archive.py` behave on tag day the way they do in CI
 - The release archive ships `VERSION`, and `Tools/check-archive.py` fails when it
   disagrees with the version in the packaged server and unified installer, so an
   archive cannot be published under a stale version

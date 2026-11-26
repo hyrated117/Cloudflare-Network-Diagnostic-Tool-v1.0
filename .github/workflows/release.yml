@@ -41,6 +41,15 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # Tag day used whatever python3 the runner image shipped. The version check, the
+      # archive builder and check-archive.py all depend on that interpreter's tarfile
+      # and argparse behaviour, so it is pinned here the way ci.yml pins Node and
+      # Python, and the way the lint job pins actionlint and shellcheck.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
       - name: Verify tag exists and points to checked-out commit
         shell: bash
         run: |

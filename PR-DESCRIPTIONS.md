@@ -1,9 +1,9 @@
 # Stacked PRs — paste-ready descriptions
 
 All five branches are pushed, and branches 1–4 still end at the commits below. PR 5
-is one commit ahead of `fd72604`: that commit adds this file and corrects the
-`CONTRIBUTING.md` sentence about release-tag suffixes, so its own diff is one
-commit and one file larger than the row below says.
+is two commits ahead of `fd72604`: one adds this file and corrects the
+`CONTRIBUTING.md` sentence about release-tag suffixes, the other pins the release
+job's Python, so its own diff is larger than the row below says.
 
 | PR | Head branch | Tip | Base branch | Commits | Files | Lines |
 | -- | ----------- | --- | ----------- | ------- | ----- | ----- |
@@ -345,6 +345,9 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
   `check-version.py` must pass, before anything is built.
 - `Tools/check-archive.py --expect-checksum` runs on the built archive before the
   upload step.
+- The release job runs on a pinned Python 3.12 (`actions/setup-python@v5`) instead of
+  the runner image's `python3`, the way `ci.yml` pins Node and Python and the lint job
+  pins actionlint and shellcheck, so tag day does not depend on the image.
 - The release body is the curated notes. `## Commits` is appended only when an
   earlier tag exists, so 1.0.1 does not list the entire history; with no earlier
   tag the body is just the notes and the step logs a `::notice::` saying so.

@@ -157,5 +157,8 @@ jobs:
       - name: Lint GitHub Actions workflows
         uses: docker://rhysd/actionlint:1.7.12
 
+      # The three scripts are clean at the default severity, so any finding here is new.
       - name: Lint shell scripts
-        run: shellcheck --severity=error installers/*.sh Tools/*.sh
+        run: |
+          shellcheck --version
+          shellcheck installers/*.sh Tools/*.sh

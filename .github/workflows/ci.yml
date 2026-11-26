@@ -157,7 +157,20 @@ jobs:
       - name: Lint GitHub Actions workflows
         uses: docker://rhysd/actionlint:1.7.12
 
-      # The three scripts are clean at the default severity, so any finding here is new.
+      # The runner image's shellcheck moves with the image, so it is pinned here the
+      # same way actionlint is. The three scripts are clean at the default severity,
+      # so any finding the pinned version reports is new.
+      - name: Install shellcheck
+        env:
+          SHELLCHECK_VERSION: 0.11.0
+          # sha256 of shellcheck-v0.11.0.linux.x86_64.tar.xz from the release assets.
+          SHELLCHECK_SHA256: 8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198
+        run: |
+          curl -fsSL -o "${RUNNER_TEMP}/shellcheck.tar.xz" \
+            "https://github.com/koalaman/shellcheck/releases/download/v${SHELLCHECK_VERSION}/shellcheck-v${SHELLCHECK_VERSION}.linux.x86_64.tar.xz"
+          ( cd "${RUNNER_TEMP}" && echo "${SHELLCHECK_SHA256}  shellcheck.tar.xz" | sha256sum -c - && tar -xf shellcheck.tar.xz )
+          echo "${RUNNER_TEMP}/shellcheck-v${SHELLCHECK_VERSION}" >> "${GITHUB_PATH}"
+
       - name: Lint shell scripts
         run: |
           shellcheck --version

@@ -47,10 +47,13 @@ python Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract
 
 A `lint` job runs `actionlint` over the workflows — its image bundles `shellcheck`, so
 the shell inside every `run:` block is checked, including the release steps — and
-`shellcheck` at its default severity over `installers/*.sh` and `Tools/*.sh`. Those
-three scripts are clean today, so a finding there is something you just introduced;
-suppress it with a `# shellcheck disable=SCXXXX` comment and a reason only when the
-warning is genuinely wrong.
+`shellcheck` 0.11.0 at its default severity over `installers/*.sh` and `Tools/*.sh`.
+The job installs that version from its pinned, checksum-verified release tarball rather
+than using whatever the runner image ships, so the findings only change when someone
+bumps `SHELLCHECK_VERSION` and `SHELLCHECK_SHA256` together. The three scripts are
+clean today, so a finding there is something you just introduced; suppress it with a
+`# shellcheck disable=SCXXXX` comment and a reason only when the warning is genuinely
+wrong.
 
 ## Version bumps
 

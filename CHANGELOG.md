@@ -19,8 +19,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
   so a bump is one edit and one command instead of twelve edits
 - A `lint` CI job that runs `actionlint` (pinned to `1.7.12`) over the workflows —
   its image bundles `shellcheck`, so the shell inside every `run:` block is checked —
-  and `shellcheck` at its default severity over the installer and tool scripts, which
-  are clean today so any finding fails the job
+  and `shellcheck` 0.11.0 at its default severity over the installer and tool scripts,
+  which are clean today so any finding fails the job. `shellcheck` is installed in the
+  job from its pinned release tarball and checked against the asset's SHA-256, so the
+  runner image cannot move it
 
 ### Changed
 - `release.yml` refuses a tag that disagrees with `VERSION` (including suffixes such as

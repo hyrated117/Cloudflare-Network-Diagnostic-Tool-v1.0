@@ -35,10 +35,11 @@ entries have been removed. The first version in this repository is `1.0.0`.
   which are clean today so any finding fails the job. `shellcheck` is installed in the
   job from its pinned release tarball and checked against the asset's SHA-256, so the
   runner image cannot move it
-- `Tools/check-workflow-triggers.py` plus a `Validate` step: it fails when `codeql.yml`
-  or `security-scan.yml` puts a `branches`/`branches-ignore` filter back on
-  `pull_request`, or drops the trigger. Those branches are stacked, so the filter skips
-  the pull requests under review while the file still parses and no run is created
+- `Tools/check-workflow-triggers.py` plus a `Validate` step: it fails when `ci.yml`,
+  `codeql.yml`, `dependency-review.yml` or `security-scan.yml` puts a
+  `branches`/`branches-ignore` filter back on `pull_request`, or drops the trigger.
+  Those branches are stacked, so the filter skips the pull requests under review while
+  the file still parses and no run is created
 
 ### Changed
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,
@@ -49,9 +50,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
   still runs each check once, through `release.yml`'s `checks` job. `workflow_dispatch`
   covers a branch that has no pull request yet, which the narrower `push` trigger would
   otherwise leave unchecked
-- `codeql.yml` and `security-scan.yml` run on every pull request instead of only those
-targeting `main`: branches here are stacked, so a pull request is opened against the
-branch below it, and the two workflows used to skip it while it was in review
+- `codeql.yml`, `dependency-review.yml` and `security-scan.yml` run on every pull
+  request instead of only those targeting `main`: branches here are stacked, so a pull
+  request is opened against the branch below it, and the workflows used to skip it
+  while it was in review
 - `security-scan.yml` installs from the committed lockfile with `npm ci
   --ignore-scripts` before `npm audit`, instead of generating a throwaway lockfile per
   run, so the audit covers the tree the repository ships rather than one resolved at

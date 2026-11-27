@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Fail when codeql.yml or security-scan.yml filters pull_request by branch.
+"""Fail when a pull-request workflow filters pull_request by branch.
 
 These branches are stacked, so a pull request is normally opened against the branch
 below it rather than against main. A `branches:` filter on `pull_request` therefore
 skips exactly the pull requests that are being reviewed: the workflow still parses,
-GitHub just never creates the run, and nothing reports the gap. Both workflows must
-trigger on every pull request.
+GitHub just never creates the run, and nothing reports the gap. Every workflow here
+that runs on pull requests - ci.yml, codeql.yml, dependency-review.yml and
+security-scan.yml - must trigger on all of them.
 
 The push trigger is deliberately not checked. It stays filtered so a branch is scanned
 once, when it lands, and its filter differs between the pre-release branches.
@@ -15,7 +16,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-WORKFLOWS = ("codeql.yml", "security-scan.yml")
+WORKFLOWS = ("ci.yml", "codeql.yml", "dependency-review.yml", "security-scan.yml")
 BRANCH_FILTERS = ("branches", "branches-ignore")
 MISSING = object()
 
@@ -100,7 +101,7 @@ def main():
     if problems:
         for message in problems:
             print(f"FAIL: {message}", file=sys.stderr)
-        return f"{len(problems)} problem(s) in the security workflows' triggers"
+        return f"{len(problems)} problem(s) in the pull-request workflows' triggers"
 
     print(f"ok {len(WORKFLOWS)} workflows: pull_request is not filtered by branch")
     return 0

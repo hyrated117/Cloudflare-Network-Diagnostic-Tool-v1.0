@@ -14,8 +14,10 @@ name: "CodeQL Advanced"
 on:
   push:
     branches: [ "main" ]
+  # Every pull request, whichever branch it targets. Branches here are stacked, so a
+  # pull request is usually opened against the branch below it rather than against
+  # main, and a `branches: ["main"]` filter would skip it entirely.
   pull_request:
-    branches: [ "main" ]
   schedule:
     - cron: '37 21 * * 5'
 

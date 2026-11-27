@@ -22,7 +22,7 @@ the branch tip that holds this file, which is what the pull request shows.
 | 2 | `fix/windows-trace-route-v2` | `b97b2fa` | `pr/installer-ci` | 10 (7 own + 3 merges) | 4 | +357 −25 |
 | 3 | `ci/packaging` | `2402dd0` | `fix/windows-trace-route-v2` | 12 (3 own + 9 merges) | 20 | +455 −1890 |
 | 4 | `docs/rewrite` | `68063b7` | `ci/packaging` | 13 (7 own + 6 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 49 (46 own + 3 merges) | 41 | +1994 −119 |
+| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 50 (47 own + 3 merges) | 42 | +2096 −119 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when
@@ -411,6 +411,13 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
 - `Tools/check-links.py` now checks git-tracked files only (falling back to a
   directory walk when git is unavailable), so ignored build output and untracked
   scratch files cannot fail a release.
+- `verify-release.yml` closes the gap the upload leaves. The publishing job proves the
+  archive is good before it is uploaded; this runs on `release: published` (or by
+  dispatch for an existing tag), downloads `mcp-installer-pack.tar.gz` and
+  `SHA256SUMS` from the release, reruns `check-archive.py --expect-checksum`, extracts
+  the archive and handshakes with the packaged installers. A truncated, replaced or
+  mismatched upload therefore fails a check instead of a user. It checks out the
+  default branch, so a fixed verifier can be dispatched against an old release.
 
 ## Dependency lockfiles
 
@@ -568,7 +575,8 @@ the curated notes with no `## Commits` section, `release archive: shippable`.
 Not checked (and cannot be from here): GitHub Actions on the remote — there is no
 `gh` auth in this environment. The Windows `tracert` path is only proven by the
 `windows-latest` job, `pwsh` is unavailable locally, and the release upload action
-has never run because no tag was pushed.
+has never run because no tag was pushed, and `verify-release.yml`'s
+`gh release download` step needs a release that already exists.
 
 All five tips carry the broadened triggers, and that is what a `pull_request` run needs:
 GitHub uses the workflow file from the PR's merge commit (`refs/pull/N/merge`), the base

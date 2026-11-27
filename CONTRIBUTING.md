@@ -70,6 +70,15 @@ python Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract
 `release.yml` calls this workflow as its `checks` job and gates the publishing job on
 it, so a tag whose commit fails any of the above cannot release anything.
 
+`verify-release.yml` covers what the publishing job cannot: it runs on
+`release: published` (or when dispatched for an existing tag), downloads
+`mcp-installer-pack.tar.gz` and `SHA256SUMS` from the release, reruns
+`check-archive.py --expect-checksum` on them, extracts the archive and handshakes with
+the packaged installers. The publishing job proves the local archive before upload;
+this proves the bytes GitHub serves, so a truncated or mismatched upload fails a check
+instead of a user. It checks out the default branch, so a fixed verifier can be
+dispatched against an already published release.
+
 A `lint` job runs `actionlint` over the workflows — its image bundles `shellcheck`, so
 the shell inside every `run:` block is checked, including the release steps — and
 `shellcheck` 0.11.0 at its default severity over `installers/*.sh` and `Tools/*.sh`.

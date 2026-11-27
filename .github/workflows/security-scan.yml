@@ -3,8 +3,9 @@ name: Security Scan
 on:
   push:
     branches: [ main, master, develop ]
+  # Every pull request, whichever branch it targets, for the same reason as codeql.yml:
+  # a stacked pull request's base is the branch below it, not main.
   pull_request:
-    branches: [ main, master, develop ]
   schedule:
     - cron: '0 2 * * 0'
   workflow_dispatch:

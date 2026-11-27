@@ -22,7 +22,7 @@ the branch tip that holds this file, which is what the pull request shows.
 | 2 | `fix/windows-trace-route-v2` | `b97b2fa` | `pr/installer-ci` | 10 (7 own + 3 merges) | 4 | +357 −25 |
 | 3 | `ci/packaging` | `2402dd0` | `fix/windows-trace-route-v2` | 12 (3 own + 9 merges) | 20 | +455 −1890 |
 | 4 | `docs/rewrite` | `68063b7` | `ci/packaging` | 13 (7 own + 6 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 48 (45 own + 3 merges) | 41 | +1968 −119 |
+| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 49 (46 own + 3 merges) | 41 | +1994 −119 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when
@@ -438,21 +438,20 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
 
 ## Workflow trigger check
 
-- `Tools/check-workflow-triggers.py` fails when `ci.yml`, `codeql.yml`,
-  `dependency-review.yml` or `security-scan.yml` puts a `branches` or
-  `branches-ignore` filter back on `pull_request`, or drops the `pull_request`
-  trigger. The regression is otherwise silent: the file still parses and GitHub simply
-  never creates the run, and a stacked pull request is exactly the one a
-  `branches: [ main ]` filter skips. It also reads every workflow file and fails when a
-  job has no `timeout-minutes` — or a value that is not a positive whole number — since
-  a job without one inherits the six-hour default; a job that calls a reusable workflow
-  is skipped, because its timeout belongs to the callee. It was checked both ways: green
-  on this tree, red with `branches: [ "main" ]` restored in a probe copy, and red again
-  with a timeout deleted and with one rewritten as a string. The `Validate` job runs it
-  with the pinned PyYAML.
-- `dependency-review.yml` appears in this diff for its action pins; its `pull_request`
-  trigger was broadened in PR 1 like the other two, so this branch only merges that
-  change down rather than claiming it.
+- `Tools/check-workflows.py` asserts the three workflow rules whose violation GitHub
+  reports as nothing. It fails when `ci.yml`, `codeql.yml`, `dependency-review.yml` or
+  `security-scan.yml` puts a `branches` or `branches-ignore` filter back on
+  `pull_request` or drops the trigger — the file still parses and no run is created, and
+  a stacked pull request is exactly the one a `branches: [ main ]` filter skips. It
+  also reads every workflow and fails when a job has no `timeout-minutes` (or a value
+  that is not a positive whole number), since a job without one inherits the six-hour
+  default; a job that calls a reusable workflow is skipped, because its timeout belongs
+  to the callee. Finally, any `uses:` must be `owner/repo@<40-hex SHA>` or
+  `docker://...@sha256:<digest>` — a local `./...` workflow is exempt — so a tag-pinned
+  action cannot return. It was checked both ways: green on this tree, and red in probe
+  copies with `branches: [ "main" ]` restored, with a timeout deleted, with one
+  rewritten as a string, with an action moved back to `@v4` and with the actionlint
+  image back on its tag. The `Validate` job runs it with the pinned PyYAML.
 
 ## Ignored files
 
@@ -549,8 +548,8 @@ that tip's own `ci.yml`:
 - `lint` at PR 5, where the job is defined: the pinned shellcheck download matches its
   SHA-256 and reports 0.11.0, and `shellcheck` plus actionlint are clean. The actionlint
   step was substituted with a local binary, because there is no Docker here.
-- Every tip's workflows pass `actionlint`, and the trigger check passes on all four
-  pull-request workflows and on every job's `timeout-minutes`.
+- Every tip's workflows pass `actionlint`, and the workflow check passes on all four
+  pull-request workflows, on every job's `timeout-minutes` and on every `uses:` pin.
 
 Previously established, not re-run in this pass — the `release.yml` dry run with a
 throwaway local `v1.0.1` tag, first at `fd72604`, re-run at `da8707a` after the release

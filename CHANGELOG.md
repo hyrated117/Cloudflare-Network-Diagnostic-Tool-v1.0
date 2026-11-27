@@ -36,13 +36,15 @@ entries have been removed. The first version in this repository is `1.0.0`.
   which are clean today so any finding fails the job. `shellcheck` is installed in the
   job from its pinned release tarball and checked against the asset's SHA-256, so the
   runner image cannot move it
-- `Tools/check-workflow-triggers.py` plus a `Validate` step: it fails when `ci.yml`,
-  `codeql.yml`, `dependency-review.yml` or `security-scan.yml` puts a
-  `branches`/`branches-ignore` filter back on `pull_request`, or drops the trigger.
-  Those branches are stacked, so the filter skips the pull requests under review while
-  the file still parses and no run is created. The same check fails when a job in any
-  workflow has no `timeout-minutes` (or a value that is not a positive whole number),
-  so the six-hour default cannot return unnoticed
+- `Tools/check-workflows.py` plus a `Validate` step, asserting the three rules that
+  fail silently on GitHub. It fails when `ci.yml`, `codeql.yml`,
+  `dependency-review.yml` or `security-scan.yml` puts a `branches`/`branches-ignore`
+  filter back on `pull_request` or drops the trigger (those branches are stacked, so
+  the filter skips the pull requests under review while the file still parses and no
+  run is created); when a job in any workflow has no `timeout-minutes`, or a value that
+  is not a positive whole number, so the six-hour default cannot return unnoticed; and
+  when a `uses:` is not pinned to a commit SHA or an image digest, so the pinning rule
+  is enforced instead of maintained by hand
 
 ### Changed
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,

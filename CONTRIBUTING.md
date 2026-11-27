@@ -22,7 +22,7 @@ python3 Tools/check-conformance.py                # Python and Node answer ident
 python3 Tools/check-version.py                    # version sites, VERSION and changelog agree
 python3 Tools/validate-json.py .                  # JSON syntax
 python3 Tools/check-dependabot.py                 # .github/dependabot.yml parses and Dependabot would accept it
-python3 Tools/check-workflow-triggers.py          # every pull request is scanned, and every job sets a timeout
+python3 Tools/check-workflows.py                  # every pull request is scanned, every job has a timeout, every use is pinned
 python3 Tools/check-links.py                      # no broken relative doc links
 python3 Tools/check-installers.py                 # shell and CLI installers write launchable configs
 Tools/build-package.sh v0.0.0-ci                  # build the release archive
@@ -37,16 +37,18 @@ as warnings rather than failures (GitHub keeps adding keys), and it exists becau
 GitHub reads `dependabot.yml` only from the default branch and says nothing when the
 file is malformed, so a typo would silently stop the action updates.
 
-`Tools/check-workflow-triggers.py` uses the same pinned PyYAML. These branches are
-stacked, so a pull request targets the branch below it, and a `branches:` filter on
-`pull_request` in `ci.yml`, `codeql.yml`, `dependency-review.yml` or
-`security-scan.yml` skips the review while the file still parses and GitHub simply
-never creates the run. The check fails if any of the four filters `pull_request` by
-branch or drops the trigger; the `push` trigger is left alone because it scans a
-branch once, when it lands. It also fails when any job in any workflow has no
-`timeout-minutes` (or a value that is not a positive whole number), so the six-hour
-default cannot come back unnoticed; a job that calls a reusable workflow is skipped,
-because its timeout belongs to the callee.
+`Tools/check-workflows.py` uses the same pinned PyYAML and asserts three things that
+fail silently on GitHub. These branches are stacked, so a pull request targets the
+branch below it, and a `branches:` filter on `pull_request` in `ci.yml`, `codeql.yml`,
+`dependency-review.yml` or `security-scan.yml` skips the review while the file still
+parses and GitHub simply never creates the run; the `push` trigger is left alone
+because it scans a branch once, when it lands. A job in any workflow with no
+`timeout-minutes` (or a value that is not a positive whole number) fails the check,
+because it would inherit the six-hour default; a job that calls a reusable workflow is
+skipped, since its timeout belongs to the callee. A `uses:` that is not
+`owner/repo@<40-hex SHA>` or `docker://...@sha256:<64-hex digest>` fails too, so a
+tag-pinned action cannot slip in; a local `./...` workflow is exempt because there is
+nothing to pin.
 
 The last three build the release tarball with `Tools/build-package.sh` — the same
 script `release.yml` uses — check its contents, then install from the extracted copy

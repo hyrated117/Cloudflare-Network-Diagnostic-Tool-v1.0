@@ -79,6 +79,14 @@ this proves the bytes GitHub serves, so a truncated or mismatched upload fails a
 instead of a user. It checks out the default branch, so a fixed verifier can be
 dispatched against an already published release.
 
+`Tools/dry-run-verify-release.sh` replays the steps after the download against a
+locally built archive: it builds `v<VERSION>` into a scratch directory, runs the tag
+check, `check-archive.py --expect-checksum` with extraction and the installer
+handshake, then removes the tree. Pass a version to build a different one, and
+`--keep` to leave the archive and extracted pack for inspection. It cannot exercise
+`gh release download` or the `release: published` trigger, but everything after them
+is the same command the workflow runs.
+
 A `lint` job runs `actionlint` over the workflows — its image bundles `shellcheck`, so
 the shell inside every `run:` block is checked, including the release steps — and
 `shellcheck` 0.11.0 at its default severity over `installers/*.sh` and `Tools/*.sh`.

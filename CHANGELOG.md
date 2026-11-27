@@ -45,9 +45,9 @@ entries have been removed. The first version in this repository is `1.0.0`.
   is not a positive whole number, so the six-hour default cannot return unnoticed; and
   when a `uses:` is not pinned to a commit SHA or an image digest, so the pinning rule
   is enforced instead of maintained by hand; and when a `run:` block ends a line with a
-  backtick followed by whitespace, which ends a pwsh line instead of continuing it, so
-  the rest of the command runs as its own statement — a break only a Windows runner
-  would report, at run time
+  continuation character followed by whitespace — a backtick in pwsh, a backslash in
+  bash — which ends the line instead of continuing it, so the rest of the command runs
+  as its own statement: a break only the runner would report, at run time
 - `verify-release.yml`, in two jobs — `Verify published assets` on Linux and `Verify
   published assets (Windows)` — on `release: published` or when dispatched for an
   existing tag. The Linux job downloads `mcp-installer-pack.tar.gz` and `SHA256SUMS`

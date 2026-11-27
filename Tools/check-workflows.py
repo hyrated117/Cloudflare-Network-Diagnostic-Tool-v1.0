@@ -18,10 +18,13 @@ Pins: an action referenced by tag, branch or nothing can change under a commit t
 already passed. Every `uses:` must name a commit SHA, a docker image digest, or a local
 workflow under ./ that cannot be pinned at all.
 
-Continuations: a pwsh line break is a backtick, and it must be the last character on
-the line. A space after it ends the line instead, so the continuation is lost and the
-rest of the command runs as its own statement - `--flag` then reads as a unary
-operator. pwsh only reports that at run time, on Windows, which no local check reaches.
+Continuations: a pwsh line break is a backtick and a POSIX one is a backslash, and
+either must be the last character on the line. Whitespace after it ends the line
+instead, so the continuation is lost and the rest of the command runs as its own
+statement - `--flag` then reads as a unary operator or an unknown command. The shell
+reports it only at run time, so no local check reached it. Which character is checked
+follows the shell the block runs in: the step's `shell:`, then the job's and the
+workflow's `defaults.run.shell`, then the runner (pwsh on Windows, bash elsewhere).
 """
 
 import re
@@ -34,7 +37,8 @@ PR_WORKFLOWS = ("ci.yml", "codeql.yml", "dependency-review.yml", "security-scan.
 BRANCH_FILTERS = ("branches", "branches-ignore")
 ACTION_PIN = re.compile(r"^[\w.-]+/[\w.-]+(?:/[\w./-]+)?@[0-9a-f]{40}$")
 IMAGE_PIN = re.compile(r"^docker://[\w.-]+(?:/[\w.-]+)*@sha256:[0-9a-f]{64}$")
-TRAILING_BACKTICK = re.compile(r"`[ \t]+$")
+# Which character continues a line, per shell, and what to call it in a message.
+CONTINUATIONS = {"pwsh": ("`", "backtick"), "bash": ("\\", "backslash")}
 MISSING = object()
 
 problems = []
@@ -126,8 +130,27 @@ def check_timeouts(label, data):
     print(f"ok {label}: {checked} job(s) set timeout-minutes")
 
 
+def shell_of(step, job, data):
+    """The shell a `run:` block executes in, resolved the way GitHub resolves it."""
+    for candidate in (
+        step.get("shell"),
+        ((job.get("defaults") or {}).get("run") or {}).get("shell"),
+        ((data.get("defaults") or {}).get("run") or {}).get("shell"),
+    ):
+        if not isinstance(candidate, str) or not candidate:
+            continue
+        lowered = candidate.lower()
+        if "pwsh" in lowered or "powershell" in lowered:
+            return "pwsh"
+        if "bash" in lowered or lowered.startswith("sh"):
+            return "bash"
+        return None  # cmd, python or another shell: neither continuation rule applies
+    runner = str(job.get("runs-on") or "").lower()
+    return "pwsh" if "windows" in runner else "bash"
+
+
 def run_blocks(data):
-    """Yield (where, run text) for every `run:` block in a workflow."""
+    """Yield (where, run text, shell) for every `run:` block in a workflow."""
     for job_name, job in (data.get("jobs") or {}).items():
         if not isinstance(job, dict):
             continue
@@ -135,21 +158,27 @@ def run_blocks(data):
             if isinstance(step, dict) and isinstance(step.get("run"), str):
                 name = step.get("name")
                 where = f"job {job_name!r} step {number}"
-                yield (f"{where} ({name!r})" if name else where), step["run"]
+                yield (
+                    f"{where} ({name!r})" if name else where
+                ), step["run"], shell_of(step, job, data)
 
 
 def check_continuations(label, data):
-    """Fail on a line whose backtick continuation is followed by whitespace."""
+    """Fail on a line whose continuation character is followed by whitespace."""
     checked = 0
-    for where, run in run_blocks(data):
+    for where, run, shell in run_blocks(data):
+        if shell is None:
+            continue
         checked += 1
+        character, spoken = CONTINUATIONS[shell]
+        pattern = re.compile(re.escape(character) + r"[ \t]+$")
         for number, line in enumerate(run.splitlines(), 1):
-            if TRAILING_BACKTICK.search(line):
+            if pattern.search(line):
                 fail(
-                    f"{label}: {where} line {number} of its run: block puts whitespace "
-                    f"after a continuation backtick ({line.lstrip()!r}); pwsh ends the line "
-                    "at the whitespace, so the continuation is lost and the rest of the "
-                    "command becomes a separate statement"
+                    f"{label}: {where} line {number} of its {shell} run: block puts "
+                    f"whitespace after a continuation {spoken} ({line.lstrip()!r}); "
+                    f"{shell} ends the line at the whitespace, so the continuation is "
+                    "lost and the rest of the command becomes a separate statement"
                 )
     return checked
 
@@ -222,7 +251,10 @@ def main():
 
     print(f"ok {len(PR_WORKFLOWS)} pull-request workflows: trigger not filtered by branch")
     print(f"ok {len(loaded)} workflows: every job sets a timeout and every use is pinned")
-    print(f"ok {run_block_count} run: block(s): no whitespace after a continuation backtick")
+    print(
+        f"ok {run_block_count} run: block(s): no whitespace after a line-continuation "
+        "character"
+    )
     return 0
 
 

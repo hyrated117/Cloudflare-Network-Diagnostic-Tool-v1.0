@@ -45,6 +45,9 @@ entries have been removed. The first version in this repository is `1.0.0`.
   still runs each check once, through `release.yml`'s `checks` job. `workflow_dispatch`
   covers a branch that has no pull request yet, which the narrower `push` trigger would
   otherwise leave unchecked
+- `codeql.yml` and `security-scan.yml` run on every pull request instead of only those
+targeting `main`: branches here are stacked, so a pull request is opened against the
+branch below it, and the two workflows used to skip it while it was in review
 - `security-scan.yml` installs from the committed lockfile with `npm ci
   --ignore-scripts` before `npm audit`, instead of generating a throwaway lockfile per
   run, so the audit covers the tree the repository ships rather than one resolved at

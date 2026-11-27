@@ -20,7 +20,7 @@ branch tip one commit later, so they describe what the pull request shows.
 | 2 | `fix/windows-trace-route-v2` | `df345b3` | `pr/installer-ci` | 8 (7 own + 1 merge) | 4 | +357 −25 |
 | 3 | `ci/packaging` | `d2f9a4b` | `fix/windows-trace-route-v2` | 10 (3 own + 7 merges) | 20 | +455 −1890 |
 | 4 | `docs/rewrite` | `113e3d5` | `ci/packaging` | 11 (7 own + 4 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `6792f34` | `docs/rewrite` | 36 (35 own + 1 merge) | 40 | +1712 −119 |
+| 5 | `fix/doh-cap-csv-cr` | `6792f34` | `docs/rewrite` | 37 (36 own + 1 merge) | 40 | +1715 −119 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when
@@ -43,7 +43,7 @@ earlier body says so rather than describing the final state.
 **Title**
 
 ```
-Fix the MCP installer configs and validate them in CI
+Fix the MCP installer configs, and validate and scan every pull request
 ```
 
 **Head:** `pr/installer-ci` → **Base:** `main`
@@ -61,7 +61,10 @@ resolve a relative `args[0]` against their own working directory, not against th
 config file, so the installed server never launched. The unified installers also
 ran `npm install` for a server that is an ES module with no runtime dependencies.
 The configs are now generated with the installed script's absolute path, and a
-checker runs the installers and handshakes with the server they produce.
+checker runs the installers and handshakes with the server they produce. The
+security workflows change too: CodeQL and the npm audit now run on every pull
+request, not only the ones opened against `main`, because the five branches here
+are stacked and each pull request targets the branch below it.
 
 ## Changes
 

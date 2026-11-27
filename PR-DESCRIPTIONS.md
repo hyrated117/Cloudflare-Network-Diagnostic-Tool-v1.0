@@ -21,7 +21,7 @@ branch tip one commit later, so they describe what the pull request shows.
 | 2 | `fix/windows-trace-route-v2` | `df345b3` | `pr/installer-ci` | 8 (7 own + 1 merge) | 4 | +357 −25 |
 | 3 | `ci/packaging` | `d2f9a4b` | `fix/windows-trace-route-v2` | 10 (3 own + 7 merges) | 20 | +455 −1890 |
 | 4 | `docs/rewrite` | `113e3d5` | `ci/packaging` | 11 (7 own + 4 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `6792f34` | `docs/rewrite` | 39 (38 own + 1 merge) | 41 | +1867 −120 |
+| 5 | `fix/doh-cap-csv-cr` | `6792f34` | `docs/rewrite` | 40 (39 own + 1 merge) | 41 | +1870 −120 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when
@@ -553,3 +553,6 @@ carry. PR 1 adds the change as a commit, and each later branch merges the update
 below it, so every later merge ref has it too. Because it is in each PR's merge base, the
 three-dot diff of PRs 2–5 does not repeat it. `ci.yml` itself already triggers on every
 push and pull request in all five branches, so the rest of CI was never filtered.
+`dependency-review.yml` is the exception: it is broadened in this PR, so this pull
+request runs the dependency review while PRs 2–4, whose trees predate the change, still
+skip it.

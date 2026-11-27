@@ -41,18 +41,14 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Check the tag
+      - name: Resolve the version
         shell: bash
         run: |
-          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Invalid release tag: ${RELEASE_TAG} (expected vMAJOR.MINOR.PATCH)" >&2
-            exit 1
-          fi
           echo "VERSION=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
           echo "Verifying published release ${RELEASE_TAG}"
 
-      # Both assets, by name: a release missing either one is already broken, and
-      # check-archive.py needs SHA256SUMS beside the archive to apply the checksum.
+      # Both assets, by name: check-release-assets.sh applies the checksum from the
+      # SHA256SUMS beside the archive, so a release missing either one is already broken.
       - name: Download the published assets
         shell: bash
         run: |
@@ -63,16 +59,9 @@ jobs:
             --dir "dist/v${VERSION}"
           ls -l "dist/v${VERSION}"
 
-      # Same contract release.yml applies before upload, now to the served bytes: the
-      # checksum must cover this archive, the required files must be present, and the
-      # version stamped inside must match the tag.
-      - name: Check the published archive
-        run: |
-          python Tools/check-archive.py "dist/v${VERSION}/mcp-installer-pack.tar.gz" \
-            --expect-checksum --extract-to dist/pack
-
-      # The archive being intact is not the same as it being installable: this runs the
-      # packaged installers against the extracted tree and requires the initialize
-      # handshake, exactly as the packaging job does before upload.
-      - name: Install from the published archive and handshake
-        run: python Tools/check-installers.py --installers-root dist/pack
+      # One script applies the whole contract — checksum, required files, stamped
+      # version, extraction, installer handshake — to whatever pair of assets it is
+      # given. Tools/dry-run-verify-release.sh calls the same script on a pack built
+      # locally, so the checks have one copy instead of two that can drift apart.
+      - name: Check the published assets
+        run: Tools/check-release-assets.sh "$VERSION" "dist/v${VERSION}"

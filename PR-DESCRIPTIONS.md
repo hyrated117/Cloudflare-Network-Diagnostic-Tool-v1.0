@@ -22,7 +22,7 @@ the branch tip that holds this file, which is what the pull request shows.
 | 2 | `fix/windows-trace-route-v2` | `b97b2fa` | `pr/installer-ci` | 10 (7 own + 3 merges) | 4 | +357 −25 |
 | 3 | `ci/packaging` | `2402dd0` | `fix/windows-trace-route-v2` | 12 (3 own + 9 merges) | 20 | +455 −1890 |
 | 4 | `docs/rewrite` | `68063b7` | `ci/packaging` | 13 (7 own + 6 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 51 (48 own + 3 merges) | 43 | +2178 −119 |
+| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 52 (49 own + 3 merges) | 44 | +2205 −119 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when
@@ -414,10 +414,12 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
 - `verify-release.yml` closes the gap the upload leaves. The publishing job proves the
   archive is good before it is uploaded; this runs on `release: published` (or by
   dispatch for an existing tag), downloads `mcp-installer-pack.tar.gz` and
-  `SHA256SUMS` from the release, reruns `check-archive.py --expect-checksum`, extracts
-  the archive and handshakes with the packaged installers. A truncated, replaced or
-  mismatched upload therefore fails a check instead of a user. It checks out the
-  default branch, so a fixed verifier can be dispatched against an old release.
+  `SHA256SUMS` from the release and applies `Tools/check-release-assets.sh` to them —
+  checksum, required files, stamped version, extraction and the installer handshake —
+  the same script `Tools/dry-run-verify-release.sh` runs on a locally built pack, so
+  the harness and the workflow cannot drift apart. A truncated, replaced or mismatched
+  upload therefore fails a check instead of a user. It checks out the default branch,
+  so a fixed verifier can be dispatched against an old release.
 
 ## Dependency lockfiles
 

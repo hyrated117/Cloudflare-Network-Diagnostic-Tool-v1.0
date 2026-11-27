@@ -72,20 +72,23 @@ it, so a tag whose commit fails any of the above cannot release anything.
 
 `verify-release.yml` covers what the publishing job cannot: it runs on
 `release: published` (or when dispatched for an existing tag), downloads
-`mcp-installer-pack.tar.gz` and `SHA256SUMS` from the release, reruns
-`check-archive.py --expect-checksum` on them, extracts the archive and handshakes with
-the packaged installers. The publishing job proves the local archive before upload;
+`mcp-installer-pack.tar.gz` and `SHA256SUMS` from the release, and runs
+`Tools/check-release-assets.sh` on them — checksum, required files, stamped version,
+extraction and the installer handshake. The publishing job proves the local archive
+before upload;
 this proves the bytes GitHub serves, so a truncated or mismatched upload fails a check
 instead of a user. It checks out the default branch, so a fixed verifier can be
 dispatched against an already published release.
 
 `Tools/dry-run-verify-release.sh` replays the steps after the download against a
-locally built archive: it builds `v<VERSION>` into a scratch directory, runs the tag
-check, `check-archive.py --expect-checksum` with extraction and the installer
-handshake, then removes the tree. Pass a version to build a different one, and
-`--keep` to leave the archive and extracted pack for inspection. It cannot exercise
-`gh release download` or the `release: published` trigger, but everything after them
-is the same command the workflow runs.
+locally built archive: it stages the committed tree the way a tag checkout would,
+builds `v<VERSION>` from it into a scratch directory, runs the same
+`Tools/check-release-assets.sh` the workflow runs, then removes the tree. Pass a
+version to build a different one, and `--keep` to leave the archive and extracted pack
+for inspection. Because both call that one script, the harness cannot drift from the
+workflow; what it cannot exercise is `gh release download` and the
+`release: published` trigger. Staging from `HEAD` also means untracked files cannot
+leak into the archive, so commit an edit before dry-running it.
 
 A `lint` job runs `actionlint` over the workflows — its image bundles `shellcheck`, so
 the shell inside every `run:` block is checked, including the release steps — and

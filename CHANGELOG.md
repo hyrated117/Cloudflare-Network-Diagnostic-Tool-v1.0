@@ -47,11 +47,12 @@ entries have been removed. The first version in this repository is `1.0.0`.
   is enforced instead of maintained by hand
 - `verify-release.yml` and its `Verify published assets` job: on `release: published`,
   or when dispatched for an existing tag, it downloads `mcp-installer-pack.tar.gz` and
-  `SHA256SUMS` from the release, reruns `check-archive.py --expect-checksum` on them,
-  extracts the archive and handshakes with the packaged installers. The publishing job
-  only proves the local archive before upload; this proves the served bytes, so an
-  upload that truncated, replaced or mismatched an asset fails a check instead of a
-  user
+  `SHA256SUMS` from the release and applies `Tools/check-release-assets.sh` to them —
+  checksum, required files, stamped version, extraction and the installer handshake,
+  the same script `Tools/dry-run-verify-release.sh` runs on a locally built pack. The
+  publishing job only proves the local archive before upload; this proves the served
+  bytes, so an upload that truncated, replaced or mismatched an asset fails a check
+  instead of a user
 
 ### Changed
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,

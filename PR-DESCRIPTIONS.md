@@ -1,23 +1,26 @@
 # Stacked PRs — paste-ready descriptions
 
-All five branches are pushed, and each row describes the tip it names. Rows 1–4 are the
-tips they had when they were pushed and have not moved since. For PR 5 that tip is
-`f07f647` — the commit that makes CodeQL and the npm audit run on every pull request —
-and the only commit after it updates this file and `CHANGELOG.md`, so the row counts
-every file the pull request touches. Its 33 commits are everything added after
-`fd72604`: the PR bodies in this file and the `CONTRIBUTING.md` tag-suffix fix, the
-release job's Python pin, the action SHA pins with Dependabot, the `ci.yml` pins and the
-three security workflows, the CI trigger/concurrency/timeout fix, the Dependabot check,
-the committed npm lockfiles, three more ignore entries and the broadened
-security-workflow triggers.
+All five branches are pushed, and each row describes the tip it names. PR 1 carries one
+commit that makes CodeQL and the npm audit run on every pull request: the five branches
+are stacked, so the old `branches: [ main ]` filter skipped four of these pull requests
+while they were in review. Each branch above it then merges the updated branch below, so
+the same change is in every tip and in every pull request's merge ref without appearing
+again in the diff of PRs 2–5. Those merges are why the later rows count one merge commit
+more than before. PR 5's own commits are the release and lint work: the PR bodies in
+this file, the `CONTRIBUTING.md` tag-suffix fix, the release job's Python pin, the action
+SHA pins with Dependabot, the `ci.yml` pins and the three security workflows, the CI
+trigger/concurrency/timeout fix, the Dependabot check, the committed npm lockfiles,
+three more ignore entries and the docs that describe the broadened triggers. PR 5's row
+names the merge below the commit that writes this file, and its counts are taken at the
+branch tip one commit later, so they describe what the pull request shows.
 
 | PR | Head branch | Tip | Base branch | Commits | Files | Lines |
 | -- | ----------- | --- | ----------- | ------- | ----- | ----- |
-| 1 | `pr/installer-ci` | `0038cea` | `main` | 1 | 10 | +336 −147 |
-| 2 | `fix/windows-trace-route-v2` | `441b3d9` | `pr/installer-ci` | 7 | 4 | +357 −25 |
-| 3 | `ci/packaging` | `ede5140` | `fix/windows-trace-route-v2` | 9 (3 own + 6 merges) | 20 | +456 −1891 |
-| 4 | `docs/rewrite` | `4acfbee` | `ci/packaging` | 10 (7 own + 3 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `f07f647` | `docs/rewrite` | 33 | 40 | +1669 −121 |
+| 1 | `pr/installer-ci` | `5be12ea` | `main` | 2 | 12 | +341 −149 |
+| 2 | `fix/windows-trace-route-v2` | `df345b3` | `pr/installer-ci` | 8 (7 own + 1 merge) | 4 | +357 −25 |
+| 3 | `ci/packaging` | `d2f9a4b` | `fix/windows-trace-route-v2` | 10 (3 own + 7 merges) | 20 | +455 −1890 |
+| 4 | `docs/rewrite` | `113e3d5` | `ci/packaging` | 11 (7 own + 4 merges) | 23 | +1265 −1647 |
+| 5 | `fix/doh-cap-csv-cr` | `6792f34` | `docs/rewrite` | 36 (35 own + 1 merge) | 40 | +1712 −119 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when
@@ -26,9 +29,8 @@ five in order reproduces the branch tree exactly, while squashing them onto `mai
 in order conflicts at PR 2 in `.github/workflows/ci.yml` (PR 1 alone applies
 cleanly).
 
-PR 5 is the only branch that contains any of the version/release tooling: PRs 1–4
-are deliberately untouched since they were pushed, so `VERSION` does not exist
-until PR 5 lands.
+PR 5 is the only branch that contains any of the version/release tooling, so `VERSION`
+does not exist until PR 5 lands.
 
 Every claim below was checked against the branch's own diff, not against the
 earlier description. Where a later PR supersedes something in an earlier one, the
@@ -85,6 +87,12 @@ checker runs the installers and handshakes with the server they produce.
   `node --check`, `compileall`, `bash -n`, the smoke test and JSON validation) and
   gets Node 20 and Python 3.12 explicitly. A new `windows` job parses every
   `installers/*.ps1` with the PowerShell parser and runs the `.ps1` checker.
+- `.github/workflows/codeql.yml`, `.github/workflows/security-scan.yml`: `pull_request`
+  now runs for every pull request instead of only those targeting `main` (the security
+  scan also listed `master` and `develop`). The branches here are stacked, so a pull
+  request is normally opened against the branch below it, and the old filter skipped
+  both workflows for it. The `push` filters are unchanged, so a branch is still scanned
+  once when it lands.
 
 ## Notes
 
@@ -156,6 +164,10 @@ any remaining difference.
   outcomes and the probe-stub marker count.
 - `windows-latest` is the only place `tracert` is actually run; that is what the
   new live-trace step is for.
+- The branch merges the updated branch below it, which broadens the `pull_request`
+  filters in `codeql.yml` and `security-scan.yml`. That change is already in the base,
+  so it adds no files or lines to this diff; it is what makes CodeQL and the npm audit
+  run while this pull request is open.
 <!-- BODY 2 END -->
 
 ---
@@ -223,6 +235,10 @@ deletes the dead weight.
   platforms, so a platform difference in the archive shows up as a failure.
 - The release body still appends `## Commits` for every release at this point;
   PR 5 makes that conditional on an earlier tag.
+- The branch merges the updated branch below it, which broadens the `pull_request`
+  filters in `codeql.yml` and `security-scan.yml`. That change is already in the base,
+  so it adds no files or lines to this diff; it is what makes CodeQL and the npm audit
+  run while this pull request is open.
 <!-- BODY 3 END -->
 
 ---
@@ -283,7 +299,10 @@ check so the next rewrite cannot rot.
 - Anchors are not validated: only the file part of a relative link is resolved.
 - The checker walks the working tree at this point; PR 5 restricts it to
   git-tracked files (with the walk kept as a fallback outside a checkout).
-- No server or workflow behaviour changes beyond the added link step.
+- No server changes. The workflow changes are the added link step and the broadened
+  `pull_request` filters in `codeql.yml` and `security-scan.yml`, which arrive with the
+  merge of the updated branch below and are already in the base, so they add nothing to
+  this diff.
 <!-- BODY 4 END -->
 
 ---
@@ -374,10 +393,6 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
   so a branch commit is checked once instead of once by `push` and again by
   `pull_request`, and a tag still runs each check once through the `checks` job.
   `workflow_dispatch` keeps a branch without a pull request checkable by hand.
-- `codeql.yml` and `security-scan.yml` filtered `pull_request` on `main`, so a stacked
-  pull request — opened against the branch below it, as four of these five are — was
-  never scanned while it was in review. Both now trigger on every pull request; their
-  `push` trigger stays `main`-only, so a branch is still scanned once when it lands.
 - `ci.yml` cancels a superseded pull request run via a `concurrency` group per ref
   (`cancel-in-progress` only for pull requests, so a release's `checks` job and a
   `main` push always finish), and every job has a `timeout-minutes` — 15, 30 for the
@@ -443,6 +458,9 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
   history. 1.0.1 would be the first tag this workflow can publish.
 - The upload step (`softprops/action-gh-release`) has not been executed — no tag
   was pushed. Everything up to it was run in a dry run.
+- The `codeql.yml` / `security-scan.yml` trigger broadening lands in PR 1, and this
+  branch merges the updated branch below, so every pull request in the stack gets
+  CodeQL and the npm audit while it is open without the change appearing twice.
 - `PR-DESCRIPTIONS.md` at the repository root carries the bodies for these five
   PRs, so they survive outside the PR descriptions themselves.
 <!-- BODY 5 END -->
@@ -475,13 +493,14 @@ was written. Corrections made in this pass:
   described. The `CONTRIBUTING.md` sentence that implied pre-release tags work is
   corrected on this branch, since `release.yml` rejects any suffix.
 
-Re-checked against the final tips: rows 1–4 are byte-identical to the tips named above,
-and each body's claims were spot-checked against that tree again — the Windows
-`tracert -d -h 15 -w 300` candidate list and the leading-`-` rejection in both servers,
-the 24-request conformance set with its probe stubs and `--live-trace`,
-`--installers-root` / `-InstallersRoot` and the `2024-11-05` session, the CodeQL matrix
-without Swift, the deleted `reference/` files and bug-report template, and
-`check-links.py` walking the working tree there. PR 5 was read at `f07f647`: 12 version
+Re-checked at the tips named above: PRs 1–4 keep every commit they were reviewed at, and
+each adds only the trigger change (PR 1, as a commit) or the merge of the updated branch
+below (PRs 2–4), so no other reviewed content moved. Each body's claims were spot-checked
+again — the Windows `tracert -d -h 15 -w 300` candidate list and the leading-`-`
+rejection in both servers, the 24-request conformance set with its probe stubs and
+`--live-trace`, `--installers-root` / `-InstallersRoot` and the `2024-11-05` session, the
+CodeQL matrix without Swift, the deleted `reference/` files and bug-report template, and
+`check-links.py` walking the working tree there. PR 5 was read at `6792f34`: 12 version
 strings in 10 files, `VERSION` and `CHANGELOG.md` at 1.0.1, 76 links in 23 Markdown
 files, the Dependabot check at 2 entries, the 65536-byte DoH cap in both servers, and
 `timeout-minutes` of 15/15/30/15 plus the release job's 20.
@@ -509,11 +528,10 @@ Not checked (and cannot be from here): GitHub Actions on the remote — there is
 `windows-latest` job, `pwsh` is unavailable locally, and the release upload action
 has never run because no tag was pushed.
 
-The broadened security triggers reach PR 5 only, and that is a property of GitHub, not
-of this branch: a `pull_request` run uses the workflow file from the PR's merge commit
-(`refs/pull/N/merge`), which is the base branch merged with the head, so the `on:` block
-in force for a PR is the one its own branches carry. Branches 1–4 predate `f07f647`:
-PR 1 targets `main` and matches the old filter; PRs 2–4 get no CodeQL or audit run while
-they are open, though `ci.yml` in those branches still triggers on every push and pull
-request, so the rest of CI does run. Covering them means putting the same two-line change
-on each of those branches, which moves their tips.
+All five tips carry the broadened triggers, and that is what a `pull_request` run needs:
+GitHub uses the workflow file from the PR's merge commit (`refs/pull/N/merge`), the base
+branch merged with the head, so the `on:` block in force is the one those two trees
+carry. PR 1 adds the change as a commit, and each later branch merges the updated branch
+below it, so every later merge ref has it too. Because it is in each PR's merge base, the
+three-dot diff of PRs 2–5 does not repeat it. `ci.yml` itself already triggers on every
+push and pull request in all five branches, so the rest of CI was never filtered.

@@ -1,11 +1,12 @@
 # Stacked PRs — paste-ready descriptions
 
-All five branches are pushed, and each row describes the tip it names. PR 1 carries two
-commits that make CodeQL, dependency review and the npm audit run on every pull request:
-the five branches are stacked, so the old `branches: [ main ]` filter skipped four of
-these pull requests while they were in review. Each branch above it then merges the
-updated branch below, so the same change is in every tip and in every pull request's
-merge ref without appearing again in the diff of PRs 2–5. Those merges are why the later
+All five branches are pushed, and each row describes the tip it names. PR 1 carries four
+commits: the installer fix, the workflow changes that make CodeQL, dependency review and
+the npm audit run on every pull request, and a timeout on the `Validate` job. The five
+branches are stacked, so the old `branches: [ main ]` filter skipped four of these pull
+requests while they were in review. Each branch above it then merges the updated branch
+below, so the same changes are in every tip and in every pull request's merge ref without
+appearing again in the diff of PRs 2–5. Those merges are why the later
 rows count merge commits the earlier ones do not. PR 5's own commits are the release and lint work: the PR bodies in
 this file, the `CONTRIBUTING.md` tag-suffix fix, the release job's Python pin, the action
 SHA pins with Dependabot, the `ci.yml` pins and the three security workflows, the CI
@@ -17,11 +18,11 @@ branch tip one commit later, so they describe what the pull request shows.
 
 | PR | Head branch | Tip | Base branch | Commits | Files | Lines |
 | -- | ----------- | --- | ----------- | ------- | ----- | ----- |
-| 1 | `pr/installer-ci` | `943503c` | `main` | 3 | 13 | +343 −150 |
-| 2 | `fix/windows-trace-route-v2` | `c8f7277` | `pr/installer-ci` | 9 (7 own + 2 merges) | 4 | +357 −25 |
-| 3 | `ci/packaging` | `0a0f9d7` | `fix/windows-trace-route-v2` | 11 (3 own + 8 merges) | 20 | +455 −1890 |
-| 4 | `docs/rewrite` | `5f230c0` | `ci/packaging` | 12 (7 own + 5 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `e620d29` | `docs/rewrite` | 42 (40 own + 2 merges) | 41 | +1868 −119 |
+| 1 | `pr/installer-ci` | `e528418` | `main` | 4 | 13 | +344 −150 |
+| 2 | `fix/windows-trace-route-v2` | `b97b2fa` | `pr/installer-ci` | 10 (7 own + 3 merges) | 4 | +357 −25 |
+| 3 | `ci/packaging` | `2402dd0` | `fix/windows-trace-route-v2` | 12 (3 own + 9 merges) | 20 | +455 −1890 |
+| 4 | `docs/rewrite` | `68063b7` | `ci/packaging` | 13 (7 own + 6 merges) | 23 | +1265 −1647 |
+| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 44 (41 own + 3 merges) | 41 | +1871 −119 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when
@@ -65,7 +66,8 @@ The configs are now generated with the installed script's absolute path, and a
 checker runs the installers and handshakes with the server they produce. The
 security workflows change too: CodeQL, dependency review and the npm audit now run
 on every pull request, not only the ones opened against `main`, because the five
-branches here are stacked and each pull request targets the branch below it.
+branches here are stacked and each pull request targets the branch below it. The
+`Validate` job also gets a 15-minute timeout instead of GitHub's six-hour default.
 
 ## Changes
 
@@ -89,8 +91,10 @@ branches here are stacked and each pull request targets the branch below it.
   the `initialize` handshake.
 - `.github/workflows/ci.yml`: the `Validate` job runs the Python checker (alongside
   `node --check`, `compileall`, `bash -n`, the smoke test and JSON validation) and
-  gets Node 20 and Python 3.12 explicitly. A new `windows` job parses every
-  `installers/*.ps1` with the PowerShell parser and runs the `.ps1` checker.
+  gets Node 20 and Python 3.12 explicitly. It also gets `timeout-minutes: 15`, so a
+  hung download or handshake fails the job instead of holding a runner for the default
+  six hours. A new `windows` job parses every `installers/*.ps1` with the PowerShell
+  parser and runs the `.ps1` checker.
 - `.github/workflows/codeql.yml`, `.github/workflows/security-scan.yml`,
   `.github/workflows/dependency-review.yml`: `pull_request` now runs for every pull
   request instead of only those targeting `main` (the security scan also listed

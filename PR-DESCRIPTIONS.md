@@ -22,7 +22,7 @@ the branch tip that holds this file, which is what the pull request shows.
 | 2 | `fix/windows-trace-route-v2` | `b97b2fa` | `pr/installer-ci` | 10 (7 own + 3 merges) | 4 | +357 −25 |
 | 3 | `ci/packaging` | `2402dd0` | `fix/windows-trace-route-v2` | 12 (3 own + 9 merges) | 20 | +455 −1890 |
 | 4 | `docs/rewrite` | `68063b7` | `ci/packaging` | 13 (7 own + 6 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 55 (52 own + 3 merges) | 44 | +2306 −119 |
+| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 56 (53 own + 3 merges) | 44 | +2310 −119 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when
@@ -302,6 +302,10 @@ check so the next rewrite cannot rot.
   blocks, does not fetch `http://`, `https://` or `mailto:` targets, skips pure
   `#anchor` links, and fails when a relative target does not exist or uses an
   unsupported scheme. New `Check documentation links` step in the `Validate` job.
+- `CONTRIBUTING.md`: a `## Checks` section listing the commands CI runs — syntax
+  checks, the smoke test, conformance, JSON and link checks, the installer handshake
+  and the packaging steps — and a `## Conventions` section on server parity, the
+  stdout protocol, timeouts, keeping the docs current and adding no dependencies.
 
 ## Notes
 
@@ -478,7 +482,7 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
   Hub lets an owner repoint (it bundles shellcheck, so the shell inside every `run:`
   block is checked too), then shellcheck 0.11.0 installed from its pinned release
   tarball with a SHA-256 check, run at default severity over `installers/*.sh` and
-  `Tools/*.sh` — three scripts today.
+  `Tools/*.sh` — five scripts today, the two installers and the three tools.
 
 ## Docs
 

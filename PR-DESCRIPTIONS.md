@@ -22,7 +22,7 @@ the branch tip that holds this file, which is what the pull request shows.
 | 2 | `fix/windows-trace-route-v2` | `b97b2fa` | `pr/installer-ci` | 10 (7 own + 3 merges) | 4 | +357 −25 |
 | 3 | `ci/packaging` | `2402dd0` | `fix/windows-trace-route-v2` | 12 (3 own + 9 merges) | 20 | +455 −1890 |
 | 4 | `docs/rewrite` | `68063b7` | `ci/packaging` | 13 (7 own + 6 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 54 (51 own + 3 merges) | 44 | +2228 −119 |
+| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 55 (52 own + 3 merges) | 44 | +2306 −119 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when
@@ -416,11 +416,14 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
   dispatch for an existing tag), downloads `mcp-installer-pack.tar.gz` and
   `SHA256SUMS` from the release and applies `Tools/check-release-assets.sh` to them —
   checksum, required files, an archive stamped with the tag's version, extraction and
-  the installer handshake —
-  the same script `Tools/dry-run-verify-release.sh` runs on a locally built pack, so
-  the harness and the workflow cannot drift apart. A truncated, replaced or mismatched
-  upload therefore fails a check instead of a user. It checks out the default branch,
-  so a fixed verifier can be dispatched against an old release.
+  the installer handshake — the same script `Tools/dry-run-verify-release.sh` runs on a
+  locally built pack, so the harness and the workflow cannot drift apart. A second job
+  on a Windows runner downloads the same assets, checks the archive and runs
+  `Tools/check-installers.ps1` against the extracted pack, so the PowerShell installers
+  are handshaked against published bytes too, not only inside the packaging job. A
+  truncated, replaced or mismatched upload therefore fails a check instead of a user. It
+  checks out the default branch, so a fixed verifier can be dispatched against an old
+  release.
 
 ## Dependency lockfiles
 

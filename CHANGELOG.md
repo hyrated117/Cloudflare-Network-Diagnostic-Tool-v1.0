@@ -45,15 +45,18 @@ entries have been removed. The first version in this repository is `1.0.0`.
   is not a positive whole number, so the six-hour default cannot return unnoticed; and
   when a `uses:` is not pinned to a commit SHA or an image digest, so the pinning rule
   is enforced instead of maintained by hand
-- `verify-release.yml` and its `Verify published assets` job: on `release: published`,
-  or when dispatched for an existing tag, it downloads `mcp-installer-pack.tar.gz` and
-  `SHA256SUMS` from the release and applies `Tools/check-release-assets.sh` to them —
-  checksum, required files, an archive stamped with the tag's version, extraction and
-  the installer handshake,
-  the same script `Tools/dry-run-verify-release.sh` runs on a locally built pack. The
-  publishing job only proves the local archive before upload; this proves the served
-  bytes, so an upload that truncated, replaced or mismatched an asset fails a check
-  instead of a user
+- `verify-release.yml`, in two jobs — `Verify published assets` on Linux and `Verify
+  published assets (Windows)` — on `release: published` or when dispatched for an
+  existing tag. The Linux job downloads `mcp-installer-pack.tar.gz` and `SHA256SUMS`
+  from the release and applies `Tools/check-release-assets.sh` to them — checksum,
+  required files, an archive stamped with the tag's version, extraction and the
+  installer handshake, the same script `Tools/dry-run-verify-release.sh` runs on a
+  locally built pack. The Windows job downloads the same two assets, checks the archive
+  with `check-archive.py` and hands the extracted pack to `Tools/check-installers.ps1`,
+  so the PowerShell installers are handshaked against published bytes instead of only
+  inside the packaging job. The publishing job only proves the local archive before
+  upload; this proves the served bytes, so an upload that truncated, replaced or
+  mismatched an asset fails a check instead of a user
 
 ### Changed
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,

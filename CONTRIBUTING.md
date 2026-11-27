@@ -74,10 +74,14 @@ it, so a tag whose commit fails any of the above cannot release anything.
 `release: published` (or when dispatched for an existing tag), downloads
 `mcp-installer-pack.tar.gz` and `SHA256SUMS` from the release, and runs
 `Tools/check-release-assets.sh` on them — checksum, required files, a version matching
-the tag, extraction and the installer handshake. The publishing job proves the local
-archive before upload; this proves the bytes GitHub serves, so a truncated, replaced or
-wrongly versioned upload fails a check instead of a user. It checks out the default branch, so a fixed verifier can be
-dispatched against an already published release.
+the tag, extraction and the installer handshake. A second job on a Windows runner
+downloads the same two assets, checks the archive with `check-archive.py` and hands the
+extracted pack to `Tools/check-installers.ps1`, so the PowerShell installers a Windows
+user runs are handshaked against published bytes too. The publishing job proves the
+local archive before upload; this proves the bytes GitHub serves, so a truncated,
+replaced or wrongly versioned upload fails a check instead of a user. It checks out the
+default branch, so a fixed verifier can be dispatched against an already published
+release.
 
 `Tools/dry-run-verify-release.sh` replays the steps after the download against a
 locally built archive: it stages the committed tree the way a tag checkout would,
@@ -85,9 +89,9 @@ builds `v<VERSION>` from it into a scratch directory, runs the same
 `Tools/check-release-assets.sh` the workflow runs, then removes the tree. Pass a
 version to build a different one, and `--keep` to leave the built archive for
 inspection. Because both call that one script, the harness cannot drift from the
-workflow; what it cannot exercise is `gh release download` and the
-`release: published` trigger. Staging from `HEAD` also means untracked files cannot
-leak into the archive, so commit an edit before dry-running it.
+workflow; what it cannot exercise is `gh release download`, the `release: published`
+trigger and the Windows job's PowerShell handshake. Staging from `HEAD` also means
+untracked files cannot leak into the archive, so commit an edit before dry-running it.
 
 A `lint` job runs `actionlint` over the workflows — its image bundles `shellcheck`, so
 the shell inside every `run:` block is checked, including the release steps — and

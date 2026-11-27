@@ -3,7 +3,10 @@ name: Verify release
 # The publishing job proves the archive is good *before* upload. Nothing proved the
 # bytes GitHub then served: a truncated upload, a replaced asset or a checksum file
 # that does not match the archive would only surface for a user. This downloads the
-# published assets again and applies the same contract to them.
+# published assets again and applies the same contract to them. The archive itself is
+# checked on both runners - it is Python, so the verdict cannot differ - and each
+# runner handshakes the installers it can run: the POSIX ones on Linux, the PowerShell
+# ones on Windows.
 on:
   release:
     types: [ published ]
@@ -65,3 +68,64 @@ jobs:
       # locally, so the checks have one copy instead of two that can drift apart.
       - name: Check the published assets
         run: Tools/check-release-assets.sh "$VERSION" "dist/v${VERSION}"
+
+  # The pack ships PowerShell installers that a Windows user runs, and only the
+  # packaging job on a Windows runner ever handshaked them. The same published bytes
+  # are downloaded and opened again here, and the extracted pack is handed to
+  # Tools/check-installers.ps1, which runs both installers and requires the
+  # initialize handshake from what they wrote.
+  verify-windows:
+    name: Verify published assets (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 15
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      # `gh release download` reads the API with this token; read access is enough.
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout the verifier
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # What the packaged installers launch: a Python server and, for the unified
+      # installer, Node.js. Missing either one fails the handshake for the wrong reason.
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+
+      - name: Resolve the version
+        shell: bash
+        run: |
+          echo "VERSION=${RELEASE_TAG#v}" >> "$GITHUB_ENV"
+          echo "Verifying published release ${RELEASE_TAG}"
+
+      # The same two assets, by name, as the Linux job: a release missing either one is
+      # already broken, and the checksum can only be applied to the pair.
+      - name: Download the published assets
+        shell: bash
+        run: |
+          mkdir -p "dist/v${VERSION}"
+          gh release download "$RELEASE_TAG" \
+            --pattern mcp-installer-pack.tar.gz \
+            --pattern SHA256SUMS \
+            --dir "dist/v${VERSION}"
+          ls -l "dist/v${VERSION}"
+
+      # The archive half of check-release-assets.sh, in the same order: the checksum
+      # covers these bytes, the stamp matches the tag, and the tree the installers are
+      # run against comes from that archive rather than from this checkout.
+      - name: Check the archive and extract it
+        shell: pwsh
+        run: |
+          $assets = "dist/v$env:VERSION"
+          python Tools/check-archive.py "$assets/mcp-installer-pack.tar.gz" `
+            --expect-checksum --expect-version "$env:VERSION" --extract-to dist/pack
+
+      - name: Handshake the packaged PowerShell installers
+        shell: pwsh
+        run: ./Tools/check-installers.ps1 -InstallersRoot dist/pack

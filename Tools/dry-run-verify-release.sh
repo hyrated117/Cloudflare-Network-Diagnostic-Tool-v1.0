@@ -4,8 +4,9 @@
 # The verifier applies Tools/check-release-assets.sh to the two assets a release
 # publishes. This builds them the way the release job does and runs that same script
 # over them, so the harness cannot drift from the workflow: there is one copy of the
-# checks. What it cannot exercise is the download and the trigger; everything after
-# them is the workflow's own command.
+# checks. What it cannot exercise is the download, the trigger and the Windows job's
+# PowerShell handshake; everything after the download on Linux is the workflow's own
+# command.
 #
 # Usage: Tools/dry-run-verify-release.sh [version] [--keep]
 #   [version]  version to build, defaulting to the repository's VERSION file
@@ -60,5 +61,6 @@ echo "== build the assets the publisher would upload"
 echo "== apply the verifier's checks"
 "${REPO_ROOT}/Tools/check-release-assets.sh" "$VERSION" "${WORK}/assets/v${VERSION}"
 
-echo "ok: verify-release.yml's steps pass for v${VERSION}"
-echo "not covered here: gh release download, and the release: published trigger"
+echo "ok: verify-release.yml's Linux job passes for v${VERSION}"
+echo "not covered here: gh release download, the release: published trigger, and the"
+echo "Windows job's PowerShell installer handshake"

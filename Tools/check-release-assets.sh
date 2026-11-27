@@ -3,9 +3,11 @@
 # build-package.sh writes them: mcp-installer-pack.tar.gz and SHA256SUMS in one
 # directory, built from the version being released.
 #
-# This is the whole post-download half of verify-release.yml. verify-release.yml and
+# This is the whole post-download half of verify-release.yml's Linux job. That job and
 # Tools/dry-run-verify-release.sh both call it, so the checks have one copy and the
-# harness cannot drift from the workflow.
+# harness cannot drift from the workflow. The workflow's Windows job runs the archive
+# check with check-archive.py directly, then check-installers.ps1 on the extracted
+# pack, so the PowerShell installers are handshaked without a POSIX installer run.
 #
 # Usage: Tools/check-release-assets.sh <version> <assets-dir>
 #   <version>     the release being verified, with or without a leading v

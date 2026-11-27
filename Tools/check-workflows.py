@@ -25,6 +25,8 @@ statement - `--flag` then reads as a unary operator or an unknown command. The s
 reports it only at run time, so no local check reached it. Which character is checked
 follows the shell the block runs in: the step's `shell:`, then the job's and the
 workflow's `defaults.run.shell`, then the runner (pwsh on Windows, bash elsewhere).
+Only code counts: a character inside a quoted string, a comment, a here-document or a
+here-string is literal text, so the line is masked before the match is trusted.
 """
 
 import re
@@ -163,8 +165,76 @@ def run_blocks(data):
                 ), step["run"], shell_of(step, job, data)
 
 
+def masked_lines(lines, shell):
+    """Yield each line with its literal text blanked to spaces, same length.
+
+    Quoted text, comments, here-documents and here-strings are not code: a continuation
+    character inside them is literal and continues nothing, so the caller looks at the
+    masked line to decide whether a match is real.
+    """
+    quoted = None
+    heredoc = None
+    strip_tabs = False
+    block_comment = False
+    for line in lines:
+        if heredoc is not None or block_comment:
+            yield " " * len(line)
+            if heredoc is not None:
+                probe = line.lstrip("\t") if strip_tabs else line
+                if probe.strip() == heredoc:
+                    heredoc = None
+            if block_comment and "#>" in line:
+                block_comment = False
+            continue
+
+        out = list(line)
+        index = 0
+        while index < len(line):
+            char = line[index]
+            if quoted is not None:
+                out[index] = " "
+                if char == "\\" and quoted != "'":
+                    if index + 1 < len(line):
+                        out[index + 1] = " "
+                        index += 2
+                        continue
+                elif char == quoted:
+                    quoted = None
+                index += 1
+                continue
+            if char in "'\"":
+                quoted = char
+                out[index] = " "
+            elif char == "#" and (index == 0 or line[index - 1] in " \t"):
+                out[index:] = " " * (len(line) - index)
+                break
+            elif shell == "pwsh" and line.startswith("<#", index):
+                close = line.find("#>", index)
+                end = len(line) if close < 0 else close + 2
+                out[index:end] = " " * (end - index)
+                block_comment = close < 0
+                index = end
+                continue
+            index += 1
+        masked = "".join(out)
+        yield masked
+
+        # A here-document or here-string starts on the line that opens it and runs to
+        # its terminator, so only look for an opener in code.
+        if quoted is None and heredoc is None:
+            if shell == "bash":
+                opener = re.search(r"<<-?[ \t]*(['\"]?)([A-Za-z_]\w*)\1", line)
+                if opener and masked.startswith("<<", opener.start()):
+                    strip_tabs = opener.group(0).startswith("<<-")
+                    heredoc = opener.group(2)
+            else:
+                opener = re.search(r"@(['\"])\s*$", line)
+                if opener and masked[opener.start()] == "@":
+                    heredoc = opener.group(1) + "@"
+
+
 def check_continuations(label, data):
-    """Fail on a line whose continuation character is followed by whitespace."""
+    """Fail on a code line whose continuation character is followed by whitespace."""
     checked = 0
     for where, run, shell in run_blocks(data):
         if shell is None:
@@ -172,14 +242,17 @@ def check_continuations(label, data):
         checked += 1
         character, spoken = CONTINUATIONS[shell]
         pattern = re.compile(re.escape(character) + r"[ \t]+$")
-        for number, line in enumerate(run.splitlines(), 1):
-            if pattern.search(line):
-                fail(
-                    f"{label}: {where} line {number} of its {shell} run: block puts "
-                    f"whitespace after a continuation {spoken} ({line.lstrip()!r}); "
-                    f"{shell} ends the line at the whitespace, so the continuation is "
-                    "lost and the rest of the command becomes a separate statement"
-                )
+        lines = run.splitlines()
+        for number, (line, masked) in enumerate(zip(lines, masked_lines(lines, shell)), 1):
+            match = pattern.search(line)
+            if not match or masked[match.start()] == " ":
+                continue
+            fail(
+                f"{label}: {where} line {number} of its {shell} run: block puts "
+                f"whitespace after a continuation {spoken} ({line.lstrip()!r}); "
+                f"{shell} ends the line at the whitespace, so the continuation is "
+                "lost and the rest of the command becomes a separate statement"
+            )
     return checked
 
 

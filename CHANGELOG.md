@@ -53,6 +53,15 @@ entries have been removed. The first version in this repository is `1.0.0`.
   masking are held in place by `Tools/test_check_workflows.py`, which the `Validate` job
   runs as `Self-test the workflow checks`: a here-document body and a trailing comment
   must stay quiet while a real break in either shell must still fail
+- `Tools/test_check_version.py` and `Tools/test_stamp_version.py`, and a `Validate` step
+  `Self-test the version checks` that runs both. The first pins every failure
+  `check-version.py` promises — a drifted site, two sites that disagree, a `VERSION`
+  that is missing or not MAJOR.MINOR.PATCH, a newest changelog section that names
+  another version, and release notes that are missing or do not name the version — and
+  the second pins the stamper: a clean tree changes nothing under `--dry-run`, a bump
+  rewrites all ten files and reads back consistent, a second run is a no-op, and a bad
+  `VERSION` or a site with the wrong number of literals fails before anything is
+  written. Both work on a temporary copy of the tree, so they never touch the checkout
 - `verify-release.yml`, in two jobs — `Verify published assets` on Linux and `Verify
   published assets (Windows)` — on `release: published` or when dispatched for an
   existing tag. The Linux job downloads `mcp-installer-pack.tar.gz` and `SHA256SUMS`

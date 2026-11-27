@@ -24,6 +24,8 @@ python3 Tools/validate-json.py .                  # JSON syntax
 python3 Tools/check-dependabot.py                 # .github/dependabot.yml parses and Dependabot would accept it
 python3 Tools/check-workflows.py                  # every pull request is scanned, every job has a timeout, every use is pinned, no continuation is broken
 python3 Tools/test_check_workflows.py             # that rule ignores literal text and still fails a real break
+python3 Tools/test_check_version.py               # every failure the version checker promises
+python3 Tools/test_stamp_version.py               # a bad VERSION writes nothing; a bump reads back consistent
 python3 Tools/check-links.py                      # no broken relative doc links
 python3 Tools/check-installers.py                 # shell and CLI installers write launchable configs
 Tools/build-package.sh v0.0.0-ci                  # build the release archive
@@ -59,6 +61,15 @@ pins both halves of that — a here-document body and a trailing comment stay qu
 real break in either shell still fails — and the `Validate` job runs it as
 `Self-test the workflow checks`; it is stdlib-only, so it runs before PyYAML is
 installed.
+
+`Tools/test_check_version.py` and `Tools/test_stamp_version.py` pin the version
+tooling the same way, and the `Validate` job runs them as `Self-test the version
+checks`. Both work on a temporary copy of the tree, so they never touch the checkout:
+the checker must fail on a drifted site, on two sites that disagree, on a `VERSION`
+that is missing or not MAJOR.MINOR.PATCH, on a newest changelog section that names
+another version, and on release notes that are missing or do not name the version;
+the stamper must write nothing for a bad `VERSION` or a site with the wrong number of
+literals, then rewrite all ten files for a real bump and read back consistent.
 
 The last three build the release tarball with `Tools/build-package.sh` — the same
 script `release.yml` uses — check its contents, then install from the extracted copy

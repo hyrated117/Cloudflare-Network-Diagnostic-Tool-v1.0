@@ -13,8 +13,9 @@ SHA pins with Dependabot, the `ci.yml` pins and the three security workflows, th
 trigger/concurrency/timeout fix, the Dependabot check, the workflow-trigger check, the
 committed npm lockfiles, three more ignore entries and the docs that describe the
 broadened triggers. PR 5's row
-names the merge below the commit that writes this file, and its counts are taken at the
-branch tip one commit later, so they describe what the pull request shows.
+names the last merge below the commits that write this file rather than a tip SHA it
+cannot contain, and its counts are taken at the branch tip that holds the file, so they
+describe what the pull request shows.
 
 | PR | Head branch | Tip | Base branch | Commits | Files | Lines |
 | -- | ----------- | --- | ----------- | ------- | ----- | ----- |
@@ -22,7 +23,7 @@ branch tip one commit later, so they describe what the pull request shows.
 | 2 | `fix/windows-trace-route-v2` | `b97b2fa` | `pr/installer-ci` | 10 (7 own + 3 merges) | 4 | +357 −25 |
 | 3 | `ci/packaging` | `2402dd0` | `fix/windows-trace-route-v2` | 12 (3 own + 9 merges) | 20 | +455 −1890 |
 | 4 | `docs/rewrite` | `68063b7` | `ci/packaging` | 13 (7 own + 6 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 44 (41 own + 3 merges) | 41 | +1871 −119 |
+| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 45 (42 own + 3 merges) | 41 | +1887 −119 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when
@@ -405,8 +406,9 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
 - `ci.yml` cancels a superseded pull request run via a `concurrency` group per ref
   (`cancel-in-progress` only for pull requests, so a release's `checks` job and a
   `main` push always finish), and every job has a `timeout-minutes` — 15, 30 for the
-  Windows job with the live trace — so a hung download or trace fails the job instead
-  of holding a runner for six hours. The release job has one too.
+  Windows job with the live trace, and the `Validate` job's arrives in PR 1 — so a hung
+  download or trace fails the job instead of holding a runner for six hours. The
+  release job has one too.
 - `Tools/check-links.py` now checks git-tracked files only (falling back to a
   directory walk when git is unavailable), so ignored build output and untracked
   scratch files cannot fail a release.
@@ -481,9 +483,10 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
   history. 1.0.1 would be the first tag this workflow can publish.
 - The upload step (`softprops/action-gh-release`) has not been executed — no tag
   was pushed. Everything up to it was run in a dry run.
-- The `codeql.yml` / `security-scan.yml` trigger broadening lands in PR 1, and this
-  branch merges the updated branch below, so every pull request in the stack gets
-  CodeQL and the npm audit while it is open without the change appearing twice.
+- The `codeql.yml`, `dependency-review.yml` and `security-scan.yml` trigger
+  broadening lands in PR 1, and this branch merges the updated branch below, so every
+  pull request in the stack gets CodeQL, dependency review and the npm audit while it
+  is open without the change appearing twice.
 - `PR-DESCRIPTIONS.md` at the repository root carries the bodies for these five
   PRs, so they survive outside the PR descriptions themselves.
 <!-- BODY 5 END -->
@@ -493,7 +496,7 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
 ## What was checked
 
 Each body's claims were re-verified against the branch's own diff before this file
-was written. Corrections made in this pass:
+was written. Corrections made while these bodies were written:
 
 - PR 1: `--installers-root` does not exist yet (added in PR 3) and is now described
   as such; the checker asserts an `initialize` handshake, not just JSON parsing;
@@ -516,27 +519,40 @@ was written. Corrections made in this pass:
   described. The `CONTRIBUTING.md` sentence that implied pre-release tags work is
   corrected on this branch, since `release.yml` rejects any suffix.
 
-Re-checked at the tips named above: PRs 1–4 keep every commit they were reviewed at, and
-each adds only the trigger change (PR 1, as a commit) or the merge of the updated branch
-below (PRs 2–4), so no other reviewed content moved. Each body's claims were spot-checked
-again — the Windows `tracert -d -h 15 -w 300` candidate list and the leading-`-`
-rejection in both servers, the 24-request conformance set with its probe stubs and
-`--live-trace`, `--installers-root` / `-InstallersRoot` and the `2024-11-05` session, the
-CodeQL matrix without Swift, the deleted `reference/` files and bug-report template, and
-`check-links.py` walking the working tree there. PR 5 was read at `6792f34`: 12 version
-strings in 10 files, `VERSION` and `CHANGELOG.md` at 1.0.1, 76 links in 23 Markdown
-files, the Dependabot check at 2 entries, the 65536-byte DoH cap in both servers, and
-`timeout-minutes` of 15/15/30/15 plus the release job's 20.
+Re-checked at the tips named above. PR 1 carries three workflow changes as commits
+alongside the installer fix — the broadenings in `codeql.yml`, `dependency-review.yml`
+and `security-scan.yml`, and the `Validate` timeout — and each later branch merges the
+updated branch below it, so they are in every tip and every merge ref without appearing
+again in the three-dot diff of PRs 2–5. Each body's claims were spot-checked again — the
+Windows `tracert -d -h 15 -w 300` candidate list and the leading-`-` rejection in both
+servers, the 24-request conformance set with its probe stubs and `--live-trace`,
+`--installers-root` / `-InstallersRoot` and the `2024-11-05` session, the CodeQL matrix
+without Swift, the deleted `reference/` files and bug-report template, and
+`check-links.py` walking the working tree there. PR 5 was read at `8f0dd87`, the merge
+below this file's commit: 12 version strings in 10 files, `VERSION` and `CHANGELOG.md`
+at 1.0.1, 76 links in 23 Markdown files, the Dependabot check at 2 entries, the
+65536-byte DoH cap in both servers, and `timeout-minutes` of 15/15/30/15 plus the
+release job's 20.
 
-Previously established by running the jobs, not re-run in this pass:
+Replayed at the tips in this pass, one pristine export per job and each job read from
+that tip's own `ci.yml`:
 
-- Dry run of every job in `ci.yml` and `release.yml`, one clean checkout per job,
-  with a throwaway local `v1.0.1` tag, first at `fd72604`, re-run at `da8707a` after
-  the release workflow changed and again at `e560454`: `validate`, `package` and
-  `lint` all passed,
-  actionlint reported no findings, and the `release` job passed after the gate — tag
-  and `VERSION` agree on 1.0.1, `check-version.py` green, release body 5747 bytes
-  from the curated notes with no `## Commits` section, `release archive: shippable`.
+- `Validate` at every tip — 4 run steps at PR 1, 5 at PRs 2–3, 6 at PR 4, 10 at PR 5:
+  all pass. At PR 5 the run started in a venv where `import yaml` failed, so the PyYAML
+  install step and the two checks that import it were exercised in order.
+- `package` at PRs 3–5, where the job exists: the archive builds, `check-archive.py`
+  accepts and extracts it, and the installers from the extracted tree handshake.
+- `lint` at PR 5, where the job is defined: the pinned shellcheck download matches its
+  SHA-256 and reports 0.11.0, and `shellcheck` plus actionlint are clean. The actionlint
+  step was substituted with a local binary, because there is no Docker here.
+- Every tip's workflows pass `actionlint`, and the trigger check passes on all four
+  workflows.
+
+Previously established, not re-run in this pass — the `release.yml` dry run with a
+throwaway local `v1.0.1` tag, first at `fd72604`, re-run at `da8707a` after the release
+workflow changed and again at `e560454`: the `release` job passed after the gate — tag
+and `VERSION` agree on 1.0.1, `check-version.py` green, release body 5747 bytes from
+the curated notes with no `## Commits` section, `release archive: shippable`.
 - The notes step with an earlier tag present: exactly one commit bullet under
   `## Commits`.
 - The lint job's meaningfulness: a probe copy with an SC2086 finding fails at
@@ -554,8 +570,8 @@ has never run because no tag was pushed.
 All five tips carry the broadened triggers, and that is what a `pull_request` run needs:
 GitHub uses the workflow file from the PR's merge commit (`refs/pull/N/merge`), the base
 branch merged with the head, so the `on:` block in force is the one those two trees
-carry. PR 1 adds the changes as two commits, and each later branch merges the updated
-branch below it, so every later merge ref has them too. Because they are in each PR's
+carry. PR 1 adds the trigger changes as two commits, and each later branch merges the
+updated branch below it, so every later merge ref has them too. Because they are in each PR's
 merge base, the three-dot diff of PRs 2–5 does not repeat them. `ci.yml` itself already triggered on
 every push and pull request in all five branches, so the rest of CI was never filtered.
 All four workflows that run on pull requests are unfiltered on every tip, so each pull

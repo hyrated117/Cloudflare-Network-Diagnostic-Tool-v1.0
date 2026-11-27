@@ -49,7 +49,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
   backslash in bash — which ends the line instead of continuing it, so the rest of the
   command runs as its own statement: a break only the runner would report, at run time.
   Only code counts, so quoted text, comments, here-documents and here-strings are
-  masked first and a literal character inside them is not reported
+  masked first and a literal character inside them is not reported. The rule and its
+  masking are held in place by `Tools/test_check_workflows.py`, which the `Validate` job
+  runs as `Self-test the workflow checks`: a here-document body and a trailing comment
+  must stay quiet while a real break in either shell must still fail
 - `verify-release.yml`, in two jobs — `Verify published assets` on Linux and `Verify
   published assets (Windows)` — on `release: published` or when dispatched for an
   existing tag. The Linux job downloads `mcp-installer-pack.tar.gz` and `SHA256SUMS`

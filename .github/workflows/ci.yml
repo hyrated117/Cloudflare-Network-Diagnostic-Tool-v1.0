@@ -84,6 +84,11 @@ jobs:
       - name: Check workflow triggers, timeouts, pins and continuations
         run: python Tools/check-workflows.py
 
+      # The continuation rule has to ignore literal text and still catch a real break;
+      # this pins both halves so a later simplification cannot give up either one.
+      - name: Self-test the workflow checks
+        run: python Tools/test_check_workflows.py
+
       - name: Check documentation links
         run: python Tools/check-links.py
 

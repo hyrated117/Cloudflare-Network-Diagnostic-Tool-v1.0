@@ -22,7 +22,8 @@ python3 Tools/check-conformance.py                # Python and Node answer ident
 python3 Tools/check-version.py                    # version sites, VERSION and changelog agree
 python3 Tools/validate-json.py .                  # JSON syntax
 python3 Tools/check-dependabot.py                 # .github/dependabot.yml parses and Dependabot would accept it
-python3 Tools/check-workflows.py                  # every pull request is scanned, every job has a timeout, every use is pinned
+python3 Tools/check-workflows.py                  # every pull request is scanned, every job has a timeout, every use is pinned, no continuation is broken
+python3 Tools/test_check_workflows.py             # that rule ignores literal text and still fails a real break
 python3 Tools/check-links.py                      # no broken relative doc links
 python3 Tools/check-installers.py                 # shell and CLI installers write launchable configs
 Tools/build-package.sh v0.0.0-ci                  # build the release archive
@@ -37,7 +38,7 @@ as warnings rather than failures (GitHub keeps adding keys), and it exists becau
 GitHub reads `dependabot.yml` only from the default branch and says nothing when the
 file is malformed, so a typo would silently stop the action updates.
 
-`Tools/check-workflows.py` uses the same pinned PyYAML and asserts three things that
+`Tools/check-workflows.py` uses the same pinned PyYAML and asserts four things that
 fail silently on GitHub. These branches are stacked, so a pull request targets the
 branch below it, and a `branches:` filter on `pull_request` in `ci.yml`, `codeql.yml`,
 `dependency-review.yml` or `security-scan.yml` skips the review while the file still
@@ -48,7 +49,16 @@ because it would inherit the six-hour default; a job that calls a reusable workf
 skipped, since its timeout belongs to the callee. A `uses:` that is not
 `owner/repo@<40-hex SHA>` or `docker://...@sha256:<64-hex digest>` fails too, so a
 tag-pinned action cannot slip in; a local `./...` workflow is exempt because there is
-nothing to pin.
+nothing to pin. A `run:` block line that ends in a continuation character followed by
+whitespace fails too — a backtick in pwsh, a backslash in bash — because the shell ends
+the line there and runs the rest of the command as its own statement, which only a
+runner would report, and only at run time; which character to look for comes from the
+shell the block runs in. Only code counts, so quoted text, comments, here-documents and
+here-strings are masked before a match is trusted. `Tools/test_check_workflows.py`
+pins both halves of that — a here-document body and a trailing comment stay quiet, a
+real break in either shell still fails — and the `Validate` job runs it as
+`Self-test the workflow checks`; it is stdlib-only, so it runs before PyYAML is
+installed.
 
 The last three build the release tarball with `Tools/build-package.sh` — the same
 script `release.yml` uses — check its contents, then install from the extracted copy

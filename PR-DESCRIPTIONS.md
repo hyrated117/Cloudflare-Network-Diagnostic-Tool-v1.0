@@ -22,7 +22,7 @@ the branch tip that holds this file, which is what the pull request shows.
 | 2 | `fix/windows-trace-route-v2` | `b97b2fa` | `pr/installer-ci` | 10 (7 own + 3 merges) | 4 | +357 −25 |
 | 3 | `ci/packaging` | `2402dd0` | `fix/windows-trace-route-v2` | 12 (3 own + 9 merges) | 20 | +455 −1890 |
 | 4 | `docs/rewrite` | `68063b7` | `ci/packaging` | 13 (7 own + 6 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 59 (56 own + 3 merges) | 44 | +2477 −119 |
+| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 60 (57 own + 3 merges) | 45 | +2579 −119 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when
@@ -475,8 +475,11 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
   `python {0}` is skipped rather than guessed at. Only code counts: quoted text,
   comments, here-documents and here-strings are masked first, because a continuation
   character inside them is literal text that continues nothing — a `C:\Program Files\ `
-  line in a here-document body or a path after `#` in a comment is not a break. It was
-  checked both ways: green on
+  line in a here-document body or a path after `#` in a comment is not a break.
+  `Tools/test_check_workflows.py` pins both halves — literal text quiet, a real break in
+  either shell still failing — and the `Validate` job runs it as
+  `Self-test the workflow checks`, stdlib-only so it runs before PyYAML is installed. It
+  was checked both ways: green on
   this tree, and red in probe copies with `branches: [ "main" ]` restored, with a
   timeout deleted, with one rewritten as a string, with an action moved back to `@v4`,
   with the actionlint image back on its tag, with a space after a pwsh backtick, with a

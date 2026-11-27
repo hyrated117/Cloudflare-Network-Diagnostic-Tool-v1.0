@@ -83,7 +83,7 @@ def contents(archive):
     return ok
 
 
-def version(archive):
+def version(archive, release=None):
     """Require the pack's VERSION to match the server and installer it ships."""
     with tarfile.open(archive) as tar:
         raw = tar.extractfile("VERSION").read().decode("utf-8")
@@ -93,6 +93,12 @@ def version(archive):
             return False
         expected = words[0]
         ok = True
+        if release is not None and expected != release.removeprefix("v"):
+            print(
+                f"FAIL: archive is stamped {expected}, but the release is {release.removeprefix('v')}",
+                file=sys.stderr,
+            )
+            ok = False
         for name, pattern in VERSION_SITES.items():
             found = re.findall(pattern, tar.extractfile(name).read().decode("utf-8"), re.MULTILINE)
             if len(found) != 1:
@@ -126,6 +132,11 @@ def main():
         action="store_true",
         help="require a SHA256SUMS file next to the archive and verify it",
     )
+    parser.add_argument(
+        "--expect-version",
+        metavar="VERSION",
+        help="require the archive to be stamped with this version, for example the release tag",
+    )
     args = parser.parse_args()
 
     archive = Path(args.archive).resolve()
@@ -138,7 +149,7 @@ def main():
     if not ok:
         return 1
 
-    if not version(archive):
+    if not version(archive, args.expect_version):
         return 1
 
     if args.extract_to:

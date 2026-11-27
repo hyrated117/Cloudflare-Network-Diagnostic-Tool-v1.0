@@ -415,7 +415,8 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
   archive is good before it is uploaded; this runs on `release: published` (or by
   dispatch for an existing tag), downloads `mcp-installer-pack.tar.gz` and
   `SHA256SUMS` from the release and applies `Tools/check-release-assets.sh` to them —
-  checksum, required files, stamped version, extraction and the installer handshake —
+  checksum, required files, an archive stamped with the tag's version, extraction and
+  the installer handshake —
   the same script `Tools/dry-run-verify-release.sh` runs on a locally built pack, so
   the harness and the workflow cannot drift apart. A truncated, replaced or mismatched
   upload therefore fails a check instead of a user. It checks out the default branch,

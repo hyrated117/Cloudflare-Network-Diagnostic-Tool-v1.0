@@ -48,7 +48,8 @@ entries have been removed. The first version in this repository is `1.0.0`.
 - `verify-release.yml` and its `Verify published assets` job: on `release: published`,
   or when dispatched for an existing tag, it downloads `mcp-installer-pack.tar.gz` and
   `SHA256SUMS` from the release and applies `Tools/check-release-assets.sh` to them —
-  checksum, required files, stamped version, extraction and the installer handshake,
+  checksum, required files, an archive stamped with the tag's version, extraction and
+  the installer handshake,
   the same script `Tools/dry-run-verify-release.sh` runs on a locally built pack. The
   publishing job only proves the local archive before upload; this proves the served
   bytes, so an upload that truncated, replaced or mismatched an asset fails a check

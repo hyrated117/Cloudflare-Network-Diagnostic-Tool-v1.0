@@ -36,7 +36,7 @@ entries have been removed. The first version in this repository is `1.0.0`.
   which are clean today so any finding fails the job. `shellcheck` is installed in the
   job from its pinned release tarball and checked against the asset's SHA-256, so the
   runner image cannot move it
-- `Tools/check-workflows.py` plus a `Validate` step, asserting the three rules that
+- `Tools/check-workflows.py` plus a `Validate` step, asserting the four rules that
   fail silently on GitHub. It fails when `ci.yml`, `codeql.yml`,
   `dependency-review.yml` or `security-scan.yml` puts a `branches`/`branches-ignore`
   filter back on `pull_request` or drops the trigger (those branches are stacked, so
@@ -44,7 +44,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
   run is created); when a job in any workflow has no `timeout-minutes`, or a value that
   is not a positive whole number, so the six-hour default cannot return unnoticed; and
   when a `uses:` is not pinned to a commit SHA or an image digest, so the pinning rule
-  is enforced instead of maintained by hand
+  is enforced instead of maintained by hand; and when a `run:` block ends a line with a
+  backtick followed by whitespace, which ends a pwsh line instead of continuing it, so
+  the rest of the command runs as its own statement — a break only a Windows runner
+  would report, at run time
 - `verify-release.yml`, in two jobs — `Verify published assets` on Linux and `Verify
   published assets (Windows)` — on `release: published` or when dispatched for an
   existing tag. The Linux job downloads `mcp-installer-pack.tar.gz` and `SHA256SUMS`

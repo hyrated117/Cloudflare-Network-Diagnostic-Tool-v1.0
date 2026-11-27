@@ -81,7 +81,7 @@ jobs:
       # Triggers, timeouts and pins all fail silently on GitHub, so each is asserted:
       # a `branches:` filter skips stacked pull requests, a job without a timeout
       # inherits six hours, and a tag-pinned action can move under a passing commit.
-      - name: Check workflow triggers, timeouts and pins
+      - name: Check workflow triggers, timeouts, pins and continuations
         run: python Tools/check-workflows.py
 
       - name: Check documentation links

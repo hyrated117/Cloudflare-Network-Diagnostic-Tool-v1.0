@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Fail when a workflow could silently skip a pull request, run unbounded, or run
-unpinned code.
+"""Fail when a workflow could silently skip a pull request, run unbounded, run
+unpinned code, or drop half of a command without saying so.
 
-All three checks are about failures GitHub reports as nothing at all.
+All four checks are about failures GitHub reports as nothing at all.
 
 Triggers: these branches are stacked, so a pull request is opened against the branch
 below it rather than against main. A `branches:` filter on `pull_request` therefore
@@ -17,6 +17,11 @@ job that calls a reusable workflow is skipped: its timeout belongs to the callee
 Pins: an action referenced by tag, branch or nothing can change under a commit that
 already passed. Every `uses:` must name a commit SHA, a docker image digest, or a local
 workflow under ./ that cannot be pinned at all.
+
+Continuations: a pwsh line break is a backtick, and it must be the last character on
+the line. A space after it ends the line instead, so the continuation is lost and the
+rest of the command runs as its own statement - `--flag` then reads as a unary
+operator. pwsh only reports that at run time, on Windows, which no local check reaches.
 """
 
 import re
@@ -29,6 +34,7 @@ PR_WORKFLOWS = ("ci.yml", "codeql.yml", "dependency-review.yml", "security-scan.
 BRANCH_FILTERS = ("branches", "branches-ignore")
 ACTION_PIN = re.compile(r"^[\w.-]+/[\w.-]+(?:/[\w./-]+)?@[0-9a-f]{40}$")
 IMAGE_PIN = re.compile(r"^docker://[\w.-]+(?:/[\w.-]+)*@sha256:[0-9a-f]{64}$")
+TRAILING_BACKTICK = re.compile(r"`[ \t]+$")
 MISSING = object()
 
 problems = []
@@ -120,6 +126,34 @@ def check_timeouts(label, data):
     print(f"ok {label}: {checked} job(s) set timeout-minutes")
 
 
+def run_blocks(data):
+    """Yield (where, run text) for every `run:` block in a workflow."""
+    for job_name, job in (data.get("jobs") or {}).items():
+        if not isinstance(job, dict):
+            continue
+        for number, step in enumerate(job.get("steps") or [], 1):
+            if isinstance(step, dict) and isinstance(step.get("run"), str):
+                name = step.get("name")
+                where = f"job {job_name!r} step {number}"
+                yield (f"{where} ({name!r})" if name else where), step["run"]
+
+
+def check_continuations(label, data):
+    """Fail on a line whose backtick continuation is followed by whitespace."""
+    checked = 0
+    for where, run in run_blocks(data):
+        checked += 1
+        for number, line in enumerate(run.splitlines(), 1):
+            if TRAILING_BACKTICK.search(line):
+                fail(
+                    f"{label}: {where} line {number} of its run: block puts whitespace "
+                    f"after a continuation backtick ({line.lstrip()!r}); pwsh ends the line "
+                    "at the whitespace, so the continuation is lost and the rest of the "
+                    "command becomes a separate statement"
+                )
+    return checked
+
+
 def check_pins(label, data):
     pinned = 0
     for where, value in uses_entries(data):
@@ -153,6 +187,7 @@ def main():
         return fail(".github/workflows has no .yml files") or "no workflows found"
 
     loaded = {}
+    run_block_count = 0
     for path in paths:
         label = path.relative_to(ROOT).as_posix()
         try:
@@ -168,6 +203,7 @@ def main():
         loaded[path.name] = data
         check_timeouts(label, data)
         check_pins(label, data)
+        run_block_count += check_continuations(label, data)
 
     present = {path.name for path in paths}
     for name in PR_WORKFLOWS:
@@ -179,10 +215,14 @@ def main():
     if problems:
         for message in problems:
             print(f"FAIL: {message}", file=sys.stderr)
-        return f"{len(problems)} problem(s) in the workflows' triggers, timeouts or pins"
+        return (
+            f"{len(problems)} problem(s) in the workflows' triggers, timeouts, pins "
+            "or continuations"
+        )
 
     print(f"ok {len(PR_WORKFLOWS)} pull-request workflows: trigger not filtered by branch")
     print(f"ok {len(loaded)} workflows: every job sets a timeout and every use is pinned")
+    print(f"ok {run_block_count} run: block(s): no whitespace after a continuation backtick")
     return 0
 
 

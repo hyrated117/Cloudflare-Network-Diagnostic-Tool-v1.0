@@ -1,21 +1,20 @@
 # Stacked PRs — paste-ready descriptions
 
-All five branches are pushed, and each row describes the tip it names. PR 1 carries four
-commits: the installer fix, the workflow changes that make CodeQL, dependency review and
-the npm audit run on every pull request, and a timeout on the `Validate` job. The five
-branches are stacked, so the old `branches: [ main ]` filter skipped four of these pull
-requests while they were in review. Each branch above it then merges the updated branch
-below, so the same changes are in every tip and in every pull request's merge ref without
-appearing again in the diff of PRs 2–5. Those merges are why the later
-rows count merge commits the earlier ones do not. PR 5's own commits are the release and lint work: the PR bodies in
-this file, the `CONTRIBUTING.md` tag-suffix fix, the release job's Python pin, the action
-SHA pins with Dependabot, the `ci.yml` pins and the three security workflows, the CI
-trigger/concurrency/timeout fix, the Dependabot check, the workflow-trigger check, the
-committed npm lockfiles, three more ignore entries and the docs that describe the
-broadened triggers. PR 5's row
-names the last merge below the commits that write this file rather than a tip SHA it
-cannot contain, and its counts are taken at the branch tip that holds the file, so they
-describe what the pull request shows.
+All five branches are pushed. Rows 1–4 name the tip they measure; PR 5's row names the
+last merge below the commits that write this file, as the note under the table explains.
+PR 1 carries four commits: the installer fix, the workflow changes that make CodeQL,
+dependency review and the npm audit run on every pull request, and a timeout on the
+`Validate` job. The five branches are stacked, so the old `branches: [ main ]` filter
+skipped four of these pull requests while they were in review. Each branch above it then
+merges the updated branch below, so the same changes are in every tip and in every pull
+request's merge ref without appearing again in the diff of PRs 2–5. Those merges are why
+the later rows count merge commits the earlier ones do not. PR 5's own commits are the
+release and lint work: the PR bodies in this file, the `CONTRIBUTING.md` tag-suffix fix,
+the release job's Python pin, the action SHA pins with Dependabot, the `ci.yml` pins and
+the three security workflows, the CI trigger/concurrency/timeout fix, the Dependabot
+check, the workflow-trigger check, the committed npm lockfiles, three more ignore
+entries and the docs that describe the broadened triggers. PR 5's counts are taken at
+the branch tip that holds this file, which is what the pull request shows.
 
 | PR | Head branch | Tip | Base branch | Commits | Files | Lines |
 | -- | ----------- | --- | ----------- | ------- | ----- | ----- |
@@ -23,7 +22,7 @@ describe what the pull request shows.
 | 2 | `fix/windows-trace-route-v2` | `b97b2fa` | `pr/installer-ci` | 10 (7 own + 3 merges) | 4 | +357 −25 |
 | 3 | `ci/packaging` | `2402dd0` | `fix/windows-trace-route-v2` | 12 (3 own + 9 merges) | 20 | +455 −1890 |
 | 4 | `docs/rewrite` | `68063b7` | `ci/packaging` | 13 (7 own + 6 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 45 (42 own + 3 merges) | 41 | +1887 −119 |
+| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 46 (43 own + 3 merges) | 41 | +1886 −119 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when

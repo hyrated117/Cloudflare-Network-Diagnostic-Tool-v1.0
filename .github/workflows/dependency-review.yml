@@ -9,8 +9,9 @@
 # Public documentation: https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-dependency-review#dependency-review-enforcement
 name: 'Dependency review'
 on:
+  # Every pull request, whichever branch it targets, for the same reason as codeql.yml:
+  # a stacked pull request's base is the branch below it, not main.
   pull_request:
-    branches: [ "main" ]
 
 # If using a dependency submission action in this workflow this permission will need to be set to:
 #

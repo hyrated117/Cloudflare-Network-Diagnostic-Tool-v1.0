@@ -75,6 +75,11 @@ clean today, so a finding there is something you just introduced; suppress it wi
 `# shellcheck disable=SCXXXX` comment and a reason only when the warning is genuinely
 wrong.
 
+Every job carries a `timeout-minutes`, so a hung download or trace fails it instead of
+holding a runner until GitHub's six-hour default: 15 for `validate`, `package` and
+`lint`, 30 for the Windows job, which runs the live trace, and 20 for `release.yml`'s
+release job.
+
 The actions in every workflow are pinned to commit SHAs, with the release they came
 from in a comment. `.github/dependabot.yml` raises a weekly `github-actions` pull
 request that moves the SHA and its comment together: take those, rather than editing

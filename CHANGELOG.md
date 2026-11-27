@@ -63,8 +63,8 @@ entries have been removed. The first version in this repository is `1.0.0`.
 - `ci.yml` cancels a superseded pull request run (a `concurrency` group per ref, with
   `cancel-in-progress` limited to pull requests so `release.yml`'s `checks` job and a
   `main` push are never interrupted), and every CI job now has a `timeout-minutes`
-  (15, and 30 for the Windows job, which runs the live trace) instead of the six-hour
-  default; `release.yml`'s release job has one too
+  instead of the six-hour default — 15 for `validate`, `package` and `lint`, and 30 for
+  the Windows job, which runs the live trace; `release.yml`'s release job has one too
 - `release.yml` refuses a tag that disagrees with `VERSION`, and both must be a bare
   `MAJOR.MINOR.PATCH` (a `-rc1` suffix is rejected), builds `dist/v<version>` from
   `VERSION`, runs `check-version.py` before packaging and `check-archive.py` on the

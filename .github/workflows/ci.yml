@@ -78,6 +78,11 @@ jobs:
       - name: Check the Dependabot config
         run: python Tools/check-dependabot.py
 
+      # A `branches:` filter here skips every stacked pull request without failing
+      # anything, so the two security workflows' pull_request trigger is asserted.
+      - name: Check the security workflows' triggers
+        run: python Tools/check-workflow-triggers.py
+
       - name: Check documentation links
         run: python Tools/check-links.py
 

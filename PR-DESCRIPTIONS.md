@@ -9,8 +9,9 @@ again in the diff of PRs 2–5. Those merges are why the later rows count one me
 more than before. PR 5's own commits are the release and lint work: the PR bodies in
 this file, the `CONTRIBUTING.md` tag-suffix fix, the release job's Python pin, the action
 SHA pins with Dependabot, the `ci.yml` pins and the three security workflows, the CI
-trigger/concurrency/timeout fix, the Dependabot check, the committed npm lockfiles,
-three more ignore entries and the docs that describe the broadened triggers. PR 5's row
+trigger/concurrency/timeout fix, the Dependabot check, the workflow-trigger check, the
+committed npm lockfiles, three more ignore entries and the docs that describe the
+broadened triggers. PR 5's row
 names the merge below the commit that writes this file, and its counts are taken at the
 branch tip one commit later, so they describe what the pull request shows.
 
@@ -20,7 +21,7 @@ branch tip one commit later, so they describe what the pull request shows.
 | 2 | `fix/windows-trace-route-v2` | `df345b3` | `pr/installer-ci` | 8 (7 own + 1 merge) | 4 | +357 −25 |
 | 3 | `ci/packaging` | `d2f9a4b` | `fix/windows-trace-route-v2` | 10 (3 own + 7 merges) | 20 | +455 −1890 |
 | 4 | `docs/rewrite` | `113e3d5` | `ci/packaging` | 11 (7 own + 4 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `6792f34` | `docs/rewrite` | 37 (36 own + 1 merge) | 40 | +1715 −119 |
+| 5 | `fix/doh-cap-csv-cr` | `6792f34` | `docs/rewrite` | 38 (37 own + 1 merge) | 41 | +1857 −119 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when
@@ -425,9 +426,19 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
   `github-actions` entry at `/` while the workflows use actions. Unrecognized keys are
   warnings, not failures, so a new GitHub key cannot fail a sound config. The
   `Validate` job installs PyYAML 6.0.4 for it, pinned like everything else; the other
-  tools stay stdlib-only. GitHub reads the file only from the default branch and
+  tools stay stdlib-only. GitHub reads the   file only from the default branch and
   reports nothing when it is malformed, so without this a typo would silently stop the
   action updates.
+
+## Workflow trigger check
+
+- `Tools/check-workflow-triggers.py` fails when `codeql.yml` or `security-scan.yml`
+  puts a `branches` or `branches-ignore` filter back on `pull_request`, or drops the
+  `pull_request` trigger. The regression is otherwise silent: the file still parses and
+  GitHub simply never creates the run, and a stacked pull request is exactly the one a
+  `branches: [ main ]` filter skips. It was checked both ways: green on this tree and
+  red with `branches: [ "main" ]` restored in a probe copy. The `Validate` job runs it
+  with the pinned PyYAML.
 
 ## Ignored files
 

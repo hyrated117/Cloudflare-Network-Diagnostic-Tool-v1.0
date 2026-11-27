@@ -22,6 +22,7 @@ python3 Tools/check-conformance.py                # Python and Node answer ident
 python3 Tools/check-version.py                    # version sites, VERSION and changelog agree
 python3 Tools/validate-json.py .                  # JSON syntax
 python3 Tools/check-dependabot.py                 # .github/dependabot.yml parses and Dependabot would accept it
+python3 Tools/check-workflow-triggers.py          # codeql.yml and security-scan.yml scan every pull request
 python3 Tools/check-links.py                      # no broken relative doc links
 python3 Tools/check-installers.py                 # shell and CLI installers write launchable configs
 Tools/build-package.sh v0.0.0-ci                  # build the release archive
@@ -35,6 +36,13 @@ here is stdlib-only. It checks the keys Dependabot needs and reports unrecognize
 as warnings rather than failures (GitHub keeps adding keys), and it exists because
 GitHub reads `dependabot.yml` only from the default branch and says nothing when the
 file is malformed, so a typo would silently stop the action updates.
+
+`Tools/check-workflow-triggers.py` uses the same pinned PyYAML. These branches are
+stacked, so a pull request targets the branch below it, and a `branches:` filter on
+`pull_request` in `codeql.yml` or `security-scan.yml` skips the review while the file
+still parses and GitHub simply never creates the run. The check fails if either
+workflow filters `pull_request` by branch or drops the trigger; the `push` trigger is
+left alone because it scans a branch once, when it lands.
 
 The last three build the release tarball with `Tools/build-package.sh` — the same
 script `release.yml` uses — check its contents, then install from the extracted copy

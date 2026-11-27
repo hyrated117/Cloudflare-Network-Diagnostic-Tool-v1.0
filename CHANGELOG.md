@@ -35,6 +35,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
   which are clean today so any finding fails the job. `shellcheck` is installed in the
   job from its pinned release tarball and checked against the asset's SHA-256, so the
   runner image cannot move it
+- `Tools/check-workflow-triggers.py` plus a `Validate` step: it fails when `codeql.yml`
+  or `security-scan.yml` puts a `branches`/`branches-ignore` filter back on
+  `pull_request`, or drops the trigger. Those branches are stacked, so the filter skips
+  the pull requests under review while the file still parses and no run is created
 
 ### Changed
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,

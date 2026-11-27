@@ -22,7 +22,7 @@ the branch tip that holds this file, which is what the pull request shows.
 | 2 | `fix/windows-trace-route-v2` | `b97b2fa` | `pr/installer-ci` | 10 (7 own + 3 merges) | 4 | +357 −25 |
 | 3 | `ci/packaging` | `2402dd0` | `fix/windows-trace-route-v2` | 12 (3 own + 9 merges) | 20 | +455 −1890 |
 | 4 | `docs/rewrite` | `68063b7` | `ci/packaging` | 13 (7 own + 6 merges) | 23 | +1265 −1647 |
-| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 47 (44 own + 3 merges) | 41 | +1891 −119 |
+| 5 | `fix/doh-cap-csv-cr` | `8f0dd87` | `docs/rewrite` | 48 (45 own + 3 merges) | 41 | +1968 −119 |
 
 Open them in order with **Create a merge commit** (no squash, no rebase), and after
 each one lands retarget the next PR's base to `main` (GitHub does this itself when
@@ -443,8 +443,12 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
   `branches-ignore` filter back on `pull_request`, or drops the `pull_request`
   trigger. The regression is otherwise silent: the file still parses and GitHub simply
   never creates the run, and a stacked pull request is exactly the one a
-  `branches: [ main ]` filter skips. It was checked both ways: green on this tree and
-  red with `branches: [ "main" ]` restored in a probe copy. The `Validate` job runs it
+  `branches: [ main ]` filter skips. It also reads every workflow file and fails when a
+  job has no `timeout-minutes` — or a value that is not a positive whole number — since
+  a job without one inherits the six-hour default; a job that calls a reusable workflow
+  is skipped, because its timeout belongs to the callee. It was checked both ways: green
+  on this tree, red with `branches: [ "main" ]` restored in a probe copy, and red again
+  with a timeout deleted and with one rewritten as a string. The `Validate` job runs it
   with the pinned PyYAML.
 - `dependency-review.yml` appears in this diff for its action pins; its `pull_request`
   trigger was broadened in PR 1 like the other two, so this branch only merges that
@@ -457,11 +461,12 @@ site agrees with it, and `release.yml` calls `ci.yml` before it publishes.
 
 ## Lint
 
-- New `Lint workflows and shell` job in `ci.yml`: actionlint pinned to the
-  `docker://rhysd/actionlint:1.7.12` image (it bundles shellcheck, so the shell
-  inside every `run:` block is checked too), then shellcheck 0.11.0 installed from
-  its pinned release tarball with a SHA-256 check, run at default severity over
-  `installers/*.sh` and `Tools/*.sh` — three scripts today.
+- New `Lint workflows and shell` job in `ci.yml`: actionlint pinned by the digest of
+  the 1.7.12 `rhysd/actionlint` multi-arch index rather than by its tag, which Docker
+  Hub lets an owner repoint (it bundles shellcheck, so the shell inside every `run:`
+  block is checked too), then shellcheck 0.11.0 installed from its pinned release
+  tarball with a SHA-256 check, run at default severity over `installers/*.sh` and
+  `Tools/*.sh` — three scripts today.
 
 ## Docs
 
@@ -545,7 +550,7 @@ that tip's own `ci.yml`:
   SHA-256 and reports 0.11.0, and `shellcheck` plus actionlint are clean. The actionlint
   step was substituted with a local binary, because there is no Docker here.
 - Every tip's workflows pass `actionlint`, and the trigger check passes on all four
-  workflows.
+  pull-request workflows and on every job's `timeout-minutes`.
 
 Previously established, not re-run in this pass — the `release.yml` dry run with a
 throwaway local `v1.0.1` tag, first at `fd72604`, re-run at `da8707a` after the release

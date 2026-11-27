@@ -28,7 +28,7 @@ concurrency:
 # Actions are pinned to commit SHAs with their release in a trailing comment, so a
 # moved or re-tagged action cannot change what runs here. .github/dependabot.yml opens
 # a weekly github-actions PR that moves the SHA and the comment together. The actionlint
-# step is a versioned image, not a tag, so it needs no pin.
+# step is a container image, pinned by digest for the same reason a tag could be moved.
 jobs:
   validate:
     name: Validate
@@ -193,9 +193,11 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       # The actionlint image bundles shellcheck, so the shell inside every `run:`
-      # block is checked too, including the release workflow's steps.
+      # block is checked too, including the release workflow's steps. Pinned by the
+      # digest of its multi-arch index (4 platforms, 1.7.12), not by the tag, which
+      # Docker Hub lets an owner repoint.
       - name: Lint GitHub Actions workflows
-        uses: docker://rhysd/actionlint:1.7.12
+        uses: docker://rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
 
       # The runner image's shellcheck moves with the image, so it is pinned here the
       # same way actionlint is. The three scripts are clean at the default severity,

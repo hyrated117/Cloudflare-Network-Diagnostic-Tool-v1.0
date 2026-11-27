@@ -17,6 +17,9 @@ jobs:
   npm-audit:
     name: Audit Node.js dependencies
     runs-on: ubuntu-latest
+    # Same cap as the other Linux jobs: an audit that cannot reach the registry should
+    # fail in minutes, not sit on a runner until the six-hour default.
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:

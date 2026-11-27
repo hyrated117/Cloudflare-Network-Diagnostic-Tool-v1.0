@@ -29,7 +29,8 @@ entries have been removed. The first version in this repository is `1.0.0`.
   are committed so the tree is pinned the moment a dependency is added, `npm ci` can
   enforce that a manifest edit carries its lockfile, and Dependabot has something to
   update
-- A `lint` CI job that runs `actionlint` (pinned to `1.7.12`) over the workflows —
+- A `lint` CI job that runs `actionlint` (pinned by the digest of the 1.7.12 image's
+  multi-arch index, so the tag cannot be repointed under it) over the workflows —
   its image bundles `shellcheck`, so the shell inside every `run:` block is checked —
   and `shellcheck` 0.11.0 at its default severity over the installer and tool scripts,
   which are clean today so any finding fails the job. `shellcheck` is installed in the
@@ -39,7 +40,9 @@ entries have been removed. The first version in this repository is `1.0.0`.
   `codeql.yml`, `dependency-review.yml` or `security-scan.yml` puts a
   `branches`/`branches-ignore` filter back on `pull_request`, or drops the trigger.
   Those branches are stacked, so the filter skips the pull requests under review while
-  the file still parses and no run is created
+  the file still parses and no run is created. The same check fails when a job in any
+  workflow has no `timeout-minutes` (or a value that is not a positive whole number),
+  so the six-hour default cannot return unnoticed
 
 ### Changed
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,

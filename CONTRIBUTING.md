@@ -22,7 +22,7 @@ python3 Tools/check-conformance.py                # Python and Node answer ident
 python3 Tools/check-version.py                    # version sites, VERSION and changelog agree
 python3 Tools/validate-json.py .                  # JSON syntax
 python3 Tools/check-dependabot.py                 # .github/dependabot.yml parses and Dependabot would accept it
-python3 Tools/check-workflow-triggers.py          # ci.yml, codeql.yml, dependency-review.yml and security-scan.yml scan every pull request
+python3 Tools/check-workflow-triggers.py          # every pull request is scanned, and every job sets a timeout
 python3 Tools/check-links.py                      # no broken relative doc links
 python3 Tools/check-installers.py                 # shell and CLI installers write launchable configs
 Tools/build-package.sh v0.0.0-ci                  # build the release archive
@@ -43,7 +43,10 @@ stacked, so a pull request targets the branch below it, and a `branches:` filter
 `security-scan.yml` skips the review while the file still parses and GitHub simply
 never creates the run. The check fails if any of the four filters `pull_request` by
 branch or drops the trigger; the `push` trigger is left alone because it scans a
-branch once, when it lands.
+branch once, when it lands. It also fails when any job in any workflow has no
+`timeout-minutes` (or a value that is not a positive whole number), so the six-hour
+default cannot come back unnoticed; a job that calls a reusable workflow is skipped,
+because its timeout belongs to the callee.
 
 The last three build the release tarball with `Tools/build-package.sh` — the same
 script `release.yml` uses — check its contents, then install from the extracted copy

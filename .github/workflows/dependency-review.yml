@@ -27,6 +27,9 @@ permissions:
 jobs:
   dependency-review:
     runs-on: ubuntu-latest
+    # The review is a single API call and a diff walk; a hung fetch should fail the job
+    # rather than hold a runner for the six-hour default.
+    timeout-minutes: 15
     steps:
       # Actions are pinned to commit SHAs with their release in a trailing comment, so a
       # moved tag cannot change what runs. .github/dependabot.yml moves both together.

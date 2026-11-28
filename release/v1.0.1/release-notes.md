@@ -36,6 +36,9 @@ the first commit. No tool was added or removed; the protocol surface is unchange
   parsed URL, so `https://host` became `https://host/` and the host was normalised; it
   now echoes the request string like Python does, and the differential check compares
   the echo with the URL it sent.
+- **`dns_check` sorts addresses in both servers.** Node reported the resolver's order
+  where Python sorted the list; both now de-duplicate and sort, and the differential
+  check compares every list with a sorted copy of itself.
 
 ### Changed
 
@@ -91,17 +94,15 @@ the first commit. No tool was added or removed; the protocol surface is unchange
 
 ## Known issues
 
-1. `dns_check` returns the same addresses in a different order: sorted in Python,
-   resolver order in Node.
-2. A CSV cell holding a non-string value is rendered by each runtime's JSON writer,
+1. A CSV cell holding a non-string value is rendered by each runtime's JSON writer,
    so `1.0` stays `1.0` in Python and becomes `1` in Node; Node also parses request
    numbers as doubles, so an integer above 2^53 loses precision before any tool sees
    it.
-3. Neither server caps incoming request-line size; `export_results` has no output cap.
-4. DoH providers may rate limit (`403`/`429`); `doh_test` always sends `GET`.
-5. `health_score` is a single TCP probe and reports a fixed 95 or 64 — it is not a
+2. Neither server caps incoming request-line size; `export_results` has no output cap.
+3. DoH providers may rate limit (`403`/`429`); `doh_test` always sends `GET`.
+4. `health_score` is a single TCP probe and reports a fixed 95 or 64 — it is not a
    composite score.
-6. v1.0.0 was dated in the changelog but never tagged; its notes in
+5. v1.0.0 was dated in the changelog but never tagged; its notes in
    [release/v1.0.0](../v1.0.0/release-notes.md) describe the original code and its
    known issues, including the DoH difference fixed here.
 

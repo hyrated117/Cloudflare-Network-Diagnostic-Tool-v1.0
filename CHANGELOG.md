@@ -238,7 +238,9 @@ entries have been removed. The first version in this repository is `1.0.0`.
   status and body instead of returning them as a tool result; Python kept an unbounded
   non-JSON body where Node caps it at 4096 characters; Node listed resolved addresses in
   resolution order where Python sorts them; and Node repeated a failed lookup's message
-  once per address family where Python reports it once
+  once per address family where Python reports it once. The parity corpus now checks every
+  `dns_check` list against a sorted, de-duplicated copy of itself, not only the pinned
+  dual-stack case
 - A `traceroute`/`tracepath` that exists but cannot execute (wrong format, permissions)
   no longer kills the Python server: it returns a failed trace, the way Node does, instead
   of raising out of the request loop

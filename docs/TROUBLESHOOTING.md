@@ -60,7 +60,7 @@ A tool that completes but fails returns a normal result with
 - `status: "error"` with a resolver message means the name did not resolve
   (typo, NXDOMAIN, or no connectivity). Only A/AAAA lookups are made.
 - Node resolves IPv4 and IPv6 independently, so a host with only A records still
-  reports `ok`.
+  reports `ok`. Both servers de-duplicate and sort the merged list.
 - There is no configurable timeout for resolution — it follows the system resolver.
 - A Unicode domain is converted to ASCII and reported in that form
   (`münchen.test` becomes `xn--mnchen-3ya.test`), not as the name you typed. Case and
@@ -136,12 +136,12 @@ A tool that completes but fails returns a normal result with
 
 | Behaviour | Node | Python |
 |---|---|---|
-| `dns_check` address order | resolver order | sorted |
 | `dns_check` with `ß` or `ς` | UTS#46: `xn--fa-hia.test`, `xn--3xa.test` | IDNA2003: `fass.test`, `xn--4xa.test` |
 
 Timestamps are not a difference: both servers stamp results
-`YYYY-MM-DDTHH:MM:SS.mmmZ` (UTC, milliseconds), and `doh_test` echoes the `url` exactly
-as supplied on both (`https://host` keeps no trailing slash).
+`YYYY-MM-DDTHH:MM:SS.mmmZ` (UTC, milliseconds), `doh_test` echoes the `url` exactly as
+supplied on both (`https://host` keeps no trailing slash), and `dns_check` addresses are
+de-duplicated and sorted on both.
 
 If a client validates result payloads strictly, run the same check against both
 servers before filing a bug.

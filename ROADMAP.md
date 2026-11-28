@@ -34,8 +34,8 @@ exist in this repository:
 
 ### Near term
 
-- Bring the Node and Python servers to full behavioural parity (the remaining
-  difference: `dns_check` address order)
+- Close the differences the runtimes still impose: IDNA2003 vs UTS#46 for a few
+  characters, `trace_route` failure fields and JSON number rendering in CSV cells
 - Conformance tests for every tool plus malformed-input cases in CI
 - Clearer timeout configuration instead of fixed values
 

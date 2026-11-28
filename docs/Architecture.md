@@ -92,9 +92,10 @@ The Node server needs no dependencies; the unified installers write a
   structurally invalid ASCII names the resolver rejects and both servers must report with
   one shared message. DoH is served by a loopback fixture, so the success and
   error results that normally need a network are compared and asserted too. Timestamps are
-  compared by shape (`YYYY-MM-DDTHH:MM:SS.mmmZ`) rather than ignored, and each `doh_test`
+  compared by shape (`YYYY-MM-DDTHH:MM:SS.mmmZ`) rather than ignored, each `doh_test`
   result's `url` is compared with the string that was sent, including a fixture endpoint
-  addressed without a path, so a normalising echo fails. Deterministic;
+  addressed without a path, so a normalising echo fails, and every `dns_check` address
+  list is compared with a sorted, de-duplicated copy of itself. Deterministic;
   `Validate` runs it as `Diff the servers on randomized requests`.
 - `Tools/check-version.py` — `VERSION`, the twelve stamped sites and the newest changelog
   section agree, and the release notes exist and name that version.

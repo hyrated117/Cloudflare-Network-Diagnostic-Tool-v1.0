@@ -15,9 +15,9 @@ redirect, empty, non-JSON, over the 64 KiB cap), `trace_route` runs with an empt
 it reports "unavailable", and `health_score` — which dials 1.1.1.1 — is not generated;
 `check-conformance.py` stubs that probe and asserts both documented scores instead.
 Timestamps record the instant a call ran, so they are compared by shape —
-`YYYY-MM-DDTHH:MM:SS.mmmZ` on both servers — rather than ignored, and the `doh_test`
-echo is compared with the URL that was sent, including one endpoint addressed without a
-path.
+`YYYY-MM-DDTHH:MM:SS.mmmZ` on both servers — rather than ignored, the `doh_test` echo is
+compared with the URL that was sent, including one endpoint addressed without a path, and
+every `dns_check` address list is checked against a sorted copy of itself.
 
 Usage: python3 Tools/test_parity.py [--seed N] [--count N]
 """
@@ -404,6 +404,25 @@ def check_url_echo(label, normalized, doh_port):
     return problems
 
 
+def check_address_lists(label, normalized):
+    """Every `dns_check` answer must be de-duplicated and sorted, like Python's.
+
+    Comparing the servers with each other would accept both returning resolver order,
+    so each list is checked against a sorted copy of itself.
+    """
+    problems = []
+    for response in normalized:
+        structured = (response.get("result") or {}).get("structuredContent") or {}
+        if structured.get("tool") != "dns_check":
+            continue
+        addresses = structured.get("addresses")
+        if not isinstance(addresses, list) or not all(isinstance(address, str) for address in addresses):
+            problems.append(f"{label}: {response.get('id')} returned addresses {addresses!r}, expected a list of strings")
+        elif addresses != sorted(set(addresses)):
+            problems.append(f"{label}: {response.get('id')} returned addresses {addresses!r}, expected them de-duplicated and sorted")
+    return problems
+
+
 def check_protocol_versions(label, normalized):
     """`initialize` echoes the supported version and falls back to it otherwise.
 
@@ -474,6 +493,8 @@ def main():
                 + check.timestamp_problems("server/index.js", node_responses)
                 + check_url_echo("server/index.py", expected, fixture.server_address[1])
                 + check_url_echo("server/index.js", actual, fixture.server_address[1])
+                + check_address_lists("server/index.py", expected)
+                + check_address_lists("server/index.js", actual)
                 + check_outcomes("server/index.py", expected)
                 + check_outcomes("server/index.js", actual)
                 + check_protocol_versions("server/index.py", expected)

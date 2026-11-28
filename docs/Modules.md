@@ -36,8 +36,10 @@ ignoring the field.
 Resolves a domain to IPv4 and IPv6 addresses.
 
 - **Node:** `dns.promises.resolve4` and `resolve6` run concurrently; addresses are
-  de-duplicated and results merged.
+  de-duplicated and the results merged.
 - **Python:** `socket.getaddrinfo` returns all address families.
+- **Both:** addresses are de-duplicated and sorted, so the two servers report the same
+  order and `Tools/test_parity.py` checks every list against a sorted copy of itself.
 - **Both:** a Unicode domain is converted to ASCII before resolution. Case is lowered and
   the name is NFC-normalised first, then Python's `idna` codec (IDNA2003) and Node's
   `domainToASCII` (UTS#46) encode it. Most names come out the same (`münchen.test` is
@@ -129,7 +131,6 @@ with `-32602`. These differences remain:
 | Area | Node | Python |
 |---|---|---|
 | `trace_route` failure | `error` with the failure text, no `returnCode` | `error` with `returnCode` and the captured output |
-| `dns_check` address order | resolver order | sorted |
 
 ## Planned tools (not implemented)
 

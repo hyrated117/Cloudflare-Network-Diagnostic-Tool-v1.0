@@ -73,8 +73,8 @@ Sends a GET request to a caller-supplied DNS-over-HTTPS endpoint.
 
 - Accepts `http` and `https` only; URLs containing credentials are rejected.
 - Sends `Accept: application/dns-json` and `User-Agent: Cloudflare-Diagnostic-Tool/1.0`.
-- 5 second timeout. The body is parsed as JSON; non-JSON bodies are returned as a
-  `raw` string (Node keeps at most the first 4096 characters, Python the whole body).
+- 5 second timeout. The body is parsed as JSON; a non-JSON body is returned as a
+  `raw` string, and both servers keep at most the first 4096 characters of it.
 - Both servers stop reading at 64 KiB. A larger body returns a normal result with
   `"status": "error"`, the HTTP `statusCode` and the message
   `DoH response exceeded 64 KiB limit` — a tool result rather than a JSON-RPC error,
@@ -131,7 +131,7 @@ field differs between them: `doh_test` echoes the URL as supplied, `dns_check`
 de-duplicates and sorts addresses, `timestamp` has one format, and `trace_route` reports
 `returnCode`/`output` or `error` the same way on both.
 
-Two differences remain, both in a value rather than in the field set:
+Two differences remain in values the servers produce themselves:
 
 | Area | Node | Python |
 |---|---|---|
@@ -143,6 +143,10 @@ holding `1.0` renders as `{"a":1}` in Node and `{"a":1.0}` in Python. Node also 
 every request number as a double, so an integer above 2^53 has lost precision before a
 tool sees it. String cells are identical on both — see [Export](./Export.md). The IDNA
 difference is described under [`dns_check`](#dns_check).
+
+Error text a failed call passes through from the resolver, the DoH endpoint or the
+operating system is returned verbatim, so it differs between the runtimes and the parity
+corpus only compares failures it can make deterministic.
 
 ## Planned tools (not implemented)
 

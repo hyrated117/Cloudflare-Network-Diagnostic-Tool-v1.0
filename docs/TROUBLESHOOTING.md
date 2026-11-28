@@ -78,8 +78,8 @@ A tool that completes but fails returns a normal result with
 - `403`/`429` usually means rate limiting or a provider that expects `POST`; this
   tool always sends `GET` with `Accept: application/dns-json`.
 - `status: "error"` also covers TLS failures and the 5 second timeout.
-- Non-JSON bodies come back as `{"raw": …}` (Node keeps the first 4096 characters,
-  Python the whole body). Both servers stop reading at 64 KiB and return
+- Non-JSON bodies come back as `{"raw": …}`, cut to the first 4096 characters on both
+  servers. Both stop reading at 64 KiB and return
   `status: "error"` with the HTTP `statusCode` for a larger body.
 - URLs with embedded credentials are rejected before any request is made.
 

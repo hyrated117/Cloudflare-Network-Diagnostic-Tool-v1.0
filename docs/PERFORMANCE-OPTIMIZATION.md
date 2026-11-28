@@ -31,7 +31,7 @@ session each, rather than multiplexing through one connection.
 
 - There is no caching layer: every call repeats its network work.
 - DoH bodies: both servers stop reading at 64 KiB and return a `status: "error"` result
-  for a larger body, so neither buffers it. Node keeps only the first 4096 characters when
+  for a larger body, so neither buffers it. Both keep only the first 4096 characters when
   the response is not JSON.
 - JSON and CSV exports are assembled as a single string in memory. Results are small, so
   there is no streaming path — and no cap on `export_results` output either.
@@ -51,5 +51,5 @@ session each, rather than multiplexing through one connection.
   `timestamp`, so a simple before/after diff is enough to spot slow calls.
 - `python3 server/smoke_test.py` exercises the protocol without touching the network, so
   it isolates startup and framing from network time.
-- Compare Node and Python on the same destination before picking one: the differences are
-  in argument handling and DoH limits, not in timeouts.
+- Compare Node and Python on the same destination before picking one: their timeouts
+  match, and neither implementation does more work than the other.

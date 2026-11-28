@@ -81,7 +81,8 @@ The Node server needs no dependencies; the unified installers write a
 
 - `server/smoke_test.py` — protocol smoke test without network access.
 - `Tools/check-conformance.py` — feeds the same requests to both servers and fails on
-  any difference except the instant a timestamp records (the format is asserted and
+  any difference except the instant inside a timestamp (its format is asserted and
+  compared) and the whitespace of the text copy of a result (its parsed payload is
   compared); `--live-trace` adds one real trace.
 - `Tools/test_parity.py` — the same comparison over a seeded random corpus and a fixed
   edge list: odd argument types, missing and extra keys, nulls, malformed lines, bad DoH

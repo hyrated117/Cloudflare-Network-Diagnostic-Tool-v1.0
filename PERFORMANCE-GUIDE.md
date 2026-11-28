@@ -45,7 +45,7 @@ timeout produces.
 ## Sequential dispatch
 
 Each server processes one request at a time. `trace_route` is the worst case: Node
-uses `execFileSync`, so a trace blocks that process for up to 20 s and later
+uses `spawnSync`, so a trace blocks that process for up to 20 s and later
 requests queue behind it. Python uses `subprocess.run` with the same bound; neither
 implementation runs traces concurrently.
 
@@ -60,8 +60,7 @@ Clients that need parallel diagnostics should start more than one server process
 - `doh_test` is the one place a large response would cost memory. Both servers stop
   reading at 64 KiB and return `status: "error"` for a larger body, so a hostile or
   misconfigured endpoint cannot make either process buffer an unbounded response.
-  (Node keeps only the first 4096 characters of a non-JSON body; Python keeps the
-  whole body up to the cap.)
+  Both keep only the first 4096 characters of a non-JSON body.
 - `export_results` has no output limit — the formatted string goes out in a single
   frame, so a large input produces a large frame on stdout.
 - No size cap is applied to incoming request lines in either server.

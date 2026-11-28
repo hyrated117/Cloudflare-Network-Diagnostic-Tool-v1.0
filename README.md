@@ -92,7 +92,7 @@ printf '%s\n' \
 
 ```json
 {"jsonrpc":"2.0","id":2,"result":{"content":[{"type":"text","text":"{…}"}],
- "structuredContent":{"tool":"dns_check","domain":"example.com","status":"ok","addresses":["93.184.215.14"]},"isError":false}}
+ "structuredContent":{"tool":"dns_check","domain":"example.com","status":"ok","addresses":["93.184.215.14"],"timestamp":"2026-11-24T23:10:02.578Z"},"isError":false}}
 ```
 
 ## Tools

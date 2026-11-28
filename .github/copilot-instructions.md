@@ -50,7 +50,7 @@
   `Tools/test_parity.py` assert that shape instead of ignoring the field, so any other
   format fails the comparison.
 - Both servers cap DoH bodies at 64 KiB and return a tool-level `status: "error"` for a
-  larger body (Node keeps only the first 4096 characters of a non-JSON body within the
+  larger body (both keep only the first 4096 characters of a non-JSON body within the
   cap). Both servers echo the `doh_test` `url` exactly as supplied — do not normalise it,
   which is what `new URL(...).toString()` did — so the parity diff compares the echo with
   the string that was sent. Both servers de-duplicate and sort `dns_check` addresses;

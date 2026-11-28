@@ -16,6 +16,7 @@ import contextlib
 import hashlib
 import importlib.util
 import io
+import json
 import pathlib
 import shutil
 import sys
@@ -82,6 +83,14 @@ class StampVersion(unittest.TestCase):
         found, problems = sites.collect()
         self.assertEqual(problems, [])
         self.assertEqual({value for values in found.values() for value in values}, {"9.9.9"})
+
+    def test_lockfile_versions_are_stamped_at_both_paths(self):
+        (self.root / "VERSION").write_text("9.9.9\n", encoding="utf-8")
+        self.assertEqual(self.stamp()[0], 0)
+        for name in ("server/package-lock.json", "installers/package-lock.json"):
+            data = json.loads((self.root / name).read_text(encoding="utf-8"))
+            self.assertEqual(data["version"], "9.9.9", name)
+            self.assertEqual(data["packages"][""]["version"], "9.9.9", name)
 
     def test_second_run_is_a_no_op(self):
         (self.root / "VERSION").write_text("9.9.9\n", encoding="utf-8")

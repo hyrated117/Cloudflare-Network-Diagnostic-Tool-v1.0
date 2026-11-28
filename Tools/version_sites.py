@@ -29,7 +29,15 @@ STRING_SITES = {
     "installers/install-mcp-server.sh": (r"\"version\":\s*\"([^\"]+)\"", 2),
     "installers/install-mcp-server.ps1": (r"version\s*=\s*\"([^\"]+)\"", 2),
 }
-JSON_SITES = ("server/package.json", "installers/package.json")
+# file -> the JSON paths that carry its version, in the order they are reported. A
+# package.json holds it at "version"; an npm lockfile repeats it for the package itself
+# under packages[""], so both are stamped or the lockfile drifts from the manifest.
+JSON_SITES = {
+    "server/package.json": (("version",),),
+    "installers/package.json": (("version",),),
+    "server/package-lock.json": (("version",), ("packages", "", "version")),
+    "installers/package-lock.json": (("version",), ("packages", "", "version")),
+}
 
 
 def read_version():
@@ -45,8 +53,31 @@ def read_version():
     return version, []
 
 
+def json_version(data, path):
+    """Return the string at `path` in `data`, or None when it is absent or not a string."""
+    node = data
+    for key in path:
+        if not isinstance(node, dict) or key not in node:
+            return None
+        node = node[key]
+    return node if isinstance(node, str) else None
+
+
+def set_json_version(data, path, version):
+    """Write `version` at `path` in `data`; the caller has already checked it exists."""
+    node = data
+    for key in path[:-1]:
+        node = node[key]
+    node[path[-1]] = version
+
+
+def path_label(path):
+    """How a JSON path is named in a problem, e.g. packages.`version` under an empty key."""
+    return ".".join(part for part in path if part) or "<root>"
+
+
 def collect():
-    """Return ({file: [version, ...]}, problems) read from the ten sites."""
+    """Return ({file: [version, ...]}, problems) read from the twelve sites."""
     found = {}
     problems = []
     for name, (pattern, expected) in STRING_SITES.items():
@@ -58,17 +89,21 @@ def collect():
             )
             continue
         found[name] = matches
-    for name in JSON_SITES:
+    for name, paths in JSON_SITES.items():
         try:
             data = json.loads((REPO_ROOT / name).read_text(encoding="utf-8"))
         except json.JSONDecodeError as error:
             problems.append(f"{name}: not valid JSON ({error})")
             continue
-        version = data.get("version")
-        if not isinstance(version, str):
-            problems.append(f'{name}: no "version" string')
-            continue
-        found[name] = [version]
+        values = []
+        for path in paths:
+            value = json_version(data, path)
+            if value is None:
+                problems.append(f'{name}: no "version" string at {path_label(path)}')
+                break
+            values.append(value)
+        else:
+            found[name] = values
     return found, problems
 
 

@@ -63,7 +63,7 @@ The repository ships two MCP stdio servers, their installers and documentation â
 ## 6. Release
 
 - [ ] `VERSION` edited and `Tools/stamp-version.py` run â€” one edit and one command write
-  all ten sites (twelve literals); `--dry-run` lists what would change
+  all twelve sites (sixteen literals); `--dry-run` lists what would change
 - [ ] `Tools/check-version.py` green **(automated: `Check version consistency`)**: it
   fails while any site drifts from `VERSION`, the newest dated `CHANGELOG.md` section
   names another version, or `release/v<version>/release-notes.md` is missing or its

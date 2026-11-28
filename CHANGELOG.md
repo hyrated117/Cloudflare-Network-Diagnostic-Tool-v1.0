@@ -14,9 +14,9 @@ entries have been removed. The first version in this repository is `1.0.0`.
 
 ### Added
 - `VERSION` at the repository root as the one place the version is written, plus
-  `Tools/stamp-version.py`, which stamps it into all twelve hand-maintained literals in
-  ten files. `Tools/check-version.py` now fails when any site drifts from `VERSION`, so
-  a bump is one edit and one command instead of twelve edits
+  `Tools/stamp-version.py`, which stamps it into all sixteen hand-maintained literals
+  in twelve files, including both `package-lock.json` files npm would otherwise rewrite. `Tools/check-version.py` now fails when any site drifts from `VERSION`, so
+  a bump is one edit and one command instead of sixteen edits
 - `Tools/check-dependabot.py` plus a `Validate` step that parse
   `.github/dependabot.yml` and assert the parts that matter: `version: 2`, a
   `package-ecosystem`, exactly one of `directory` or `directories`, a known `schedule`
@@ -67,7 +67,7 @@ entries have been removed. The first version in this repository is `1.0.0`.
   that is missing or not MAJOR.MINOR.PATCH, a newest changelog section that names
   another version, and release notes that are missing or do not name the version — and
   the second pins the stamper: a clean tree changes nothing under `--dry-run`, a bump
-  rewrites all ten files and reads back consistent, a second run is a no-op, and a bad
+  rewrites all twelve files and reads back consistent, a second run is a no-op, and a bad
   `VERSION` or a site with the wrong number of literals fails before anything is
   written. Both work on a temporary copy of the tree, so they never touch the checkout
 - `verify-release.yml`, in two jobs — `Verify published assets` on Linux and `Verify

@@ -3,11 +3,13 @@
 
 The version lives in one place, `VERSION`, but it cannot be read at runtime: the
 installers are copied to a user's machine as loose files and the servers are launched
-directly, so all ten sites listed in `version_sites.py` carry twelve literals. This
+directly, so all twelve sites listed in `version_sites.py` carry sixteen literals. This
 script stamps them into every site, so a version bump is one edit plus one command
-instead of twelve manual edits.
+instead of sixteen manual edits. That includes both `package-lock.json` files, whose
+`version` and `packages[""].version` npm rewrites from the manifest on the next
+`npm install`.
 
-It rewrites only those ten sites. `CHANGELOG.md` and
+It rewrites only those twelve sites. `CHANGELOG.md` and
 `release/v<version>/release-notes.md` are prose and stay hand-written;
 `Tools/check-version.py` fails until their newest section and title name the stamped
 version, and fails if any site here drifts from `VERSION`.
@@ -58,16 +60,18 @@ def main(argv):
             lines.append(f"  {name}: {'/'.join(found[name])} -> {version}")
             writes.append((path, new_text))
 
-    for name in sites.JSON_SITES:
+    for name, paths in sites.JSON_SITES.items():
         path = sites.REPO_ROOT / name
         text = path.read_text(encoding="utf-8")
         data = json.loads(text)
-        data["version"] = version
+        for item in paths:
+            sites.set_json_version(data, item, version)
         new_text = json.dumps(data, indent=2, ensure_ascii=False) + "\n"
         if new_text == text:
             lines.append(f"  {name}: {version} (unchanged)")
         else:
-            lines.append(f"  {name}: {found[name][0]} -> {version}")
+            shown = "/".join(dict.fromkeys(found[name]))
+            lines.append(f"  {name}: {shown} -> {version}")
             writes.append((path, new_text))
 
     print("\n".join(lines))

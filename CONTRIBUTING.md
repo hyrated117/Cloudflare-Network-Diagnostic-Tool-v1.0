@@ -73,7 +73,7 @@ the checker must fail on a drifted site, on two sites that disagree, on a `VERSI
 that is missing or not MAJOR.MINOR.PATCH, on a newest changelog section that names
 another version, and on release notes that are missing or do not name the version;
 the stamper must write nothing for a bad `VERSION` or a site with the wrong number of
-literals, then rewrite all ten files for a real bump and read back consistent.
+literals, then rewrite all twelve files for a real bump and read back consistent.
 
 The last three build the release tarball with `Tools/build-package.sh` — the same
 script `release.yml` uses — check its contents, then install from the extracted copy
@@ -158,7 +158,7 @@ request for that digest and it would otherwise age silently. Bump it by hand:
 
 `VERSION` at the repository root holds the version. The installers are copied to a
 user's machine as loose files and the servers are launched directly, so the twelve
-literals in ten files cannot read it at runtime; `Tools/stamp-version.py` writes it
+literals in twelve files cannot read it at runtime; `Tools/stamp-version.py` writes it
 into all of them. To bump:
 
 1. Edit `VERSION` (for example `1.0.2`).

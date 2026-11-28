@@ -78,7 +78,7 @@ The Node server needs no dependencies; the unified installers write a
 - `server/smoke_test.py` — protocol smoke test without network access.
 - `Tools/check-conformance.py` — feeds the same requests to both servers and fails on
   any difference; `--live-trace` adds one real trace.
-- `Tools/check-version.py` — `VERSION`, the ten stamped sites and the newest changelog
+- `Tools/check-version.py` — `VERSION`, the twelve stamped sites and the newest changelog
   section agree, and the release notes exist and name that version.
 - `Tools/validate-json.py` — JSON syntax validation.
 - `Tools/check-dependabot.py` — `.github/dependabot.yml` parses and holds the keys

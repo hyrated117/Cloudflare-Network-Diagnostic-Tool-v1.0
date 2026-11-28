@@ -2,7 +2,7 @@
 """Self-test for Tools/check-version.py.
 
 The checker is what keeps a version bump to one edit: it fails when `VERSION` is not
-MAJOR.MINOR.PATCH, when any of the ten sites drifts from it, and when the newest
+MAJOR.MINOR.PATCH, when any of the twelve sites drifts from it, and when the newest
 CHANGELOG section or its release notes disagree. Each of those failures is pinned here
 against a throwaway copy of the tree, so a later simplification that turns a failure
 into a warning, or compares the wrong CHANGELOG section, fails this test.
@@ -15,6 +15,7 @@ Stdlib only. It imports `version_sites`, which is stdlib too.
 import contextlib
 import importlib.util
 import io
+import json
 import pathlib
 import shutil
 import sys
@@ -89,6 +90,16 @@ class CheckVersion(unittest.TestCase):
         code, _, err = self.check()
         self.assertEqual(code, 1)
         self.assertIn("version strings disagree", err)
+
+    def test_lockfile_nested_version_drift_fails(self):
+        # npm keeps the package's own version at packages[""] as well as at the top.
+        path = self.root / "server" / "package-lock.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data["packages"][""]["version"] = "9.9.9"
+        path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+        code, _, err = self.check()
+        self.assertEqual(code, 1)
+        self.assertIn("server/package-lock.json: 9.9.9", err)
 
     def test_non_semver_version_fails(self):
         (self.root / "VERSION").write_text("1.0\n", encoding="utf-8")

@@ -28,6 +28,7 @@ python3 Tools/test_check_workflows.py             # each rule fails its break an
 python3 Tools/test_check_pins.py                  # every pin-audit rule, offline
 python3 Tools/test_check_actionlint_image.py      # every image-check rule, offline
 python3 Tools/test_windows_trace_route.py         # the Windows tracert branch, forced
+python3 Tools/test_check_stack.py                 # every stack-guard rule, on temp repos
 python3 Tools/test_check_version.py               # every failure the version checker promises
 python3 Tools/test_stamp_version.py               # a bad VERSION writes nothing; a bump reads back consistent
 python3 Tools/check-links.py                      # no broken relative doc links
@@ -89,6 +90,14 @@ and runs in `Validate` as `Self-test the image check`.
 Windows: it forces `trace_route` down the `tracert` path in both servers and puts a fake
 `tracert` on `PATH`, so the exact flags (`-d -h 15 -w 300`), a successful trace, a failed
 one and a missing binary are all asserted offline in `Validate`.
+
+`Tools/check-stack.py --fetch` is the pre-flight for the stacked pull requests: it
+resolves each branch, refuses a pull request whose base is not the previous tip (its diff
+would carry someone else's commits), allows the first base to have moved but reports how
+far, and merges the five branches into a simulated `main` with `git merge-tree` to prove
+none conflicts. It needs git 2.38 or newer and the branches' refs, so `Validate` runs only
+its self-test (`Self-test the stack check`); run it with `--fetch` before opening or
+retargeting a pull request.
 
 `Tools/test_check_version.py` and `Tools/test_stamp_version.py` pin the version
 tooling the same way, and the `Validate` job runs them as `Self-test the version

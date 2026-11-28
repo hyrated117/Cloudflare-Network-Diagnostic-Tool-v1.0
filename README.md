@@ -124,6 +124,7 @@ python3 Tools/test_check_workflows.py          # each rule, the break and the so
 python3 Tools/test_check_pins.py               # the pin audit's rules, offline
 python3 Tools/test_check_actionlint_image.py   # the image check's rules, offline
 python3 Tools/test_windows_trace_route.py      # the Windows tracert branch, forced
+python3 Tools/test_check_stack.py              # the stack guard's rules, on temp repos
 python3 Tools/test_check_version.py            # every failure the checker promises
 python3 Tools/test_stamp_version.py            # a bump writes all sites or none
 python3 Tools/test_check_archive.py            # the release gate's rules, on built packs
@@ -143,6 +144,8 @@ extracts the actionlint and shellcheck binaries and runs them, so the lint step 
 reproduced without a Docker daemon. `Tools/test_windows_trace_route.py` forces the
 Windows `tracert` branch on Linux with a shim, so the command shape and the three
 outcomes are checked on every pull request rather than only in the Windows job.
+`Tools/check-stack.py --fetch` rehearses the five stacked pull requests before they are
+opened: bases, ancestry and a conflict-free merge into `main` in order.
 
 ## Documentation
 

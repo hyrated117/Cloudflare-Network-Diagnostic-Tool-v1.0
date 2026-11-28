@@ -95,6 +95,10 @@ The Node server needs no dependencies; the unified installers write a
 - `Tools/test_windows_trace_route.py` — forces the `tracert` branch of `trace_route` in
   both servers with a shim on `PATH`, so its flags and its success, failure and missing
   outcomes are validated on Linux instead of only by the Windows job.
+- `Tools/check-stack.py` and `Tools/test_check_stack.py` — the five stacked branches are
+  pre-flighted before review: each base must be the previous tip, and the branches are
+  merged into a simulated `main` to prove the sequence is conflict-free. It needs the
+  branch refs, so `Validate` runs its self-test.
 - `Tools/check-links.py` — relative documentation links resolve.
 - `Tools/check-installers.py` / `Tools/check-installers.ps1` — run the shell,
   unified-shell, Python and Node CLI installers (or the two PowerShell installers) into

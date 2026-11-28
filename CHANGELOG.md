@@ -101,6 +101,12 @@ entries have been removed. The first version in this repository is `1.0.0`.
   fake `tracert` on `PATH`, so `Validate` asserts the exact flags
   (`-d -h 15 -w 300 <destination>`), a successful trace, a failed one (`error` with the
   message) and a missing binary (`unavailable`) on every pull request
+- `Tools/check-stack.py`, the pre-flight for the five stacked pull requests: it refuses a
+  branch whose base is not the previous tip, allows `main` to have moved past PR 1's
+  branch point but reports how far, and merges all five into a simulated `main` with
+  `git merge-tree --write-tree`, so a conflict or a wrong base is found before the pull
+  requests are opened instead of in review. `Tools/test_check_stack.py` pins its rules
+  against throwaway repositories and `Validate` runs it as `Self-test the stack check`
 - `Tools/check-installers.py` also runs `installers/install-mcp-server.py`, so the
   Python server installer's config is handshaked like the shell, unified-shell and Node
   CLI ones instead of only being described in the docs

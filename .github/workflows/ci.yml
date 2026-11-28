@@ -109,6 +109,11 @@ jobs:
       - name: Test the Windows tracert branch
         run: python Tools/test_windows_trace_route.py
 
+      # The guard itself needs the five branches' refs, so Validate pins its rules and the
+      # mapping chain is rehearsed with `python Tools/check-stack.py --fetch` before a PR.
+      - name: Self-test the stack check
+        run: python Tools/test_check_stack.py
+
       # A bump is one edit and one command only if the stamp is all-or-nothing and the
       # checker still fails a drift; both run against a temporary copy of the tree.
       - name: Self-test the version checks

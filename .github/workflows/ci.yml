@@ -78,6 +78,11 @@ jobs:
       - name: Check the Dependabot config
         run: python Tools/check-dependabot.py
 
+      # Every rule has to reject a broken entry and accept a sound one, so a later
+      # simplification cannot quietly widen what passes.
+      - name: Self-test the Dependabot check
+        run: python Tools/test_check_dependabot.py
+
       # Triggers, timeouts and pins all fail silently on GitHub, so each is asserted:
       # a `branches:` filter skips stacked pull requests, a job without a timeout
       # inherits six hours, and a tag-pinned action can move under a passing commit.

@@ -8,7 +8,9 @@ Dependabot pull requests stopped.
 
 The repository's own tools are stdlib-only; this one needs PyYAML, because writing a
 YAML parser to validate a YAML file would be a worse failure mode than installing the
-parser. CI installs it before running this.
+parser. CI installs it before running this. Every rule below is pinned both ways by
+`Tools/test_check_dependabot.py`, which runs the checks against mappings rather than
+files, so it needs no PyYAML itself.
 """
 
 import sys
@@ -107,6 +109,51 @@ def check_entry(index, entry):
         fail(f"{label}.schedule: interval cron needs a cronjob string")
 
 
+def pinned_workflows():
+    """Names of the workflow files that use an action, so a pin updater must cover them."""
+    return sorted(
+        path.name
+        for path in WORKFLOWS.glob("*.yml")
+        if any(
+            line.strip().startswith("uses: ")
+            for line in path.read_text(encoding="utf-8").splitlines()
+        )
+    )
+
+
+def check_config(config, pinned):
+    """Assert the top-level keys, every update entry, and the pin coverage of `pinned`.
+
+    Returns the `updates` list so the caller can report what it found.
+    """
+    if config.get("version") != 2:
+        fail(f"version must be 2, got {config.get('version')!r}")
+
+    updates = config.get("updates")
+    if not isinstance(updates, list) or not updates:
+        fail("updates must be a non-empty list")
+        updates = []
+    for index, entry in enumerate(updates):
+        check_entry(index, entry)
+
+    # The workflows pin every action to a commit SHA, so the file has to keep the
+    # github-actions entry that moves those pins; otherwise they never get updated.
+    covered = any(
+        isinstance(entry, dict)
+        and entry.get("package-ecosystem") == "github-actions"
+        and entry.get("directory") == "/"
+        for entry in updates
+    )
+    if pinned and not covered:
+        fail(
+            "the workflows use actions in "
+            + ", ".join(pinned)
+            + ", but no github-actions entry with directory '/' exists, "
+            "so those actions would never be updated"
+        )
+    return updates
+
+
 def main():
     try:
         import yaml
@@ -128,37 +175,7 @@ def main():
         return f"{CONFIG.relative_to(ROOT)} must be a mapping at the top level"
     unrecognized(CONFIG.relative_to(ROOT), config, TOP_LEVEL)
 
-    if config.get("version") != 2:
-        fail(f"version must be 2, got {config.get('version')!r}")
-
-    updates = config.get("updates")
-    if not isinstance(updates, list) or not updates:
-        fail("updates must be a non-empty list")
-        updates = []
-    for index, entry in enumerate(updates):
-        check_entry(index, entry)
-
-    # The workflows pin every action to a commit SHA, so the file has to keep the
-    # github-actions entry that moves those pins; otherwise they never get updated.
-    pinned = sorted(
-        path.name
-        for path in WORKFLOWS.glob("*.yml")
-        if any(line.strip().startswith("uses: ") for line in path.read_text(encoding="utf-8").splitlines())
-    )
-    covered = any(
-        isinstance(entry, dict)
-        and entry.get("package-ecosystem") == "github-actions"
-        and entry.get("directory") == "/"
-        for entry in updates
-    )
-    if pinned and not covered:
-        fail(
-            "the workflows use actions in "
-            + ", ".join(pinned)
-            + ", but no github-actions entry with directory '/' exists, "
-            "so those actions would never be updated"
-        )
-
+    updates = check_config(config, pinned_workflows())
 
     if problems:
         for message in problems:

@@ -22,6 +22,7 @@ python3 Tools/check-conformance.py                # Python and Node answer ident
 python3 Tools/check-version.py                    # version sites, VERSION and changelog agree
 python3 Tools/validate-json.py .                  # JSON syntax
 python3 Tools/check-dependabot.py                 # .github/dependabot.yml parses and Dependabot would accept it
+python3 Tools/test_check_dependabot.py            # each rule fails a bad config, passes a sound one
 python3 Tools/check-workflows.py                  # every pull request is scanned, every job has a timeout, every use is pinned, no continuation is broken
 python3 Tools/test_check_workflows.py             # each rule fails its break and passes a sound workflow
 python3 Tools/test_check_version.py               # every failure the version checker promises

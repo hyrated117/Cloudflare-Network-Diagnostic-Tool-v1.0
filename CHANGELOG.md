@@ -23,7 +23,12 @@ entries have been removed. The first version in this repository is `1.0.0`.
   interval, and a `github-actions` entry at `/` whenever the workflows use actions.
   Unrecognized keys are warnings, not failures, since GitHub adds keys this check will
   not know about. GitHub reads that file only from the default branch and reports
-  nothing when it is wrong, so a typo would silently stop the updates
+  nothing when it is wrong, so a typo would silently stop the updates. Every rule is
+  pinned both ways by `Tools/test_check_dependabot.py`, which `Validate` runs as
+  `Self-test the Dependabot check`: a bad `version`, a bad `directory`/`directories`
+  pair, an unknown interval, a `cron` interval without a `cronjob` and a missing
+  `github-actions` entry for `/` each fail, while a sound config and an unrecognized key
+  (a warning, not a failure) pass
 - `installers/package-lock.json` and `server/package-lock.json`. Neither package
   declares a dependency today, so each lockfile lists only the package itself; they
   are committed so the tree is pinned the moment a dependency is added, `npm ci` can

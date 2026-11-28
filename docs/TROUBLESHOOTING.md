@@ -138,6 +138,7 @@ A tool that completes but fails returns a normal result with
 
 | Behaviour | Node | Python |
 |---|---|---|
+| CSV cell holding a number | `JSON.stringify`, so `1.0` becomes `1` | `json.dumps`, so `1.0` stays `1.0` |
 | `dns_check` with `ß` or `ς` | UTS#46: `xn--fa-hia.test`, `xn--3xa.test` | IDNA2003: `fass.test`, `xn--4xa.test` |
 
 Timestamps are not a difference: both servers stamp results

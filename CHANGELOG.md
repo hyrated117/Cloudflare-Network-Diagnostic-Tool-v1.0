@@ -78,6 +78,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
   upload; this proves the served bytes, so an upload that truncated, replaced or
   mismatched an asset fails a check instead of a user
 
+- `Tools/check-installers.py` also runs `installers/install-mcp-server.py`, so the
+  Python server installer's config is handshaked like the shell, unified-shell and Node
+  CLI ones instead of only being described in the docs
+
 ### Changed
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,
   so a tag whose commit fails the smoke test, the Node/Python conformance comparison,

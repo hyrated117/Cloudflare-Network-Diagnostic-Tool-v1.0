@@ -144,6 +144,9 @@ def main():
         workdir = Path(tmp)
         run_installer("install-mcp-server.sh", ["bash", "installers/install-mcp-server.sh"], workdir)
         run_installer("install-mcp-unified.sh", ["bash", "installers/install-mcp-unified.sh"], workdir)
+        run_installer(
+            "install-mcp-server.py", [sys.executable, "installers/install-mcp-server.py"], workdir
+        )
         node = shutil.which("node")
         if node:
             run_installer("cli.js", [node, "installers/cli.js", "install"], workdir, client_config=False)

@@ -88,9 +88,8 @@ The Node server needs no dependencies; the unified installers write a
   hides a continuation character behind whitespace.
 - `Tools/check-links.py` — relative documentation links resolve.
 - `Tools/check-installers.py` / `Tools/check-installers.ps1` — run the shell,
-  unified-shell and Node CLI installers (or the two PowerShell installers) into a
-  temporary directory and confirm the generated config launches the server. Neither
-  check runs `installers/install-mcp-server.py`.
+  unified-shell, Python and Node CLI installers (or the two PowerShell installers) into
+  a temporary directory and confirm the generated config launches the server.
 - `.github/workflows/ci.yml` — `validate` job (syntax, smoke test, conformance, version
   consistency, JSON, the pinned PyYAML with the Dependabot check, the workflow checks
   and their self-test, the version self-tests, documentation links, installer configs),

@@ -14,6 +14,8 @@ table (A, AAAA, both, neither), DoH is served by a loopback fixture (200, 404, 5
 redirect, empty, non-JSON, over the 64 KiB cap), `trace_route` runs with an empty PATH so
 it reports "unavailable", and `health_score` — which dials 1.1.1.1 — is not generated;
 `check-conformance.py` stubs that probe and asserts both documented scores instead.
+Timestamps record the instant a call ran, so they are compared by shape —
+`YYYY-MM-DDTHH:MM:SS.mmmZ` on both servers — rather than ignored.
 
 Usage: python3 Tools/test_parity.py [--seed N] [--count N]
 """
@@ -433,10 +435,14 @@ def main():
             env = build_env(workdir)
             stdin = "\n".join(lines + MALFORMED_LINES) + "\n"
             stdin = stdin.replace(DOH_PORT_PLACEHOLDER, str(fixture.server_address[1]))
-            expected = check.normalize(check.responses(run_server(python_server, stdin, env)))
-            actual = check.normalize(check.responses(run_server(node_server, stdin, env)))
+            python_responses = check.responses(run_server(python_server, stdin, env))
+            node_responses = check.responses(run_server(node_server, stdin, env))
+            expected = check.normalize(python_responses)
+            actual = check.normalize(node_responses)
             problems = (
-                check_outcomes("server/index.py", expected)
+                check.timestamp_problems("server/index.py", python_responses)
+                + check.timestamp_problems("server/index.js", node_responses)
+                + check_outcomes("server/index.py", expected)
                 + check_outcomes("server/index.js", actual)
                 + check_protocol_versions("server/index.py", expected)
                 + check_protocol_versions("server/index.js", actual)

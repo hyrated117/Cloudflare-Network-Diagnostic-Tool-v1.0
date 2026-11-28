@@ -17,8 +17,8 @@ reference and [Architecture](./Architecture.md) for the design.
 # 🚀 Near term
 
 ### Servers
-- Full behavioural parity between the Node and Python implementations
-  (extra-argument rejection, DoH body size limits, timestamp format)
+- Full behavioural parity between the Node and Python implementations (the
+  remaining differences: the echoed `doh_test` URL and `dns_check` address order)
 - Conformance tests per tool, including malformed input and offline behaviour, run
   in CI on both platforms
 

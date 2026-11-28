@@ -105,7 +105,9 @@ one and a missing binary are all asserted offline in `Validate`.
 cases: a seeded random corpus (plus a fixed edge list) of odd argument types, missing and
 extra keys, nulls, malformed lines, credentials and non-HTTP schemes in a DoH URL, a NUL
 byte in a destination and non-ASCII export payloads goes to both servers, and every
-response must match. The paths that normally need a network are compared too: name
+response must match. Timestamps are compared by shape (`YYYY-MM-DDTHH:MM:SS.mmmZ`)
+rather than ignored: the two servers cannot share an instant, but they must share the
+format. The paths that normally need a network are compared too: name
 resolution is stubbed in both runtimes from one table (A, AAAA, both, neither, and
 Unicode names) and DoH is served by a loopback fixture (200, 404, 503, a redirect, empty,
 non-JSON, over the 64 KiB cap), with each outcome asserted rather than merely diffed.

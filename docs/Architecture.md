@@ -81,7 +81,8 @@ The Node server needs no dependencies; the unified installers write a
 
 - `server/smoke_test.py` — protocol smoke test without network access.
 - `Tools/check-conformance.py` — feeds the same requests to both servers and fails on
-  any difference; `--live-trace` adds one real trace.
+  any difference except the instant a timestamp records (the format is asserted and
+  compared); `--live-trace` adds one real trace.
 - `Tools/test_parity.py` — the same comparison over a seeded random corpus and a fixed
   edge list: odd argument types, missing and extra keys, nulls, malformed lines, bad DoH
   URLs, a NUL byte in a destination and non-ASCII exports. Name resolution is stubbed in
@@ -90,7 +91,8 @@ The Node server needs no dependencies; the unified installers write a
   which the two IDNA standards encode differently and the test pins as deliberate, plus
   structurally invalid ASCII names the resolver rejects and both servers must report with
   one shared message. DoH is served by a loopback fixture, so the success and
-  error results that normally need a network are compared and asserted too. Deterministic;
+  error results that normally need a network are compared and asserted too. Timestamps are
+  compared by shape (`YYYY-MM-DDTHH:MM:SS.mmmZ`) rather than ignored. Deterministic;
   `Validate` runs it as `Diff the servers on randomized requests`.
 - `Tools/check-version.py` — `VERSION`, the twelve stamped sites and the newest changelog
   section agree, and the release notes exist and name that version.

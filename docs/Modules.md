@@ -24,7 +24,10 @@ make no logging calls, so stderr stays empty unless startup fails.
 | `health_score` | none | `healthy`, `degraded` |
 | `export_results` | `format` (`json`\|`csv`), `results` (object) | `ok` |
 
-All results carry `tool` and an ISO-8601 `timestamp`.
+All results carry `tool` and an ISO-8601 `timestamp` in UTC with milliseconds, for
+example `2026-11-24T23:10:02.578Z`. Both servers emit that same shape;
+`Tools/check-conformance.py` and `Tools/test_parity.py` assert the format instead of
+ignoring the field.
 
 ---
 
@@ -124,7 +127,6 @@ with `-32602`. These differences remain:
 | Area | Node | Python |
 |---|---|---|
 | `trace_route` failure | `error` with the failure text, no `returnCode` | `error` with `returnCode` and the captured output |
-| Timestamp format | `…Z` | `…+00:00` |
 | `doh_test` echoed `url` | normalised (`https://host` becomes `https://host/`) | exactly as supplied |
 | `dns_check` address order | resolver order | sorted |
 

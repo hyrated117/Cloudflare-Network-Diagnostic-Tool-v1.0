@@ -262,6 +262,11 @@ entries have been removed. The first version in this repository is `1.0.0`.
   `Tools/check-actionlint-image.py` annotated with `dict[...]` and `str | None` (3.9+/3.10+),
   so the archive and image self-tests failed on the Python 3.8 floor. The first is sliced
   and the second takes its annotations from `__future__`
+- The two servers stamped results differently — `…Z` in Node, `…+00:00` with
+  variable-length microseconds in Python — so the parity and conformance comparisons had
+  to drop `timestamp` before diffing. Both now emit `YYYY-MM-DDTHH:MM:SS.mmmZ`, and
+  `Tools/check-conformance.py` / `Tools/test_parity.py` assert that shape instead of
+  ignoring the field, so a server that changes format fails the comparison
 
 ## [1.0.1] - 2026-11-25
 

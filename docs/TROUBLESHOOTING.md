@@ -136,10 +136,12 @@ A tool that completes but fails returns a normal result with
 
 | Behaviour | Node | Python |
 |---|---|---|
-| Timestamps | `…Z` | `…+00:00` |
 | `doh_test` echoed `url` | normalised (`https://host` becomes `https://host/`) | as supplied |
 | `dns_check` address order | resolver order | sorted |
 | `dns_check` with `ß` or `ς` | UTS#46: `xn--fa-hia.test`, `xn--3xa.test` | IDNA2003: `fass.test`, `xn--4xa.test` |
+
+Timestamps are not a difference: both servers stamp results
+`YYYY-MM-DDTHH:MM:SS.mmmZ` (UTC, milliseconds).
 
 If a client validates result payloads strictly, run the same check against both
 servers before filing a bug.

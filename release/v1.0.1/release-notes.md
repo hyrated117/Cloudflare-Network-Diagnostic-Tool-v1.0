@@ -28,6 +28,10 @@ the first commit. No tool was added or removed; the protocol surface is unchange
   ship. Destinations starting with `-` are rejected in both servers.
 - **Installed MCP configs use the server script's absolute path**, so clients no
   longer receive a relative `index.py` resolved against their own working directory.
+- **Timestamps use one format in both servers.** Results are stamped
+  `YYYY-MM-DDTHH:MM:SS.mmmZ` (UTC, milliseconds) in Node and Python alike; Python
+  previously wrote `…+00:00` with microseconds of varying length. The conformance and
+  differential checks now assert that shape instead of dropping the field.
 
 ### Changed
 
@@ -83,20 +87,19 @@ the first commit. No tool was added or removed; the protocol surface is unchange
 
 ## Known issues
 
-1. Timestamps differ between implementations: `…Z` in Node, `…+00:00` in Python.
-2. `doh_test` echoes `url` exactly as supplied in Python and normalised in Node
+1. `doh_test` echoes `url` exactly as supplied in Python and normalised in Node
    (`https://host` becomes `https://host/`).
-3. `dns_check` returns the same addresses in a different order: sorted in Python,
+2. `dns_check` returns the same addresses in a different order: sorted in Python,
    resolver order in Node.
-4. A CSV cell holding a non-string value is rendered by each runtime's JSON writer,
+3. A CSV cell holding a non-string value is rendered by each runtime's JSON writer,
    so `1.0` stays `1.0` in Python and becomes `1` in Node; Node also parses request
    numbers as doubles, so an integer above 2^53 loses precision before any tool sees
    it.
-5. Neither server caps incoming request-line size; `export_results` has no output cap.
-6. DoH providers may rate limit (`403`/`429`); `doh_test` always sends `GET`.
-7. `health_score` is a single TCP probe and reports a fixed 95 or 64 — it is not a
+4. Neither server caps incoming request-line size; `export_results` has no output cap.
+5. DoH providers may rate limit (`403`/`429`); `doh_test` always sends `GET`.
+6. `health_score` is a single TCP probe and reports a fixed 95 or 64 — it is not a
    composite score.
-8. v1.0.0 was dated in the changelog but never tagged; its notes in
+7. v1.0.0 was dated in the changelog but never tagged; its notes in
    [release/v1.0.0](../v1.0.0/release-notes.md) describe the original code and its
    known issues, including the DoH difference fixed here.
 

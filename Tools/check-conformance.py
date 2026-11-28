@@ -5,9 +5,10 @@ Both entry points in server/ implement the same MCP stdio surface, and they had
 drifted: one accepted arguments its own input schema forbade, exported CSV in a
 different dialect, described tools differently, and rejected URLs with another
 message. This script feeds the same requests to both servers and fails on any
-difference except the volatile fields (timestamps, and the text copy of a tool
-result, which the runtimes serialize with different whitespace; its payload is
-compared instead).
+difference except the instant inside a timestamp (its shape is asserted and compared;
+the value cannot match because the servers run at different moments) and the text copy
+of a tool result, which the runtimes serialize with different whitespace; its payload
+is compared instead.
 
 No request reaches the internet. Everything except `health_score` and the two
 `doh_test` cases is answered without any network access at all: the arguments are
@@ -33,6 +34,7 @@ import argparse
 import difflib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -53,6 +55,11 @@ DOH_PORT_PLACEHOLDER = "DOH_PORT"
 DOH_AT_CAP_ID = 26
 DOH_OVER_CAP_ID = 27
 EXPECTED_DOH_OVER_CAP = {"status": "error", "statusCode": 200, "error": "DoH response exceeded 64 KiB limit"}
+
+# Both servers stamp results the same way: UTC, milliseconds, `Z`. The value differs on
+# every call and between the servers; the shape must not, so it is compared.
+TIMESTAMP_FORMAT = re.compile(r"\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\Z")
+TIMESTAMP_PLACEHOLDER = "<timestamp>"
 
 REQUESTS = [
     {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
@@ -183,6 +190,10 @@ def normalize(value):
         normalized = {}
         for key, item in value.items():
             if key == "timestamp":
+                # The value is the instant the call ran, which can never match between two
+                # servers. The shape must: a timestamp in any other format is kept verbatim,
+                # so the diff fails, and timestamp_problems() names the reason.
+                normalized[key] = TIMESTAMP_PLACEHOLDER if isinstance(item, str) and TIMESTAMP_FORMAT.match(item) else item
                 continue
             normalized[key] = [normalize_content(entry) for entry in item] if key == "content" and isinstance(item, list) else normalize(item)
         return normalized
@@ -199,6 +210,38 @@ def normalize_content(entry):
         except json.JSONDecodeError:
             return normalize(entry)
     return normalize(entry)
+
+
+def timestamps(value):
+    """Every timestamp value in a decoded response, including nested payloads."""
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key == "timestamp":
+                yield item
+            else:
+                yield from timestamps(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from timestamps(item)
+
+
+def timestamp_problems(label, responses):
+    """Every timestamp must use the shared format, and there must be some to check.
+
+    Comparing the value would be wrong — the servers run at different instants — but
+    comparing only the shape is right, and a server that silently changes format while
+    the other matches it must still fail.
+    """
+    problems = []
+    seen = 0
+    for response in responses:
+        for stamp in timestamps(response):
+            seen += 1
+            if not isinstance(stamp, str) or not TIMESTAMP_FORMAT.match(stamp):
+                problems.append(f"{label}: timestamp {stamp!r} is not the shared format YYYY-MM-DDTHH:MM:SS.mmmZ")
+    if not seen:
+        problems.append(f"{label}: answered no timestamps, so the shared format was not exercised")
+    return problems
 
 
 def diff_text(expected, actual):
@@ -304,7 +347,10 @@ def check_doh_cap(label, normalized):
 
 def run_server(command, workdir, label, doh_port):
     completed = run(command, build_env(workdir), payload(doh_port))
-    normalized = normalize(responses(completed))
+    decoded = responses(completed)
+    for problem in timestamp_problems(label, decoded):
+        fail(problem)
+    normalized = normalize(decoded)
     check_probe_stub(label, completed.stderr)
     check_health_scores(label, normalized)
     check_doh_cap(label, normalized)

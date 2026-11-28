@@ -26,7 +26,12 @@ logger = logging.getLogger(__name__)
 
 
 def now():
-    return datetime.now(timezone.utc).isoformat()
+    """UTC with milliseconds and a `Z`, the exact shape `new Date().toISOString()` gives.
+
+    `isoformat()` defaults to microseconds and `+00:00`, which made the two servers'
+    timestamps incomparable and forced the parity checks to ignore the field.
+    """
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 def trace_candidates():

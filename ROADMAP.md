@@ -34,8 +34,8 @@ exist in this repository:
 
 ### Near term
 
-- Bring the Node and Python servers to full behavioural parity (extra-argument
-  handling, DoH body limits, timestamp format)
+- Bring the Node and Python servers to full behavioural parity (the remaining
+  differences: the echoed `doh_test` URL and `dns_check` address order)
 - Conformance tests for every tool plus malformed-input cases in CI
 - Clearer timeout configuration instead of fixed values
 

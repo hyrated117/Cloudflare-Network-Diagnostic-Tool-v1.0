@@ -42,11 +42,15 @@
   statuses aligned.
 - Both servers reject unknown tools, missing required arguments and unexpected
   arguments with `-32602`; keep it that way on both sides.
+- Every tool result carries a `timestamp` in the same shape on both servers:
+  `YYYY-MM-DDTHH:MM:SS.mmmZ` (UTC, milliseconds). `Tools/check-conformance.py` and
+  `Tools/test_parity.py` assert that shape instead of ignoring the field, so any other
+  format fails the comparison.
 - Both servers cap DoH bodies at 64 KiB and return a tool-level `status: "error"` for a
   larger body (Node keeps only the first 4096 characters of a non-JSON body within the
-  cap). Known differences, which must stay deliberate and documented: timestamps differ
-  (`Z` vs `+00:00`); `doh_test` echoes the URL as supplied in Python and normalised in
-  Node; `dns_check` sorts addresses in Python and keeps resolver order in Node.
+  cap). Known differences, which must stay deliberate and documented: `doh_test`
+  echoes the URL as supplied in Python and normalised in Node; `dns_check` sorts
+  addresses in Python and keeps resolver order in Node.
 - `dns_check` lowercases and NFC-normalises a Unicode domain, then converts it with each
   runtime's IDNA (Python: IDNA2003, Node: UTS#46) and reports the resolved ASCII name.
   Keep the shared steps identical; `faß.test` and `ς.test` still encode differently by

@@ -104,6 +104,11 @@ jobs:
       - name: Self-test the image check
         run: python Tools/test_check_actionlint_image.py
 
+      # The Windows job was the only place the tracert branch ran; this forces it on
+      # Linux with a shim, so the flags and the three outcomes are checked every PR.
+      - name: Test the Windows tracert branch
+        run: python Tools/test_windows_trace_route.py
+
       # A bump is one edit and one command only if the stamp is all-or-nothing and the
       # checker still fails a drift; both run against a temporary copy of the tree.
       - name: Self-test the version checks

@@ -27,6 +27,7 @@ python3 Tools/check-workflows.py                  # triggers, timeouts, pins, br
 python3 Tools/test_check_workflows.py             # each rule fails its break and passes a sound workflow
 python3 Tools/test_check_pins.py                  # every pin-audit rule, offline
 python3 Tools/test_check_actionlint_image.py      # every image-check rule, offline
+python3 Tools/test_windows_trace_route.py         # the Windows tracert branch, forced
 python3 Tools/test_check_version.py               # every failure the version checker promises
 python3 Tools/test_stamp_version.py               # a bad VERSION writes nothing; a bump reads back consistent
 python3 Tools/check-links.py                      # no broken relative doc links
@@ -83,6 +84,11 @@ with fake registries and runs in `Validate` as `Self-test the pin check`; set
 the image's entrypoint does under `docker://`. That makes the Docker step checkable on a
 machine without a daemon; `Tools/test_check_actionlint_image.py` pins its rules offline
 and runs in `Validate` as `Self-test the image check`.
+
+`Tools/test_windows_trace_route.py` covers the one branch that otherwise runs only on
+Windows: it forces `trace_route` down the `tracert` path in both servers and puts a fake
+`tracert` on `PATH`, so the exact flags (`-d -h 15 -w 300`), a successful trace, a failed
+one and a missing binary are all asserted offline in `Validate`.
 
 `Tools/test_check_version.py` and `Tools/test_stamp_version.py` pin the version
 tooling the same way, and the `Validate` job runs them as `Self-test the version

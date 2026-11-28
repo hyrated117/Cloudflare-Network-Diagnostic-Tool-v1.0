@@ -96,6 +96,11 @@ entries have been removed. The first version in this repository is `1.0.0`.
   `actionlint` and `shellcheck` binaries and runs them from the repository root, so the
   exact bytes CI lints with are exercised. `Tools/test_check_actionlint_image.py` pins
   its rules offline and `Validate` runs it as `Self-test the image check`
+- `Tools/test_windows_trace_route.py`, which closes the last branch that ran only on
+  Windows: it forces `trace_route` down the `tracert` path in both servers and puts a
+  fake `tracert` on `PATH`, so `Validate` asserts the exact flags
+  (`-d -h 15 -w 300 <destination>`), a successful trace, a failed one (`error` with the
+  message) and a missing binary (`unavailable`) on every pull request
 - `Tools/check-installers.py` also runs `installers/install-mcp-server.py`, so the
   Python server installer's config is handshaked like the shell, unified-shell and Node
   CLI ones instead of only being described in the docs

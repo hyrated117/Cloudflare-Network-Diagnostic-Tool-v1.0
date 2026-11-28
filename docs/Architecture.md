@@ -92,6 +92,9 @@ The Node server needs no dependencies; the unified installers write a
 - `Tools/check-actionlint-image.py` and `Tools/test_check_actionlint_image.py` — the
   image `lint` runs, pulled by its pinned digest and executed from its extracted
   binaries, so the Docker step is reproducible without a daemon; its rules run offline.
+- `Tools/test_windows_trace_route.py` — forces the `tracert` branch of `trace_route` in
+  both servers with a shim on `PATH`, so its flags and its success, failure and missing
+  outcomes are validated on Linux instead of only by the Windows job.
 - `Tools/check-links.py` — relative documentation links resolve.
 - `Tools/check-installers.py` / `Tools/check-installers.ps1` — run the shell,
   unified-shell, Python and Node CLI installers (or the two PowerShell installers) into

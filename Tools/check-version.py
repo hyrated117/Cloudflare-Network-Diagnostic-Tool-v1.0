@@ -3,7 +3,7 @@
 
 `VERSION` at the repository root is the single source for the version. It cannot be
 read at runtime: the installers are copied to a user's machine as loose files and the
-servers are launched directly, so each of the twelve sites listed in
+servers are launched directly, so each of the ten sites listed in
 `version_sites.py` carries a literal that `Tools/stamp-version.py` writes. This script
 fails when any of those sites drifts from `VERSION`, when the sites disagree with each
 other, when `CHANGELOG.md`'s newest dated release section names a different version, or

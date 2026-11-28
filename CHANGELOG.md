@@ -14,7 +14,7 @@ entries have been removed. The first version in this repository is `1.0.0`.
 
 ### Added
 - `VERSION` at the repository root as the one place the version is written, plus
-  `Tools/stamp-version.py`, which stamps it into all twelve hand-maintained sites in
+  `Tools/stamp-version.py`, which stamps it into all twelve hand-maintained literals in
   ten files;   `Tools/check-version.py` now fails when any site drifts from `VERSION`,
   so a bump is one edit and one command instead of twelve edits
 - `Tools/check-dependabot.py` plus a `Validate` step that parse

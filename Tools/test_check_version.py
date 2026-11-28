@@ -2,7 +2,7 @@
 """Self-test for Tools/check-version.py.
 
 The checker is what keeps a version bump to one edit: it fails when `VERSION` is not
-MAJOR.MINOR.PATCH, when any of the twelve sites drifts from it, and when the newest
+MAJOR.MINOR.PATCH, when any of the ten sites drifts from it, and when the newest
 CHANGELOG section or its release notes disagree. Each of those failures is pinned here
 against a throwaway copy of the tree, so a later simplification that turns a failure
 into a warning, or compares the wrong CHANGELOG section, fails this test.

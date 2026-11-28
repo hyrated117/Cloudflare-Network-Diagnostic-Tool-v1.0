@@ -46,7 +46,7 @@ def read_version():
 
 
 def collect():
-    """Return ({file: [version, ...]}, problems) read from the twelve sites."""
+    """Return ({file: [version, ...]}, problems) read from the ten sites."""
     found = {}
     problems = []
     for name, (pattern, expected) in STRING_SITES.items():

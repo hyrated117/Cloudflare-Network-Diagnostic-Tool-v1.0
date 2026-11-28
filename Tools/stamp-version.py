@@ -3,11 +3,11 @@
 
 The version lives in one place, `VERSION`, but it cannot be read at runtime: the
 installers are copied to a user's machine as loose files and the servers are launched
-directly, so all twelve sites listed in `version_sites.py` carry a literal. This
-script stamps that literal into all of them, so a version bump is one edit plus one
-command instead of twelve edits.
+directly, so all ten sites listed in `version_sites.py` carry twelve literals. This
+script stamps them into every site, so a version bump is one edit plus one command
+instead of twelve manual edits.
 
-It rewrites only those twelve string sites. `CHANGELOG.md` and
+It rewrites only those ten sites. `CHANGELOG.md` and
 `release/v<version>/release-notes.md` are prose and stay hand-written;
 `Tools/check-version.py` fails until their newest section and title name the stamped
 version, and fails if any site here drifts from `VERSION`.

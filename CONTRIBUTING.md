@@ -97,7 +97,11 @@ would carry someone else's commits), allows the first base to have moved but rep
 far, and merges the five branches into a simulated `main` with `git merge-tree` to prove
 none conflicts. It needs git 2.38 or newer and the branches' refs, so `Validate` runs only
 its self-test (`Self-test the stack check`); run it with `--fetch` before opening or
-retargeting a pull request.
+retargeting a pull request. Once the pull requests are merged the guard reports "already
+merged", and once their branches are deleted it reports that there is nothing to
+rehearse; both exit 0, so it never fails as dead weight. That is the signal to retire it:
+delete the guard, its self-test, the `Self-test the stack check` step and the entries
+that list them.
 
 `Tools/test_check_version.py` and `Tools/test_stamp_version.py` pin the version
 tooling the same way, and the `Validate` job runs them as `Self-test the version

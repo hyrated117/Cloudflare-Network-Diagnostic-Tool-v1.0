@@ -98,7 +98,9 @@ The Node server needs no dependencies; the unified installers write a
 - `Tools/check-stack.py` and `Tools/test_check_stack.py` — the five stacked branches are
   pre-flighted before review: each base must be the previous tip, and the branches are
   merged into a simulated `main` to prove the sequence is conflict-free. It needs the
-  branch refs, so `Validate` runs its self-test.
+  branch refs, so `Validate` runs its self-test. It reports "already merged" or "nothing
+  to rehearse" and exits 0 once the stack is gone, and should be deleted with its
+  self-test and `Validate` step after PR 5 merges.
 - `Tools/check-links.py` — relative documentation links resolve.
 - `Tools/check-installers.py` / `Tools/check-installers.ps1` — run the shell,
   unified-shell, Python and Node CLI installers (or the two PowerShell installers) into

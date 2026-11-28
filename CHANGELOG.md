@@ -105,8 +105,11 @@ entries have been removed. The first version in this repository is `1.0.0`.
   branch whose base is not the previous tip, allows `main` to have moved past PR 1's
   branch point but reports how far, and merges all five into a simulated `main` with
   `git merge-tree --write-tree`, so a conflict or a wrong base is found before the pull
-  requests are opened instead of in review. `Tools/test_check_stack.py` pins its rules
-  against throwaway repositories and `Validate` runs it as `Self-test the stack check`
+  requests are opened instead of in review. It degrades cleanly once the stack is gone —
+  every branch merged reports "already merged", deleted branches report "nothing to
+  rehearse", both exit 0 — so it can be deleted with its self-test and `Validate` step
+  after PR 5 merges. `Tools/test_check_stack.py` pins its rules against throwaway
+  repositories and `Validate` runs it as `Self-test the stack check`
 - `Tools/check-installers.py` also runs `installers/install-mcp-server.py`, so the
   Python server installer's config is handshaked like the shell, unified-shell and Node
   CLI ones instead of only being described in the docs

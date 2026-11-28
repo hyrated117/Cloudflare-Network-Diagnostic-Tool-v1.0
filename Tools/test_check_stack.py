@@ -138,8 +138,38 @@ class Rehearsal(unittest.TestCase):
 
     def test_a_missing_branch_is_an_error_not_a_traceback(self):
         repo = new_repo(self.directory)
-        with self.assertRaisesRegex(check.StackError, "does not exist"):
-            check.rehearsal(repo, ["main", "no-such-branch"])
+        branch(repo, "b1")
+        write_commit(repo, "b1.txt", "one\n")
+        with self.assertRaisesRegex(check.StackError, "no-such-branch"):
+            check.rehearsal(repo, ["main", "b1", "no-such-branch"])
+
+    def test_no_branches_left_is_reported_as_retired(self):
+        repo = new_repo(self.directory)
+        with self.assertRaisesRegex(check.NoStack, "none of the stack branches exist"):
+            check.rehearsal(repo, ["main", "b1", "b2"])
+        code, output = capture_run(repo, ["main", "b1", "b2"])
+        self.assertEqual(code, 0, output)
+        self.assertIn("nothing to rehearse", output)
+        self.assertIn("can be retired", output)
+
+    def test_merged_branches_are_reported_as_retired(self):
+        repo = new_repo(self.directory)
+        branch(repo, "b1")
+        write_commit(repo, "b1.txt", "one\n")
+        checkout(repo, "main")
+        sh(repo, "merge", "-q", "--no-ff", "-m", "merge b1", "b1")
+        with self.assertRaisesRegex(check.NoStack, "already merged"):
+            check.rehearsal(repo, ["main", "b1"])
+        code, output = capture_run(repo, ["main", "b1"])
+        self.assertEqual(code, 0, output)
+        self.assertIn("already merged", output)
+
+    def test_a_partially_missing_stack_is_still_an_error(self):
+        repo = new_repo(self.directory)
+        branch(repo, "b1")
+        write_commit(repo, "b1.txt", "one\n")
+        with self.assertRaisesRegex(check.StackError, r"branch\(s\) missing: b2"):
+            check.rehearsal(repo, ["main", "b1", "b2"])
 
     def test_the_diff_summary_counts_the_branch_alone(self):
         repo = new_repo(self.directory)

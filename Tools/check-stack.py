@@ -27,6 +27,14 @@ from `origin` first. Run it before opening or retargeting a pull request:
 `Validate` as `Self-test the stack check`, so the rehearsal is repeatable rather than
 one-off. Needs git 2.38 or newer for `merge-tree --write-tree`.
 
+Once the pull requests are merged, the guard says so instead of failing: if every stack
+branch is an ancestor of `main` it reports "already merged", and if the branches have
+been deleted it reports that there is nothing to rehearse. Both exit 0, so a stale habit
+of running it is a no-op rather than a false alarm. That is the signal to retire it —
+delete this file, its self-test, the `Self-test the stack check` step in `Validate` and
+the entries that describe them (README, CONTRIBUTING, Architecture, CHANGELOG and the
+check list) once PR 5 is merged and its branches are gone.
+
 Usage:
     python3 Tools/check-stack.py [--fetch] [--remote NAME]
 """
@@ -57,6 +65,10 @@ class StackError(Exception):
     """A ref, object or merge the guard cannot work with."""
 
 
+class NoStack(Exception):
+    """Nothing left to rehearse: the branches are merged already or deleted."""
+
+
 def git(repo, *args):
     return subprocess.run(
         ["git", "-C", str(repo), *args],
@@ -73,13 +85,20 @@ def git_ok(repo, *args):
     return completed.stdout.strip()
 
 
-def tip(repo, name, remote="origin"):
-    """The commit a branch ref points at, preferring the remote-tracking ref."""
+def maybe_tip(repo, name, remote="origin"):
+    """The commit a branch ref points at, or None when the branch is gone."""
     for ref in (f"refs/remotes/{remote}/{name}", f"refs/heads/{name}", name):
         completed = git(repo, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}")
         if completed.returncode == 0:
             return completed.stdout.strip()
-    raise StackError(f"branch '{name}' does not exist (try --fetch)")
+    return None
+
+
+def tip(repo, name, remote="origin"):
+    commit = maybe_tip(repo, name, remote)
+    if commit is None:
+        raise StackError(f"branch '{name}' does not exist (try --fetch)")
+    return commit
 
 
 def is_ancestor(repo, older, newer):
@@ -128,7 +147,23 @@ def merge(repo, left, right):
 def rehearsal(repo, branches, remote="origin"):
     """Rehearse the stack; returns (problems, results, final tree, last head tree)."""
     problems, results = [], []
-    tips = [tip(repo, name, remote) for name in branches]
+    tips = [maybe_tip(repo, name, remote) for name in branches]
+    if tips[0] is None:
+        if all(commit is None for commit in tips[1:]):
+            raise NoStack("none of the branches exist, so the stack is gone")
+        raise StackError("branch 'main' does not exist (try --fetch)")
+    present = [(name, commit) for name, commit in zip(branches[1:], tips[1:]) if commit]
+    missing = [name for name, commit in zip(branches[1:], tips[1:]) if commit is None]
+    if not present:
+        raise NoStack(
+            "none of the stack branches exist (" + ", ".join(missing) + ")"
+        )
+    if all(is_ancestor(repo, commit, tips[0]) for _, commit in present):
+        raise NoStack("every stack branch is already merged into main")
+    if missing:
+        raise StackError(
+            "branch(s) missing: " + ", ".join(missing) + " (try --fetch)"
+        )
     parent = tips[0]
     for index in range(1, len(branches)):
         base, head = branches[index - 1], branches[index]
@@ -185,7 +220,11 @@ def rehearsal(repo, branches, remote="origin"):
 
 
 def run(branches=STACK, remote="origin", repo=ROOT):
-    problems, results, final_tree, last_tree = rehearsal(repo, branches, remote)
+    try:
+        problems, results, final_tree, last_tree = rehearsal(repo, branches, remote)
+    except NoStack as note:
+        print(f"note {note}; nothing to rehearse, so the stack can be retired")
+        return 0
     for step in results:
         if step["clean"]:
             detail = (

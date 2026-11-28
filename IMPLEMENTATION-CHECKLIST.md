@@ -51,14 +51,16 @@ The repository ships two MCP stdio servers, their installers and documentation �
 - [x] Linux `Validate` job: syntax (`node --check` on both entries, `compileall`, `bash -n`
   on every shell script), Python smoke test, Python/Node conformance and randomized
   parity, version
-  consistency, JSON, the pinned PyYAML install with the Dependabot check and its
-  self-test, the workflow checks and their self-test, the pin and image self-tests, the
+  consistency, JSON, the pinned PyYAML install with the runtime-matrix check and its
+  self-test, the Dependabot check and its self-test, the workflow checks and their
+  self-test, the pin and image self-tests, the
   Windows tracert test, the destination/domain injection test, the stack self-test, both
   version self-tests, the archive
   self-test, documentation links, installer configs **(automated)**
 - [x] The same `Validate` steps run on the documented floor — Node 18 with Python 3.8,
   alongside Node 20 and Python 3.12 — so the minimums in [README.md](./README.md) are
-  executed rather than assumed **(automated: the `validate` job's matrix)**
+  executed rather than assumed **(automated: the `validate` job's matrix, kept in step with
+  the README by `Tools/check-runtimes.py`)**
 - [x] `lint` job: actionlint pinned by image digest, with its bundled shellcheck over
   every `run:` block, then shellcheck 0.11.0 from its checksum-verified tarball over
   `installers/*.sh` and `Tools/*.sh` **(automated)**

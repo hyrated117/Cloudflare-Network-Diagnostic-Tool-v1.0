@@ -281,7 +281,7 @@ def main():
         import yaml
     except ModuleNotFoundError:
         return (
-            "check-workflows.py needs PyYAML: python3 -m pip install pyyaml==6.0.4 "
+            "check-workflows.py needs PyYAML: python3 -m pip install pyyaml==6.0.3 "
             "(CI installs it before running this check)"
         )
 

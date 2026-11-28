@@ -94,6 +94,17 @@ jobs:
       - name: Install PyYAML
         run: python -m pip install --disable-pip-version-check --quiet pyyaml==6.0.3
 
+      # The matrix is the only thing that runs the floor README.md promises, and a leg
+      # naming any versions at all is valid YAML: without this, dropping the 18/3.8 leg
+      # would leave the promise untested with every workflow still green.
+      - name: Check the runtime matrix covers the README minimums
+        run: python Tools/check-runtimes.py
+
+      # A matrix that names 18 and a setup step that hardcodes 20 tests neither, so the
+      # wiring is pinned as tightly as the versions.
+      - name: Self-test the runtime matrix check
+        run: python Tools/test_check_runtimes.py
+
       - name: Check the Dependabot config
         run: python Tools/check-dependabot.py
 

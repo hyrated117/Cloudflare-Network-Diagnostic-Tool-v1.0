@@ -13,6 +13,14 @@ entries have been removed. The first version in this repository is `1.0.0`.
 ## [Unreleased]
 
 ### Added
+- `Tools/check-runtimes.py`, run in `Validate` as `Check the runtime matrix covers the
+  README minimums`, with `Tools/test_check_runtimes.py` as its self-test. It reads the
+  minimums out of `README.md`'s `## Requirements` list and fails when no `validate` leg
+  runs that exact Node or Python version, when a leg's version is not a quoted version
+  string, or when `setup-node`/`setup-python` stop reading `${{ matrix.node }}` and
+  `${{ matrix.python }}`. The matrix is the only thing that executes the floor, and a
+  workflow naming any runtimes at all is valid YAML, so without this check lowering a leg
+  or editing the README requirement left the promise untested with everything green
 - A `Validate` matrix: the job now runs on the runtimes the project promises as well as
   the one it releases from — Node 18 with Python 3.8 next to Node 20 and Python 3.12. The floor was a
   README claim with nothing executing it. PyYAML is pinned to `6.0.3` because `6.0.4`

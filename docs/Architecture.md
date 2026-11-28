@@ -97,6 +97,11 @@ The Node server needs no dependencies; the unified installers write a
 - `Tools/validate-json.py` — JSON syntax validation.
 - `Tools/check-dependabot.py` — `.github/dependabot.yml` parses and holds the keys
   Dependabot needs.
+- `Tools/check-runtimes.py` and `Tools/test_check_runtimes.py` — the `validate` matrix is
+  tied to the minimums `README.md` promises: a leg must run the exact Node minimum and a
+  leg the exact Python minimum (the same leg may cover both), the setup steps must read the
+  versions from the matrix rather than hardcode them, and an unquoted `3.10` — which YAML
+  reads back as `3.1` — is refused.
 - `Tools/check-workflows.py` and `Tools/test_check_workflows.py` — every pull request
   triggers a run, every job sets a timeout, every `uses:` is pinned, and no `run:` line
   hides a continuation character behind whitespace.
@@ -123,8 +128,9 @@ The Node server needs no dependencies; the unified installers write a
   unified-shell, Python and Node CLI installers (or the two PowerShell installers) into
   a temporary directory and confirm the generated config launches the server.
 - `.github/workflows/ci.yml` — `validate` job (syntax, smoke test, conformance,
-  version consistency, JSON, the pinned PyYAML with the Dependabot check and its
-  self-test, the workflow checks and their self-test, the version self-tests, the
+  version consistency, JSON, the pinned PyYAML with the runtime-matrix check and its
+  self-test, the Dependabot check and its self-test, the workflow checks and their
+  self-test, the version self-tests, the
   archive self-test, documentation links, installer configs) on a matrix that runs the
   release environment (Node 20, Python 3.12) and the floor the README promises
   (Node 18, Python 3.8), a `package` job (build

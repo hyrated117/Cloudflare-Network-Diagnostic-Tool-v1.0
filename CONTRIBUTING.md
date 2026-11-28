@@ -22,6 +22,8 @@ python3 Tools/check-conformance.py                # Python and Node answer ident
 python3 Tools/test_parity.py                      # ...and on 300 seeded random requests
 python3 Tools/check-version.py                    # version sites, VERSION and changelog agree
 python3 Tools/validate-json.py .                  # JSON syntax
+python3 Tools/check-runtimes.py                   # the validate matrix runs README's minimums
+python3 Tools/test_check_runtimes.py              # each rule fails its break, passes a sound matrix
 python3 Tools/check-dependabot.py                 # .github/dependabot.yml parses and Dependabot would accept it
 python3 Tools/test_check_dependabot.py            # each rule fails a bad config, passes a sound one
 python3 Tools/check-workflows.py                  # triggers, timeouts, pins, broken continuations

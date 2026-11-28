@@ -120,7 +120,9 @@ python3 Tools/check-conformance.py  # Python and Node answer identically
 python3 Tools/test_parity.py        # ...and on 300 seeded random requests too
 python3 Tools/check-version.py      # VERSION, the stamped sites and the changelog agree
 python3 Tools/validate-json.py .    # JSON syntax
-python3 -m pip install --quiet pyyaml==6.0.3   # needed by the two checks below
+python3 -m pip install --quiet pyyaml==6.0.3   # needed by the checks below
+python3 Tools/check-runtimes.py     # the validate matrix runs README's minimums
+python3 Tools/test_check_runtimes.py           # that check's rules, both ways
 python3 Tools/check-dependabot.py   # .github/dependabot.yml parses and is accepted
 python3 Tools/test_check_dependabot.py         # that check's rules, both ways
 python3 Tools/check-workflows.py    # triggers, timeouts, pins, broken continuations

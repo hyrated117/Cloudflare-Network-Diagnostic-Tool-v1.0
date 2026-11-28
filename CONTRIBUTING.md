@@ -119,7 +119,7 @@ the shell inside every `run:` block is checked, including the release steps — 
 `shellcheck` 0.11.0 at its default severity over `installers/*.sh` and `Tools/*.sh`.
 The job installs that version from its pinned, checksum-verified release tarball rather
 than using whatever the runner image ships, so the findings only change when someone
-bumps `SHELLCHECK_VERSION` and `SHELLCHECK_SHA256` together. The three scripts are
+bumps `SHELLCHECK_VERSION` and `SHELLCHECK_SHA256` together. The five scripts are
 clean today, so a finding there is something you just introduced; suppress it with a
 `# shellcheck disable=SCXXXX` comment and a reason only when the warning is genuinely
 wrong.

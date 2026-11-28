@@ -54,7 +54,10 @@ DNS_TABLE = {
     "aaaa.parity.test": {"v4": [], "v6": ["2001:db8::1"]},
     "dual.parity.test": {"v4": ["192.0.2.9", "192.0.2.2"], "v6": ["2001:db8::9"]},
     "missing.parity.test": {"v4": [], "v6": []},
+    "xn--mnchen-3ya.test": {"v4": ["198.51.100.7"], "v6": []},
 }
+# Sent as written, and expected to be looked up as the punycode name above.
+UNICODE_HOST = "münchen.test"
 
 # DoH is served by the loopback fixture in main(); the port is filled in by main() too.
 DOH_PORT_PLACEHOLDER = "DOH_PORT"
@@ -72,7 +75,7 @@ DOH_BODIES = {
     "/error": (503, '{"Status":2}'),
     "/over": (200, "x" * DOH_OVER_CAP),
 }
-DNS_VALUES = BAD_DOMAINS + list(DNS_TABLE)
+DNS_VALUES = BAD_DOMAINS + list(DNS_TABLE) + [UNICODE_HOST]
 URL_VALUES = BAD_URLS + [DOH_BASE + path for path in DOH_PATHS]
 
 # The last two reach the trace and find no binary (empty PATH), so both must say
@@ -129,7 +132,7 @@ MALFORMED_LINES = ["{not json", "{", "[]", "null", "123", '"text"', "true", "[{}
 # Every stub outcome, so no seed can skip one.
 NETWORK_REQUESTS = [
     {"jsonrpc": "2.0", "id": f"dns:{host}", "method": "tools/call", "params": {"name": "dns_check", "arguments": {"domain": host}}}
-    for host in DNS_TABLE
+    for host in list(DNS_TABLE) + [UNICODE_HOST]
 ] + [
     {"jsonrpc": "2.0", "id": f"doh:{path}", "method": "tools/call", "params": {"name": "doh_test", "arguments": {"url": DOH_BASE + path}}}
     for path in DOH_PATHS
@@ -147,15 +150,19 @@ _original = socket.getaddrinfo
 
 
 def getaddrinfo(host, port, *args, **kwargs):
-    entry = TABLE.get(host)
+    # CPython encodes a non-ASCII name to punycode before asking the resolver.
+    name = str(host)
+    if any(ord(ch) > 127 for ch in name):
+        name = name.encode("idna").decode("ascii")
+    entry = TABLE.get(name)
     if entry is None:
         try:
             ipaddress.ip_address(str(host))
         except ValueError:
-            raise socket.gaierror("parity.test stub: unknown host " + str(host))
+            raise socket.gaierror("parity.test stub: unknown host " + name)
         return _original(host, port, *args, **kwargs)
     if not entry["v4"] and not entry["v6"]:
-        raise socket.gaierror(str(host) + " not found")
+        raise socket.gaierror(name + " not found")
     answers = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (address, 0)) for address in entry["v4"]]
     answers += [(socket.AF_INET6, socket.SOCK_STREAM, 6, "", (address, 0, 0, 0)) for address in entry["v6"]]
     return answers
@@ -171,6 +178,8 @@ const dns = require('node:dns');
 const table = %s;
 
 const resolve = (family) => async (host) => {
+  // c-ares takes an ASCII name; the raw UTF-8 label is not one.
+  if (/[^\x00-\x7F]/.test(host)) throw new Error(`${host} not found`);
   const entry = table[host];
   if (!entry) throw new Error(`parity.test stub: unknown host ${host}`);
   if (!entry[family].length) throw new Error(`${host} not found`);
@@ -307,6 +316,7 @@ def check_outcomes(label, normalized):
     expect("dns:aaaa.parity.test", {"status": "ok", "addresses": ["2001:db8::1"]})
     expect("dns:dual.parity.test", {"status": "ok", "addresses": ["192.0.2.2", "192.0.2.9", "2001:db8::9"]})
     expect("dns:missing.parity.test", {"status": "error", "addresses": [], "error": "missing.parity.test not found"})
+    expect("dns:münchen.test", {"status": "ok", "domain": "xn--mnchen-3ya.test", "addresses": ["198.51.100.7"]})
     expect("doh:/ok", {"status": "ok", "statusCode": 200, "response": {"Status": 0, "Answer": [{"name": "dual.parity.test.", "type": 1, "TTL": 60, "data": "192.0.2.9"}]}})
     expect("doh:/unicode", {"status": "ok", "statusCode": 200, "response": {"Status": 0, "note": "héllo 🙂"}})
     expect("doh:/text", {"status": "ok", "statusCode": 200, "response": {"raw": "parity fixture: not JSON"}})

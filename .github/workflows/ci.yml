@@ -140,6 +140,49 @@ jobs:
       - name: Check installer MCP configs
         run: python Tools/check-installers.py
 
+  # The README and the installers promise macOS, and the server picks a traceroute
+  # candidate per platform, but nothing else in this file runs on a Mac. These are the
+  # checks that need no Linux tooling: syntax, the smoke test, conformance against the
+  # stubbed resolver/DoH/traceroute, the differential test and the injection test.
+  macos:
+    name: Validate on macOS
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+
+      - name: Check syntax
+        run: |
+          node --check server/index.js
+          node --check installers/cli.js
+          python -m compileall -q server installers Tools
+          for script in installers/*.sh Tools/*.sh; do
+            bash -n "$script"
+          done
+
+      - name: Run Python MCP smoke test
+        run: python server/smoke_test.py
+
+      - name: Compare the Python and Node servers
+        run: python Tools/check-conformance.py
+
+      - name: Diff the servers on randomized requests
+        run: python Tools/test_parity.py
+
+      - name: Test hostile destinations and domains
+        run: python Tools/test_injection.py
+
   package:
     name: Validate release package
     runs-on: ubuntu-latest

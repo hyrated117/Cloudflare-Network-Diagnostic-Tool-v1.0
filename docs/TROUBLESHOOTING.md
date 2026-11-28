@@ -62,6 +62,8 @@ A tool that completes but fails returns a normal result with
 - Node resolves IPv4 and IPv6 independently, so a host with only A records still
   reports `ok`.
 - There is no configurable timeout for resolution — it follows the system resolver.
+- A Unicode domain is resolved as its punycode form and reported that way
+  (`münchen.test` becomes `xn--mnchen-3ya.test`), not as the name you typed.
 
 ### doh_test
 

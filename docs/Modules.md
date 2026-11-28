@@ -35,6 +35,9 @@ Resolves a domain to IPv4 and IPv6 addresses.
 - **Node:** `dns.promises.resolve4` and `resolve6` run concurrently; addresses are
   de-duplicated and results merged.
 - **Python:** `socket.getaddrinfo` returns all address families.
+- **Both:** a Unicode domain is converted to its punycode form before resolution
+  (`münchen.test` is resolved and reported as `xn--mnchen-3ya.test`), so the two servers
+  answer the same question and echo the same `domain`.
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"tools/call",

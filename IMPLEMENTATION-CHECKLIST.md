@@ -61,6 +61,9 @@ The repository ships two MCP stdio servers, their installers and documentation â
   the packaged server â€” `Tools/check-installers.py` (four installers) on Linux and
   `Tools/check-installers.ps1 -InstallersRoot` on Windows **(automated)**
 - [x] Windows job: PowerShell parser, a real `tracert` trace, installer configs **(automated)**
+- [x] macOS job: syntax checks, Python smoke test, conformance, randomized parity and the
+  injection test on `macos-latest`, so the platform the README and installers claim is
+  run and not only assumed **(automated)**
 - [ ] CodeQL, dependency review and security scan green on the release commit
 
 ## 6. Release

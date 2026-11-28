@@ -98,7 +98,8 @@ cases: a seeded random corpus (plus a fixed edge list) of odd argument types, mi
 extra keys, nulls, malformed lines, credentials and non-HTTP schemes in a DoH URL, a NUL
 byte in a destination and non-ASCII export payloads goes to both servers, and every
 response must match. The paths that normally need a network are compared too: name
-resolution is stubbed in both runtimes from one table (A, AAAA, both, neither) and DoH is
+resolution is stubbed in both runtimes from one table (A, AAAA, both, neither, and a
+Unicode name that must arrive as punycode) and DoH is
 served by a loopback fixture (200, 404, 503, a redirect, empty, non-JSON, over the 64 KiB
 cap), with each outcome asserted rather than merely diffed. It is deterministic and
 offline — `trace_route` runs with an empty `PATH` and `health_score` is never generated —
@@ -148,6 +149,12 @@ python Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract
 ./Tools/check-installers.ps1 -InstallersRoot dist/pack
 ```
 
+A job on `macos-latest` runs the checks that need no Linux tooling — the syntax checks,
+the Python smoke test, conformance, the differential test and the injection test — so
+the macOS support the README and installers promise is exercised instead of assumed. It
+does not run a live traceroute, so the `tracepath`/BSD `traceroute` choice is still only
+covered by the stubs on the other runners.
+
 `release.yml` calls this workflow as its `checks` job and gates the publishing job on
 it, so a tag whose commit fails any of the above cannot release anything.
 
@@ -186,8 +193,8 @@ wrong.
 
 Every job carries a `timeout-minutes`, so a hung download or trace fails it instead of
 holding a runner until GitHub's six-hour default: 15 for `validate`, `package` and
-`lint`, 30 for the Windows job, which runs the live trace, and 20 for `release.yml`'s
-release job.
+`lint`, 20 for the macOS job and `release.yml`'s release job, and 30 for the Windows job,
+which runs the live trace.
 
 The actions in every workflow are pinned to commit SHAs, with the release they came
 from in a comment. `.github/dependabot.yml` raises a weekly `github-actions` pull

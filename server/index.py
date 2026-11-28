@@ -72,6 +72,14 @@ class DiagnosticServer:
         if not isinstance(domain, str) or not domain.strip():
             raise ValueError("domain must be a non-empty string")
         domain = domain.strip()
+        if not domain.isascii():
+            # CPython's getaddrinfo encodes a Unicode name to punycode anyway; doing
+            # it here too means the reported domain is the name that was resolved,
+            # and Node (whose resolver takes ASCII only) answers the same question.
+            try:
+                domain = domain.encode("idna").decode("ascii")
+            except UnicodeError:
+                pass  # leave a malformed label to the resolver, as Node does
         try:
             addresses = sorted({entry[4][0] for entry in socket.getaddrinfo(domain, None)})
             return {"tool": "dns_check", "domain": domain, "status": "ok", "addresses": addresses, "timestamp": now()}

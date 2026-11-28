@@ -136,9 +136,11 @@ python3 Tools/check-installers.py   # shell, Python and CLI installers write lau
 
 The `Validate` job runs these on Linux in this order. A `package` job then builds the
 release archive and installs from the extracted copy, `lint` runs actionlint and the
-pinned shellcheck over the workflows and shell scripts, and a Windows job parses the
+pinned shellcheck over the workflows and shell scripts, a Windows job parses the
 PowerShell installers, runs a real `trace_route` through `tracert`, and installs from
-the archive the Linux job built — see `.github/workflows/ci.yml`. `Tools/check-pins.py`
+the archive the Linux job built, and a macOS job runs the syntax checks, smoke test,
+conformance, differential test and injection test on `macos-latest` — see
+`.github/workflows/ci.yml`. `Tools/check-pins.py`
 re-runs the pin audit against the GitHub API and Docker Hub, which is why it needs
 network access and only its self-test is part of CI. `Tools/check-actionlint-image.py`
 does the same for the `lint` job's image: it pulls the pinned digest, checks every layer,

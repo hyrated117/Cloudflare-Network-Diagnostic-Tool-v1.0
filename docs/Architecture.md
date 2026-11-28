@@ -81,7 +81,8 @@ The Node server needs no dependencies; the unified installers write a
 - `Tools/test_parity.py` — the same comparison over a seeded random corpus and a fixed
   edge list: odd argument types, missing and extra keys, nulls, malformed lines, bad DoH
   URLs, a NUL byte in a destination and non-ASCII exports. Name resolution is stubbed in
-  both runtimes from one table and DoH is served by a loopback fixture, so the success and
+  both runtimes from one table, which also holds a Unicode name that must be looked up as
+  punycode, and DoH is served by a loopback fixture, so the success and
   error results that normally need a network are compared and asserted too. Deterministic;
   `Validate` runs it as `Diff the servers on randomized requests`.
 - `Tools/check-version.py` — `VERSION`, the twelve stamped sites and the newest changelog
@@ -120,5 +121,6 @@ The Node server needs no dependencies; the unified installers write a
   archive self-test, documentation links, installer configs), a `package` job (build
   the archive, check it, install from the extracted copy), a `lint` job (actionlint
   with its bundled shellcheck, then pinned shellcheck over `installers/*.sh` and
-  `Tools/*.sh`) and a `windows` job (PowerShell parser, a real `tracert` trace, and the
-  same archive installed with the `.ps1` installers).
+  `Tools/*.sh`), a `windows` job (PowerShell parser, a real `tracert` trace, and the
+  same archive installed with the `.ps1` installers) and a `macos` job (syntax checks,
+  smoke test, conformance, differential test and injection test on `macos-latest`).

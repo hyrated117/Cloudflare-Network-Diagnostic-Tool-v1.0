@@ -4,7 +4,7 @@
 import { execFileSync } from 'node:child_process';
 import dns from 'node:dns';
 import net from 'node:net';
-import { pathToFileURL } from 'node:url';
+import { domainToASCII, pathToFileURL } from 'node:url';
 
 const PROTOCOL_VERSION = '2024-11-05';
 const TRACE_TIMEOUT_MS = 20000;
@@ -63,7 +63,13 @@ class DiagnosticServer {
 
   async dnsCheck(domain) {
     if (typeof domain !== 'string' || !domain.trim()) throw new TypeError('domain must be a non-empty string');
-    const host = domain.trim();
+    let host = domain.trim();
+    if (/[^\x00-\x7F]/.test(host)) {
+      // c-ares takes ASCII, so a Unicode label goes out as punycode; Python does the
+      // same, and both then report the punycode name.
+      host = domainToASCII(host);
+      if (!host) throw new TypeError('domain must be a valid hostname');
+    }
     const results = await Promise.allSettled([
       dns.promises.resolve4(host),
       dns.promises.resolve6(host),

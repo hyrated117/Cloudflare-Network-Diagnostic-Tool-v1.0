@@ -46,6 +46,10 @@
   cap). Known differences, which must stay deliberate and documented: timestamps differ
   (`Z` vs `+00:00`); `doh_test` echoes the URL as supplied in Python and normalised in
   Node; `dns_check` sorts addresses in Python and keeps resolver order in Node.
+- `dns_check` converts a Unicode domain to punycode on both sides before resolving, and
+  reports that form as `domain`; keep the conversion identical on both servers.
+- `ci.yml` runs `validate` on Linux, `package`, `lint`, `windows`, and a `macos` job with
+  the syntax checks, smoke test, conformance, differential test and injection test.
 - Use the standard library only. Do not add dependencies to either server.
 
 ## Installers

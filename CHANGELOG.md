@@ -128,13 +128,20 @@ entries have been removed. The first version in this repository is `1.0.0`.
   stubbed in both runtimes from one table, DoH is served by a loopback fixture (200, 404,
   503, a redirect, empty, non-JSON, over the 64 KiB cap) with each outcome asserted,
   `trace_route` runs with an empty `PATH` and `health_score` is never generated. It found
-  ten server differences, all fixed below
+  eleven server differences, all fixed below
 - `Tools/test_injection.py` and a `Validate` step that keep caller input out of the
   command line: a fake `traceroute` first on `PATH` logs its exact argv and resolver stubs
   log every name, then flag-shaped destinations (`-n`, `--help`, a trailing `-n 1`) must
   be refused while shell-shaped ones (`;`, `&&`, `|`, `$(...)`, backticks, `${IFS}`) must
   arrive as one literal argument. Every payload aims a `touch` at a marker file that must
   never appear, so a shell in either server fails the test
+- `Tools/test_parity.py` sends a Unicode domain (`münchen.test`): the resolver table holds
+  its punycode form and both servers must look up and report that name, so a runtime that
+  treats non-ASCII labels differently is a failing diff instead of a surprise
+- a `macos` job in `ci.yml` runs the syntax checks, the Python smoke test, conformance,
+  the differential test and the injection test on `macos-latest`. macOS is claimed
+  support, but every other job runs on Linux or Windows, so the platform the README and
+  installers promise was never executed; this job runs no live traceroute
 
 ### Changed
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,
@@ -181,6 +188,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
   archive cannot be published under a stale version
 
 ### Fixed
+- `dns_check` now converts a Unicode domain to its punycode form on both servers. Node's
+  `dns` module rejected the raw UTF-8 label (`münchen.test not found`) while Python's
+  `getaddrinfo` encoded and resolved it, so one server returned addresses and the other
+  an error for the same domain; both now report the punycode `domain`
 - `release.yml` no longer appends the repository's whole history to a first tag's
   release body: with no earlier tag the curated notes stand alone and a notice is
   logged, and otherwise only the commits since that tag are listed

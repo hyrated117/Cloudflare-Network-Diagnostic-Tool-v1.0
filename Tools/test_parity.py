@@ -64,6 +64,10 @@ DNS_TABLE = {
 # Sent as written and converted by the server. Case and composition are normalised before
 # the conversion, so these must all land on the ASCII names above.
 UNICODE_HOSTS = ["münchen.test", "MÜNCHEN.test", "e\u0301xample.test", "münchen..test"]
+# Structurally invalid ASCII names: the resolver is asked and rejects them, and both servers
+# must report the shared message rather than the resolver's own wording (CPython raises
+# UnicodeError here, c-ares answers EBADNAME).
+INVALID_ASCII_HOSTS = ["a..b", "x" * 64 + ".test"]
 # The two runtimes' IDNA standards cannot be reconciled with the standard library:
 # CPython's idna codec is IDNA2003, Node's domainToASCII is UTS#46. These names encode
 # differently; check_outcomes pins each server's exact result and compare() skips them,
@@ -146,7 +150,7 @@ MALFORMED_LINES = ["{not json", "{", "[]", "null", "123", '"text"', "true", "[{}
 # Every stub outcome, so no seed can skip one.
 NETWORK_REQUESTS = [
     {"jsonrpc": "2.0", "id": f"dns:{host}", "method": "tools/call", "params": {"name": "dns_check", "arguments": {"domain": host}}}
-    for host in list(DNS_TABLE) + UNICODE_HOSTS + list(IDN_DIVERGENT)
+    for host in list(DNS_TABLE) + UNICODE_HOSTS + INVALID_ASCII_HOSTS + list(IDN_DIVERGENT)
 ] + [
     {"jsonrpc": "2.0", "id": f"doh:{path}", "method": "tools/call", "params": {"name": "doh_test", "arguments": {"url": DOH_BASE + path}}}
     for path in DOH_PATHS
@@ -165,12 +169,10 @@ _original = socket.getaddrinfo
 
 def getaddrinfo(host, port, *args, **kwargs):
     # CPython encodes a non-ASCII name to punycode before asking the resolver.
-    name = str(host)
-    if any(ord(ch) > 127 for ch in name):
-        try:
-            name = name.encode("idna").decode("ascii")
-        except UnicodeError:
-            raise socket.gaierror("parity.test stub: unknown host " + name)
+    # CPython IDNA-encodes every name, ASCII included, before asking the resolver, so a
+    # label it rejects (empty, too long) raises UnicodeError here exactly as the real
+    # getaddrinfo does; the server must turn that into a tool result.
+    name = str(host).encode("idna").decode("ascii")
     entry = TABLE.get(name)
     if entry is None:
         try:
@@ -337,6 +339,8 @@ def check_outcomes(label, normalized):
     expect("dns:MÜNCHEN.test", {"status": "ok", "domain": "xn--mnchen-3ya.test", "addresses": ["198.51.100.7"]})
     expect("dns:e\u0301xample.test", {"status": "ok", "domain": "xn--xample-9ua.test", "addresses": ["198.51.100.6"]})
     expect("dns:münchen..test", {"status": "error", "domain": "münchen..test", "addresses": [], "error": "domain is not a valid hostname"})
+    for host in INVALID_ASCII_HOSTS:
+        expect(f"dns:{host}", {"status": "error", "domain": host, "addresses": [], "error": "domain is not a valid hostname"})
     for host, (python_name, node_name) in IDN_DIVERGENT.items():
         name = node_name if label == "server/index.js" else python_name
         addresses = DNS_TABLE[name]["v4"]

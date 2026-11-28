@@ -11,7 +11,8 @@ const TRACE_TIMEOUT_MS = 20000;
 const MAX_DOH_BYTES = 65536;
 const timestamp = () => new Date().toISOString();
 const DNS_INVALID = 'domain is not a valid hostname';
-// The same ASCII label rules the Python server applies, so both refuse the same names.
+// The same ASCII label rules the Python server applies, so both refuse the same names:
+// before resolution for a converted name, and on a resolver rejection for an ASCII one.
 const validHostname = (name) =>
   name.length <= 253 &&
   /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*\.?$/.test(name);
@@ -86,6 +87,11 @@ class DiagnosticServer {
     ]);
     // Sorted and de-duplicated like the Python server, so both report one order.
     const addresses = [...new Set(results.flatMap((result) => result.status === 'fulfilled' ? result.value : []))].sort();
+    // c-ares rejects a malformed label with a code and message of its own; report the
+    // shared message instead, the same one Python gives for the same name.
+    if (!addresses.length && !validHostname(host)) {
+      return { tool: 'dns_check', domain: host, status: 'error', addresses: [], error: DNS_INVALID, timestamp: timestamp() };
+    }
     const errors = [...new Set(results.filter((result) => result.status === 'rejected').map((result) => result.reason.message))];
     return { tool: 'dns_check', domain: host, status: addresses.length ? 'ok' : 'error', addresses, ...(addresses.length ? {} : { error: errors.join('; ') || 'No addresses found' }), timestamp: timestamp() };
   }

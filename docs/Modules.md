@@ -43,8 +43,10 @@ Resolves a domain to IPv4 and IPv6 addresses.
   `xn--4xa.test` and `xn--3xa.test`. Each server reports the name it resolved. A name that
   needed conversion but is not a valid hostname (empty label, a label over 63 characters,
   a leading or trailing hyphen) is refused with `domain is not a valid hostname` and the
-  name as typed, before any lookup. A plain ASCII name is not checked here: it goes to the
-  resolver exactly as it did before, so its errors are the resolver's.
+  name as typed, before any lookup. A plain ASCII name still goes to the resolver; if the
+  resolver rejects it and the labels are malformed (an empty label, one over 63
+  characters), both servers report the same `domain is not a valid hostname` result
+  instead of the resolver's own wording, which differs between the two runtimes.
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"tools/call",

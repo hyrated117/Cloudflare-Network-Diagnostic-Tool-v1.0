@@ -39,8 +39,8 @@ def trace_candidates():
 
 def valid_hostname(name):
     """The ASCII label rules the Node server applies, shared so both refuse the same
-    converted names. Plain ASCII input is not checked here: it goes to the resolver as it
-    always did, and only a name that was IDNA-converted is held to these rules."""
+    converted names before resolution, and a plain ASCII name only after the resolver
+    rejected it — a valid ASCII name is never held back by this check."""
     if not name.isascii() or len(name) > 253:
         return False
     labels = (name[:-1] if name.endswith(".") else name).split(".")
@@ -108,7 +108,14 @@ class DiagnosticServer:
             addresses = sorted({entry[4][0] for entry in socket.getaddrinfo(domain, None)})
             return {"tool": "dns_check", "domain": domain, "status": "ok", "addresses": addresses, "timestamp": now()}
         except socket.gaierror as exc:
-            return {"tool": "dns_check", "domain": domain, "status": "error", "addresses": [], "error": str(exc), "timestamp": now()}
+            error = str(exc)
+        except UnicodeError:
+            # CPython IDNA-encodes the name before asking the resolver, so a label it
+            # rejects (empty, too long) raises here instead of a gaierror.
+            error = DNS_INVALID
+        if error != DNS_INVALID and not valid_hostname(domain):
+            error = DNS_INVALID
+        return {"tool": "dns_check", "domain": domain, "status": "error", "addresses": [], "error": error, "timestamp": now()}
 
     def doh_test(self, url):
         if not isinstance(url, str):

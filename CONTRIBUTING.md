@@ -106,7 +106,10 @@ normalisation land on one punycode name, and a malformed label is refused by bot
 the two characters the standards cannot agree on: `faß.test` and `ς.test` encode
 differently under Python's IDNA2003 and Node's UTS#46, so `IDN_DIVERGENT` pins each
 server's exact answer, keeps them out of the strict diff, and fails if they ever stop
-differing. It is deterministic and
+differing. Two structurally invalid ASCII names (`a..b`, an over-long label) are compared
+too: the resolver is asked and rejects them, and both servers must report the same
+`domain is not a valid hostname` result instead of CPython's `UnicodeError` or c-ares's
+`EBADNAME`. It is deterministic and
 offline — `trace_route` runs with an empty `PATH` and `health_score` is never generated —
 and `Validate` runs it as `Diff the servers on randomized requests`.
 

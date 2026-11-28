@@ -51,8 +51,9 @@
   Keep the shared steps identical; `faß.test` and `ς.test` still encode differently by
   standard, and `Tools/test_parity.py`'s `IDN_DIVERGENT` pins both answers. Only a name
   that needed conversion is label-checked: one that is not a valid hostname is refused
-  with `domain is not a valid hostname` on both servers, while plain ASCII input keeps
-  going to the resolver unchanged.
+  with `domain is not a valid hostname` on both servers. Plain ASCII input still goes to
+  the resolver, but a malformed ASCII name the resolver rejects gets that same shared
+  message instead of CPython's `UnicodeError` or c-ares's `EBADNAME`.
 - `ci.yml` runs `validate` on Linux, `package`, `lint`, `windows`, and a `macos` job with
   the syntax checks, smoke test, conformance, differential test and injection test.
 - Use the standard library only. Do not add dependencies to either server.

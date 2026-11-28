@@ -83,8 +83,9 @@ The Node server needs no dependencies; the unified installers write a
   URLs, a NUL byte in a destination and non-ASCII exports. Name resolution is stubbed in
   both runtimes from one table, which also holds Unicode names: case and NFC variants that
   must encode identically, a malformed label both servers refuse, and `faß.test`/`ς.test`,
-  which the two IDNA standards encode differently and the test pins as deliberate. DoH is
-  served by a loopback fixture, so the success and
+  which the two IDNA standards encode differently and the test pins as deliberate, plus
+  structurally invalid ASCII names the resolver rejects and both servers must report with
+  one shared message. DoH is served by a loopback fixture, so the success and
   error results that normally need a network are compared and asserted too. Deterministic;
   `Validate` runs it as `Diff the servers on randomized requests`.
 - `Tools/check-version.py` — `VERSION`, the twelve stamped sites and the newest changelog

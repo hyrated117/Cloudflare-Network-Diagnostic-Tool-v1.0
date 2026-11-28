@@ -200,7 +200,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
   hostname with the same `domain is not a valid hostname` result and the name as typed,
   while a plain ASCII name is still left to the resolver as before; `faß.test` and `ς.test`
   still encode differently by standard, and both are documented and pinned rather than
-  quietly disagreeing
+  quietly disagreeing. An invalid ASCII name no longer surfaces as a `-32602` protocol
+  error from CPython's `UnicodeError` on one server and a c-ares `EBADNAME` tool error on
+  the other: both report `domain is not a valid hostname`, and the parity corpus covers
+  `a..b` and an over-long label
 - `release.yml` no longer appends the repository's whole history to a first tag's
   release body: with no earlier tag the curated notes stand alone and a notice is
   logged, and otherwise only the commits since that tag are listed

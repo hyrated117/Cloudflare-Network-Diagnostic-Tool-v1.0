@@ -69,8 +69,9 @@ A tool that completes but fails returns a normal result with
   Node — see the differences table below.
 - `domain is not a valid hostname` means a name that needed IDNA conversion has an empty
   label, a label over 63 characters or a leading/trailing hyphen. It is refused before the
-  resolver is asked, and the result echoes the name as typed. Plain ASCII names are not
-  checked this way; their errors come from the resolver, as before.
+  resolver is asked, and the result echoes the name as typed. A plain ASCII name is still
+  sent to the resolver, but if the resolver rejects a malformed one (an empty or over-long
+  label) both servers report this same message rather than the resolver's wording.
 
 ### doh_test
 

@@ -8,6 +8,7 @@ import logging
 import socket
 import subprocess
 import sys
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -17,6 +18,7 @@ PROTOCOL_VERSION = "2024-11-05"
 MAX_DOH_BYTES = 65536
 # Non-JSON bodies are kept only this far, so a remote endpoint cannot stuff the result.
 MAX_RAW_CHARS = 4096
+DNS_INVALID = "domain is not a valid hostname"
 logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -33,6 +35,21 @@ def trace_candidates():
         return [("tracert", ["-d", "-h", "15", "-w", "300"])]
     return [("traceroute", []), ("tracepath", [])]
 
+
+
+def valid_hostname(name):
+    """The ASCII label rules the Node server applies, shared so both refuse the same names."""
+    if not name.isascii() or len(name) > 253:
+        return False
+    labels = (name[:-1] if name.endswith(".") else name).split(".")
+    return all(
+        label
+        and len(label) <= 63
+        and not label.startswith("-")
+        and not label.endswith("-")
+        and all(ch.isalnum() or ch == "-" for ch in label)
+        for label in labels
+    )
 
 class DiagnosticServer:
     """MCP-style JSON-RPC stdio server with network diagnostic tools."""
@@ -71,15 +88,20 @@ class DiagnosticServer:
     def dns_check(self, domain):
         if not isinstance(domain, str) or not domain.strip():
             raise ValueError("domain must be a non-empty string")
-        domain = domain.strip()
+        typed = domain.strip()
+        domain = typed
         if not domain.isascii():
-            # CPython's getaddrinfo encodes a Unicode name to punycode anyway; doing
-            # it here too means the reported domain is the name that was resolved,
-            # and Node (whose resolver takes ASCII only) answers the same question.
+            # CPython's getaddrinfo encodes a Unicode name before resolving, but with
+            # IDNA2003 where Node's domainToASCII uses UTS#46. Case and composition are
+            # normalised here so both start from the same name; the encodings still
+            # differ for a few characters (ß, final sigma) — docs/Modules.md lists them.
+            domain = unicodedata.normalize("NFC", domain).lower()
             try:
                 domain = domain.encode("idna").decode("ascii")
             except UnicodeError:
-                pass  # leave a malformed label to the resolver, as Node does
+                pass  # the label check below refuses it, the same on both servers
+        if not valid_hostname(domain):
+            return {"tool": "dns_check", "domain": typed, "status": "error", "addresses": [], "error": DNS_INVALID, "timestamp": now()}
         try:
             addresses = sorted({entry[4][0] for entry in socket.getaddrinfo(domain, None)})
             return {"tool": "dns_check", "domain": domain, "status": "ok", "addresses": addresses, "timestamp": now()}

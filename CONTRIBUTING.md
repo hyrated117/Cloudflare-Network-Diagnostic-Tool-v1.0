@@ -98,18 +98,24 @@ cases: a seeded random corpus (plus a fixed edge list) of odd argument types, mi
 extra keys, nulls, malformed lines, credentials and non-HTTP schemes in a DoH URL, a NUL
 byte in a destination and non-ASCII export payloads goes to both servers, and every
 response must match. The paths that normally need a network are compared too: name
-resolution is stubbed in both runtimes from one table (A, AAAA, both, neither, and a
-Unicode name that must arrive as punycode) and DoH is
-served by a loopback fixture (200, 404, 503, a redirect, empty, non-JSON, over the 64 KiB
-cap), with each outcome asserted rather than merely diffed. It is deterministic and
+resolution is stubbed in both runtimes from one table (A, AAAA, both, neither, and
+Unicode names) and DoH is served by a loopback fixture (200, 404, 503, a redirect, empty,
+non-JSON, over the 64 KiB cap), with each outcome asserted rather than merely diffed.
+The Unicode cases cover what the standard library lets the servers share — case and NFC
+normalisation land on one punycode name, and a malformed label is refused by both — and
+the two characters the standards cannot agree on: `faß.test` and `ς.test` encode
+differently under Python's IDNA2003 and Node's UTS#46, so `IDN_DIVERGENT` pins each
+server's exact answer, keeps them out of the strict diff, and fails if they ever stop
+differing. It is deterministic and
 offline — `trace_route` runs with an empty `PATH` and `health_score` is never generated —
 and `Validate` runs it as `Diff the servers on randomized requests`.
 
 `Tools/test_injection.py` covers the input side: a fake `traceroute` first on `PATH`
 records its argv and resolver stubs record names, then flag-shaped and shell-shaped
-destinations and domains are sent. Each value must be refused or arrive as one literal
-argument, no payload may add an argument, and a marker file every payload aims a `touch`
-at must never appear. `Validate` runs it as `Test hostile destinations and domains`.
+destinations and domains are sent. A destination must be refused or arrive as one literal
+argument, the same strings as a domain must be refused as invalid hostnames with no
+lookup, no payload may add an argument, and a marker file every payload aims a `touch` at
+must never appear. `Validate` runs it as `Test hostile destinations and domains`.
 
 `Tools/check-stack.py --fetch` is the pre-flight for the stacked pull requests: it
 resolves each branch, refuses a pull request whose base is not the previous tip (its diff

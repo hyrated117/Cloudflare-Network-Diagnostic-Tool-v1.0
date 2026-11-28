@@ -128,16 +128,20 @@ entries have been removed. The first version in this repository is `1.0.0`.
   stubbed in both runtimes from one table, DoH is served by a loopback fixture (200, 404,
   503, a redirect, empty, non-JSON, over the 64 KiB cap) with each outcome asserted,
   `trace_route` runs with an empty `PATH` and `health_score` is never generated. It found
-  eleven server differences, all fixed below
+  eleven server differences: ten are fixed below, and the eleventh — IDNA2003 in Python
+  against UTS#46 in Node — is documented and pinned as deliberate
 - `Tools/test_injection.py` and a `Validate` step that keep caller input out of the
   command line: a fake `traceroute` first on `PATH` logs its exact argv and resolver stubs
   log every name, then flag-shaped destinations (`-n`, `--help`, a trailing `-n 1`) must
   be refused while shell-shaped ones (`;`, `&&`, `|`, `$(...)`, backticks, `${IFS}`) must
   arrive as one literal argument. Every payload aims a `touch` at a marker file that must
   never appear, so a shell in either server fails the test
-- `Tools/test_parity.py` sends a Unicode domain (`münchen.test`): the resolver table holds
-  its punycode form and both servers must look up and report that name, so a runtime that
-  treats non-ASCII labels differently is a failing diff instead of a surprise
+- `Tools/test_parity.py` sends Unicode domains: `münchen.test`, an upper-case and an
+  NFD-composed form must all encode to `xn--mnchen-3ya.test`, a malformed label must be
+  refused by both servers, and `faß.test`/`ς.test` — which Python's IDNA2003 and Node's
+  UTS#46 encode differently — are pinned per server in `IDN_DIVERGENT`, kept out of the
+  strict diff and failed if they ever stop differing, so the remaining gap is deliberate
+  rather than silent
 - a `macos` job in `ci.yml` runs the syntax checks, the Python smoke test, conformance,
   the differential test and the injection test on `macos-latest`. macOS is claimed
   support, but every other job runs on Linux or Windows, so the platform the README and
@@ -188,10 +192,14 @@ entries have been removed. The first version in this repository is `1.0.0`.
   archive cannot be published under a stale version
 
 ### Fixed
-- `dns_check` now converts a Unicode domain to its punycode form on both servers. Node's
-  `dns` module rejected the raw UTF-8 label (`münchen.test not found`) while Python's
-  `getaddrinfo` encoded and resolved it, so one server returned addresses and the other
-  an error for the same domain; both now report the punycode `domain`
+- `dns_check` now converts a Unicode domain on both servers instead of leaving it to the
+  resolver. Node's `dns` module rejected the raw UTF-8 label (`münchen.test not found`)
+  while Python's `getaddrinfo` encoded and resolved it, so one server returned addresses
+  and the other an error for the same domain. Both lowercase and NFC-normalise first, so
+  case and composition no longer matter, and both refuse a name that is not a valid
+  hostname with the same `domain is not a valid hostname` result and the name as typed;
+  `faß.test` and `ς.test` still encode differently by standard; both are documented and
+  pinned, rather than quietly disagreeing
 - `release.yml` no longer appends the repository's whole history to a first tag's
   release body: with no earlier tag the curated notes stand alone and a notice is
   logged, and otherwise only the commits since that tag are listed

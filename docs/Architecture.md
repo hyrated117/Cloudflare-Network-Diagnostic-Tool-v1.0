@@ -49,7 +49,7 @@ All diagnostics use the standard library or the operating system's utilities:
 
 | Tool | Mechanism | Timeout |
 |---|---|---|
-| `dns_check` | `dns.resolve4/resolve6` (Node), `getaddrinfo` (Python) | resolver default |
+| `dns_check` | `dns.resolve4/resolve6` (Node), `getaddrinfo` (Python); IDNA-encoded first | resolver default |
 | `doh_test` | `fetch` (Node), `urllib` (Python) | 5 s |
 | `trace_route` | `traceroute`, then `tracepath`; `tracert -d -h 15 -w 300` on Windows | 20 s |
 | `health_score` | TCP connect to `1.1.1.1:443` | 3 s |
@@ -81,8 +81,10 @@ The Node server needs no dependencies; the unified installers write a
 - `Tools/test_parity.py` — the same comparison over a seeded random corpus and a fixed
   edge list: odd argument types, missing and extra keys, nulls, malformed lines, bad DoH
   URLs, a NUL byte in a destination and non-ASCII exports. Name resolution is stubbed in
-  both runtimes from one table, which also holds a Unicode name that must be looked up as
-  punycode, and DoH is served by a loopback fixture, so the success and
+  both runtimes from one table, which also holds Unicode names: case and NFC variants that
+  must encode identically, a malformed label both servers refuse, and `faß.test`/`ς.test`,
+  which the two IDNA standards encode differently and the test pins as deliberate. DoH is
+  served by a loopback fixture, so the success and
   error results that normally need a network are compared and asserted too. Deterministic;
   `Validate` runs it as `Diff the servers on randomized requests`.
 - `Tools/check-version.py` — `VERSION`, the twelve stamped sites and the newest changelog
@@ -100,8 +102,9 @@ The Node server needs no dependencies; the unified installers write a
   image `lint` runs, pulled by its pinned digest and executed from its extracted
   binaries, so the Docker step is reproducible without a daemon; its rules run offline.
 - `Tools/test_injection.py` — a fake `traceroute` first on `PATH` records its argv and
-  resolver stubs record names; flag-shaped and shell-shaped destinations and domains must
-  be refused or arrive as one literal argument, never as extra flags or shell code.
+  resolver stubs record names; flag-shaped and shell-shaped destinations must be refused
+  or arrive as one literal argument, never as extra flags or shell code, and the same
+  strings in a domain are refused as invalid hostnames before any lookup.
 - `Tools/test_windows_trace_route.py` — forces the `tracert` branch of `trace_route` in
   both servers with a shim on `PATH`, so its flags and its success, failure and missing
   outcomes are validated on Linux instead of only by the Windows job.

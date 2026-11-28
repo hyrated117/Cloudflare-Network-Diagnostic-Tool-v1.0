@@ -10,6 +10,11 @@ const PROTOCOL_VERSION = '2024-11-05';
 const TRACE_TIMEOUT_MS = 20000;
 const MAX_DOH_BYTES = 65536;
 const timestamp = () => new Date().toISOString();
+const DNS_INVALID = 'domain is not a valid hostname';
+// The same ASCII label rules the Python server applies, so both refuse the same names.
+const validHostname = (name) =>
+  name.length <= 253 &&
+  /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*\.?$/.test(name);
 const log = (...args) => console.error(...args);
 
 // Windows ships tracert rather than traceroute. -d skips reverse DNS and -h/-w
@@ -63,12 +68,17 @@ class DiagnosticServer {
 
   async dnsCheck(domain) {
     if (typeof domain !== 'string' || !domain.trim()) throw new TypeError('domain must be a non-empty string');
-    let host = domain.trim();
+    const typed = domain.trim();
+    let host = typed;
     if (/[^\x00-\x7F]/.test(host)) {
-      // c-ares takes ASCII, so a Unicode label goes out as punycode; Python does the
-      // same, and both then report the punycode name.
-      host = domainToASCII(host);
-      if (!host) throw new TypeError('domain must be a valid hostname');
+      // domainToASCII is UTS#46 where Python's idna codec is IDNA2003: case and NFC are
+      // normalised here so both start from the same name, but a few characters still
+      // encode differently (ß, final sigma) — docs/Modules.md lists them.
+      const normalized = host.normalize('NFC').toLowerCase();
+      host = domainToASCII(normalized) || normalized;
+    }
+    if (!validHostname(host)) {
+      return { tool: 'dns_check', domain: typed, status: 'error', addresses: [], error: DNS_INVALID, timestamp: timestamp() };
     }
     const results = await Promise.allSettled([
       dns.promises.resolve4(host),

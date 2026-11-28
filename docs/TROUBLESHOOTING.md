@@ -62,8 +62,14 @@ A tool that completes but fails returns a normal result with
 - Node resolves IPv4 and IPv6 independently, so a host with only A records still
   reports `ok`.
 - There is no configurable timeout for resolution — it follows the system resolver.
-- A Unicode domain is resolved as its punycode form and reported that way
-  (`münchen.test` becomes `xn--mnchen-3ya.test`), not as the name you typed.
+- A Unicode domain is converted to ASCII and reported in that form
+  (`münchen.test` becomes `xn--mnchen-3ya.test`), not as the name you typed. Case and
+  composition do not change the result, but the two servers use different IDNA standards
+  for a few characters, so `faß.test` is `fass.test` in Python and `xn--fa-hia.test` in
+  Node — see the differences table below.
+- `domain is not a valid hostname` means the name has an empty label, a label over 63
+  characters or a leading/trailing hyphen. It is refused before the resolver is asked, and
+  the result echoes the name as typed.
 
 ### doh_test
 
@@ -131,6 +137,7 @@ A tool that completes but fails returns a normal result with
 | Timestamps | `…Z` | `…+00:00` |
 | `doh_test` echoed `url` | normalised (`https://host` becomes `https://host/`) | as supplied |
 | `dns_check` address order | resolver order | sorted |
+| `dns_check` with `ß` or `ς` | UTS#46: `xn--fa-hia.test`, `xn--3xa.test` | IDNA2003: `fass.test`, `xn--4xa.test` |
 
 If a client validates result payloads strictly, run the same check against both
 servers before filing a bug.

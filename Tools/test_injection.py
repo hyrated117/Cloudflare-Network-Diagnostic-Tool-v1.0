@@ -8,13 +8,15 @@ backticks, `${IFS}` instead of a space), then inspects what actually happened:
 
 - a fake `traceroute` at the front of `PATH` records its exact argv, so a value that
   reached the command line can be seen as one argument, never split into flags;
-- resolver stubs in both runtimes record the host they were asked for, so a hostile
-  domain can be seen arriving as one literal string, not as something a shell expanded;
+- resolver stubs in both runtimes record the host they were asked for, so a domain that
+  is looked up can be seen arriving as one literal string, not something a shell expanded;
 - every payload aims a `touch` at a marker file in a temporary directory, and the test
   fails if that file appears.
 
 Rejected values must produce the server's validation error and no argv; accepted ones
 must arrive as exactly `traceroute <value>`, with no extra argument, and leave no marker.
+A domain that is not a valid hostname is refused by both servers before the resolver is
+asked, so a hostile string cannot become a lookup either.
 On Linux `traceroute` is invoked without
 fixed flags, which is why one argument is expected here; the Windows `tracert` shape is
 covered by `Tools/test_windows_trace_route.py`. Nothing here needs a network.
@@ -53,18 +55,20 @@ DESTINATIONS = [
 
 EXECUTED = sum(1 for _, expectation in DESTINATIONS if expectation == "exec")
 
-# (domain, "reject" or "lookup"). Every domain here is a literal name, flag-shaped or not.
+# (domain, "reject" for a protocol error, "invalid" for a tool-level hostname refusal,
+# "lookup" when it must reach the resolver). No flag- or shell-shaped string is a legal
+# hostname, so those are refused before any lookup.
 DOMAINS = [
     ("", "reject"),
     (" ", "reject"),
     ("\t", "reject"),
     ("example.com", "lookup"),
-    ("-n", "lookup"),
-    ("--help", "lookup"),
-    ("$(touch${IFS}MARKER)", "lookup"),
-    ("`touch${IFS}MARKER`", "lookup"),
-    ("example.com;touch${IFS}MARKER", "lookup"),
-    ("example.com&&touch${IFS}MARKER", "lookup"),
+    ("-n", "invalid"),
+    ("--help", "invalid"),
+    ("$(touch${IFS}MARKER)", "invalid"),
+    ("`touch${IFS}MARKER`", "invalid"),
+    ("example.com;touch${IFS}MARKER", "invalid"),
+    ("example.com&&touch${IFS}MARKER", "invalid"),
 ]
 
 PYTHON_RESOLVER_STUB = '''\
@@ -192,6 +196,14 @@ def check_server(label, completed, trace_log, dns_log, marker):
                 problems.append(failure(label, f"domain {value!r} was refused with {error!r}"))
             if filled in lookups:
                 problems.append(failure(label, f"domain {value!r} reached the resolver"))
+        elif expectation == "invalid":
+            result = (response.get("result") or {}).get("structuredContent") or {}
+            if result.get("error") != "domain is not a valid hostname":
+                problems.append(failure(label, f"domain {value!r} returned {str(result)[:120]}"))
+            if result.get("domain") != filled:
+                problems.append(failure(label, f"domain {value!r} echoed {result.get('domain')!r}"))
+            if filled in lookups:
+                problems.append(failure(label, f"domain {value!r} reached the resolver"))
         else:
             if response.get("error") is not None:
                 problems.append(failure(label, f"domain {value!r} was refused with {error!r}"))
@@ -250,7 +262,7 @@ def main():
         print(f"FAIL: {problem}", file=sys.stderr)
     if problems:
         sys.exit(f"{len(problems)} injection check(s) failed")
-    print(f"ok {len(DESTINATIONS)} destinations and {len(DOMAINS)} domains reach argv and the resolver as data on both servers")
+    print(f"ok {len(DESTINATIONS)} destinations and {len(DOMAINS)} domains stay data on both servers")
 
 
 if __name__ == "__main__":

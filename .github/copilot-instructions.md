@@ -46,8 +46,11 @@
   cap). Known differences, which must stay deliberate and documented: timestamps differ
   (`Z` vs `+00:00`); `doh_test` echoes the URL as supplied in Python and normalised in
   Node; `dns_check` sorts addresses in Python and keeps resolver order in Node.
-- `dns_check` converts a Unicode domain to punycode on both sides before resolving, and
-  reports that form as `domain`; keep the conversion identical on both servers.
+- `dns_check` lowercases and NFC-normalises a Unicode domain, then converts it with each
+  runtime's IDNA (Python: IDNA2003, Node: UTS#46) and reports the resolved ASCII name.
+  Keep the shared steps identical; `faß.test` and `ς.test` still encode differently by
+  standard, and `Tools/test_parity.py`'s `IDN_DIVERGENT` pins both answers. A name that is
+  not a valid hostname is refused with `domain is not a valid hostname` on both servers.
 - `ci.yml` runs `validate` on Linux, `package`, `lint`, `windows`, and a `macos` job with
   the syntax checks, smoke test, conformance, differential test and injection test.
 - Use the standard library only. Do not add dependencies to either server.

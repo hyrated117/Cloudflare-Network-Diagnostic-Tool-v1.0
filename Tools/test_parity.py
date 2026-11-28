@@ -55,9 +55,23 @@ DNS_TABLE = {
     "dual.parity.test": {"v4": ["192.0.2.9", "192.0.2.2"], "v6": ["2001:db8::9"]},
     "missing.parity.test": {"v4": [], "v6": []},
     "xn--mnchen-3ya.test": {"v4": ["198.51.100.7"], "v6": []},
+    "xn--xample-9ua.test": {"v4": ["198.51.100.6"], "v6": []},
+    "fass.test": {"v4": ["198.51.100.8"], "v6": []},
+    "xn--fa-hia.test": {"v4": ["198.51.100.8"], "v6": []},
+    "xn--4xa.test": {"v4": ["198.51.100.9"], "v6": []},
+    "xn--3xa.test": {"v4": ["198.51.100.9"], "v6": []},
 }
-# Sent as written, and expected to be looked up as the punycode name above.
-UNICODE_HOST = "münchen.test"
+# Sent as written and converted by the server. Case and composition are normalised before
+# the conversion, so these must all land on the ASCII names above.
+UNICODE_HOSTS = ["münchen.test", "MÜNCHEN.test", "e\u0301xample.test", "münchen..test"]
+# The two runtimes' IDNA standards cannot be reconciled with the standard library:
+# CPython's idna codec is IDNA2003, Node's domainToASCII is UTS#46. These names encode
+# differently; check_outcomes pins each server's exact result and compare() skips them,
+# then asserts below that they really do still differ.
+IDN_DIVERGENT = {
+    "faß.test": ("fass.test", "xn--fa-hia.test"),
+    "ς.test": ("xn--4xa.test", "xn--3xa.test"),
+}
 
 # DoH is served by the loopback fixture in main(); the port is filled in by main() too.
 DOH_PORT_PLACEHOLDER = "DOH_PORT"
@@ -75,7 +89,7 @@ DOH_BODIES = {
     "/error": (503, '{"Status":2}'),
     "/over": (200, "x" * DOH_OVER_CAP),
 }
-DNS_VALUES = BAD_DOMAINS + list(DNS_TABLE) + [UNICODE_HOST]
+DNS_VALUES = BAD_DOMAINS + list(DNS_TABLE) + ["münchen.test"]
 URL_VALUES = BAD_URLS + [DOH_BASE + path for path in DOH_PATHS]
 
 # The last two reach the trace and find no binary (empty PATH), so both must say
@@ -132,7 +146,7 @@ MALFORMED_LINES = ["{not json", "{", "[]", "null", "123", '"text"', "true", "[{}
 # Every stub outcome, so no seed can skip one.
 NETWORK_REQUESTS = [
     {"jsonrpc": "2.0", "id": f"dns:{host}", "method": "tools/call", "params": {"name": "dns_check", "arguments": {"domain": host}}}
-    for host in list(DNS_TABLE) + [UNICODE_HOST]
+    for host in list(DNS_TABLE) + UNICODE_HOSTS + list(IDN_DIVERGENT)
 ] + [
     {"jsonrpc": "2.0", "id": f"doh:{path}", "method": "tools/call", "params": {"name": "doh_test", "arguments": {"url": DOH_BASE + path}}}
     for path in DOH_PATHS
@@ -153,7 +167,10 @@ def getaddrinfo(host, port, *args, **kwargs):
     # CPython encodes a non-ASCII name to punycode before asking the resolver.
     name = str(host)
     if any(ord(ch) > 127 for ch in name):
-        name = name.encode("idna").decode("ascii")
+        try:
+            name = name.encode("idna").decode("ascii")
+        except UnicodeError:
+            raise socket.gaierror("parity.test stub: unknown host " + name)
     entry = TABLE.get(name)
     if entry is None:
         try:
@@ -317,6 +334,13 @@ def check_outcomes(label, normalized):
     expect("dns:dual.parity.test", {"status": "ok", "addresses": ["192.0.2.2", "192.0.2.9", "2001:db8::9"]})
     expect("dns:missing.parity.test", {"status": "error", "addresses": [], "error": "missing.parity.test not found"})
     expect("dns:münchen.test", {"status": "ok", "domain": "xn--mnchen-3ya.test", "addresses": ["198.51.100.7"]})
+    expect("dns:MÜNCHEN.test", {"status": "ok", "domain": "xn--mnchen-3ya.test", "addresses": ["198.51.100.7"]})
+    expect("dns:e\u0301xample.test", {"status": "ok", "domain": "xn--xample-9ua.test", "addresses": ["198.51.100.6"]})
+    expect("dns:münchen..test", {"status": "error", "domain": "münchen..test", "addresses": [], "error": "domain is not a valid hostname"})
+    for host, (python_name, node_name) in IDN_DIVERGENT.items():
+        name = node_name if label == "server/index.js" else python_name
+        addresses = DNS_TABLE[name]["v4"]
+        expect(f"dns:{host}", {"status": "ok", "domain": name, "addresses": addresses})
     expect("doh:/ok", {"status": "ok", "statusCode": 200, "response": {"Status": 0, "Answer": [{"name": "dual.parity.test.", "type": 1, "TTL": 60, "data": "192.0.2.9"}]}})
     expect("doh:/unicode", {"status": "ok", "statusCode": 200, "response": {"Status": 0, "note": "héllo 🙂"}})
     expect("doh:/text", {"status": "ok", "statusCode": 200, "response": {"raw": "parity fixture: not JSON"}})
@@ -331,12 +355,14 @@ def check_outcomes(label, normalized):
     return problems
 
 
-def compare(check, expected, actual):
+def compare(check, expected, actual, ignore=()):
     """Every response, in order, must match once volatile fields are normalized."""
     if len(expected) != len(actual):
         print(f"FAIL: server/index.py answered {len(expected)} responses, server/index.js answered {len(actual)}", file=sys.stderr)
         return False
     for index, (left, right) in enumerate(zip(expected, actual), start=1):
+        if isinstance(left.get("id"), str) and left.get("id") in ignore:
+            continue
         if left != right:
             print(f"FAIL: response {index} (id {left.get('id')}) differs\n{check.diff_text(left, right)}", file=sys.stderr)
             return False
@@ -376,9 +402,18 @@ def main():
         fixture.shutdown()
         fixture.server_close()
 
+    divergent = {f"dns:{host}" for host in IDN_DIVERGENT}
+    matched = compare(check, expected, actual, ignore=divergent)
+    # A pinned difference that stops differing means a runtime changed; the case belongs
+    # back in the strict comparison rather than sitting in the ignored list for ever.
+    python_by_id = {r.get("id"): r for r in expected if isinstance(r.get("id"), str)}
+    node_by_id = {r.get("id"): r for r in actual if isinstance(r.get("id"), str)}
+    for key in sorted(divergent):
+        if python_by_id.get(key) == node_by_id.get(key):
+            problems.append(f"{key} no longer differs between the servers; remove it from IDN_DIVERGENT")
     for problem in problems:
         print(f"FAIL: {problem}", file=sys.stderr)
-    if not compare(check, expected, actual) or problems:
+    if not matched or problems:
         sys.exit(f"1 differential mismatch (seed {args.seed}, {len(lines) + len(MALFORMED_LINES)} requests)")
     print(f"ok {len(expected)} responses match (seed {args.seed}, {len(lines) + len(MALFORMED_LINES)} requests)")
 

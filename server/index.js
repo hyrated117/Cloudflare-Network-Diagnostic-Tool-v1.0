@@ -138,7 +138,9 @@ class DiagnosticServer {
 
   async exportResults(format = 'json', results = {}) {
     if (!['json', 'csv'].includes(format)) throw new TypeError("format must be 'json' or 'csv'");
-    if (results === null || typeof results !== 'object' || Array.isArray(results)) throw new TypeError('results must be an object');
+    // `results: null` means "nothing to export", the same as omitting it.
+    if (results === null) results = {};
+    if (typeof results !== 'object' || Array.isArray(results)) throw new TypeError('results must be an object');
     let content;
     if (format === 'json') {
       content = JSON.stringify(results, null, 2);
@@ -154,6 +156,7 @@ class DiagnosticServer {
   }
 
   async callTool(name, args) {
+    if (typeof name !== 'string') throw new TypeError('tool name must be a string');
     const tool = this.tools[name];
     if (!tool) throw new Error(`Unknown tool '${name}'`);
     if (!args || typeof args !== 'object' || Array.isArray(args)) throw new TypeError('arguments must be a JSON object');
@@ -192,7 +195,8 @@ class DiagnosticServer {
           result = { tools: Object.entries(this.tools).map(([name, tool]) => ({ name, description: tool.description, inputSchema: tool.inputSchema })) };
           break;
         case 'tools/call': {
-          const output = await this.callTool(params.name, params.arguments ?? {});
+          // Only an omitted `arguments` is empty; an explicit null is not an object.
+          const output = await this.callTool(params.name, params.arguments === undefined ? {} : params.arguments);
           result = { content: [{ type: 'text', text: JSON.stringify(output) }], structuredContent: output, isError: output.status === 'error' };
           break;
         }

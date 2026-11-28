@@ -19,6 +19,7 @@ node --check installers/cli.js
 python3 -m compileall -q server installers Tools  # Python syntax
 python3 server/smoke_test.py                      # JSON-RPC smoke test, no network
 python3 Tools/check-conformance.py                # Python and Node answer identically
+python3 Tools/test_parity.py                      # ...and on 300 seeded random requests
 python3 Tools/check-version.py                    # version sites, VERSION and changelog agree
 python3 Tools/validate-json.py .                  # JSON syntax
 python3 Tools/check-dependabot.py                 # .github/dependabot.yml parses and Dependabot would accept it
@@ -90,6 +91,14 @@ and runs in `Validate` as `Self-test the image check`.
 Windows: it forces `trace_route` down the `tracert` path in both servers and puts a fake
 `tracert` on `PATH`, so the exact flags (`-d -h 15 -w 300`), a successful trace, a failed
 one and a missing binary are all asserted offline in `Validate`.
+
+`Tools/test_parity.py` pushes the Python/Node comparison past the fixed conformance
+cases: a seeded random corpus (plus a fixed edge list) of odd argument types, missing and
+extra keys, nulls, malformed lines, credentials and non-HTTP schemes in a DoH URL, a NUL
+byte in a destination and non-ASCII export payloads goes to both servers, and every
+response must match. It is deterministic and offline — the argument pools fail validation
+before a lookup, `trace_route` runs with an empty `PATH`, and `health_score` is never
+generated — and `Validate` runs it as `Diff the servers on randomized requests`.
 
 `Tools/check-stack.py --fetch` is the pre-flight for the stacked pull requests: it
 resolves each branch, refuses a pull request whose base is not the previous tip (its diff

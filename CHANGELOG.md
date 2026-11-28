@@ -120,6 +120,13 @@ entries have been removed. The first version in this repository is `1.0.0`.
   sound pack passes and extracts. A `SHA256SUMS` with fewer than two fields, a pack with
   no `VERSION` and a missing versioned site now report a failure instead of raising, and
   `Validate` runs the test as `Self-test the archive check`
+- `Tools/test_parity.py` and a `Validate` step that diff the two servers on a seeded
+  random corpus plus a fixed edge list — odd argument types, missing and extra keys,
+  nulls, malformed lines, credentials and non-HTTP schemes in a DoH URL, a NUL byte in a
+  destination, non-ASCII exports — so drift the hand-written conformance cases never
+  listed fails. Deterministic (`--seed`, `--count`) and offline: the argument pools fail
+  validation before a lookup, `trace_route` runs with an empty `PATH`, `health_score` is
+  never generated. It immediately found five server differences, all fixed below
 
 ### Changed
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,
@@ -174,6 +181,15 @@ entries have been removed. The first version in this repository is `1.0.0`.
 - The release documentation no longer claims that no tag exists: the v1.0.1 notes, the
   v1.0.0 notes header, the 1.0.0 entry below and the release checklist record that
   v1.0.0 was never tagged, so publishing v1.0.1 cannot make them false
+- Differences between the two servers that the fixed conformance cases missed, found by
+  `Tools/test_parity.py`: the Python `export_results` escaped non-ASCII characters in
+  JSON output where Node wrote them raw; Python rejected `results: null` while Node
+  treated it as `{}`; Node treated `arguments: null` as omitted where Python rejected it;
+  a NUL byte in `destination` reached `subprocess` in Python and failed with "embedded
+  null byte" instead of the validation message; a non-string or missing tool name was
+  reported as `'None'` by Python and `'null'`/`'undefined'` by Node; and the two servers
+  chose different messages for a DoH URL whose scheme was missing, non-HTTP or carried
+  credentials
 
 ## [1.0.1] - 2026-11-25
 

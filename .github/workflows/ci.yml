@@ -60,9 +60,12 @@ jobs:
       - name: Run Python MCP smoke test
         run: python server/smoke_test.py
 
-      # Both servers implement one MCP surface; this fails when they diverge.
+      # Both servers implement one MCP surface; these fail when they diverge.
       - name: Compare the Python and Node servers
         run: python Tools/check-conformance.py
+
+      - name: Diff the servers on randomized requests
+        run: python Tools/test_parity.py
 
       - name: Check version consistency
         run: python Tools/check-version.py

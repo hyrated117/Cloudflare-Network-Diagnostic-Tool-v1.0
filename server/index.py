@@ -83,10 +83,12 @@ class DiagnosticServer:
             parsed = urllib.parse.urlsplit(url)
         except ValueError as exc:
             raise ValueError("url must be a valid HTTP(S) URL") from exc
-        if not parsed.netloc:
+        if not parsed.scheme:
             raise ValueError("url must be a valid HTTP(S) URL")
         if parsed.scheme not in ("http", "https") or parsed.username or parsed.password:
             raise ValueError("url must use HTTP or HTTPS and must not contain credentials")
+        if not parsed.netloc:
+            raise ValueError("url must be a valid HTTP(S) URL")
         request = urllib.request.Request(url, headers={"Accept": "application/dns-json", "User-Agent": "Cloudflare-Diagnostic-Tool/1.0"})
         try:
             with urllib.request.urlopen(request, timeout=5) as response:
@@ -105,7 +107,7 @@ class DiagnosticServer:
             return {"tool": "doh_test", "url": url, "status": "error", "error": str(exc), "timestamp": now()}
 
     def trace_route(self, destination):
-        if not isinstance(destination, str) or not destination.strip() or any(ch.isspace() for ch in destination) or destination.strip().startswith("-"):
+        if not isinstance(destination, str) or not destination.strip() or any(ch.isspace() or ch == "\0" for ch in destination) or destination.strip().startswith("-"):
             raise ValueError("destination must be a non-empty host or IP without whitespace and must not start with '-'")
         destination = destination.strip()
         for command, fixed_args in trace_candidates():
@@ -135,7 +137,7 @@ class DiagnosticServer:
         if not isinstance(results, dict):
             raise ValueError("results must be an object")
         if format == "json":
-            content = json.dumps(results, indent=2)
+            content = json.dumps(results, indent=2, ensure_ascii=False)
         else:
             output = io.StringIO(newline="")
             writer = csv.writer(output, lineterminator="\n")
@@ -171,6 +173,8 @@ class DiagnosticServer:
         elif method == "tools/call":
             try:
                 name = params.get("name")
+                if not isinstance(name, str):
+                    raise ValueError("tool name must be a string")
                 tool = self.tools.get(name)
                 if tool is None:
                     raise ValueError(f"Unknown tool '{name}'")

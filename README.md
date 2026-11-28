@@ -114,6 +114,7 @@ python3 -m compileall -q server installers Tools
 bash -n installers/*.sh Tools/*.sh
 python3 server/smoke_test.py        # protocol smoke test, no network access
 python3 Tools/check-conformance.py  # Python and Node answer identically
+python3 Tools/test_parity.py        # ...and on 300 seeded random requests too
 python3 Tools/check-version.py      # VERSION, the stamped sites and the changelog agree
 python3 Tools/validate-json.py .    # JSON syntax
 python3 -m pip install --quiet pyyaml==6.0.4   # needed by the two checks below
@@ -146,6 +147,9 @@ Windows `tracert` branch on Linux with a shim, so the command shape and the thre
 outcomes are checked on every pull request rather than only in the Windows job.
 `Tools/check-stack.py --fetch` rehearses the five stacked pull requests before they are
 opened: bases, ancestry and a conflict-free merge into `main` in order.
+`Tools/test_parity.py` widens the hand-written conformance cases into a seeded random
+corpus of odd arguments, malformed lines and hostile values, and fails on any response
+that differs between the two servers.
 
 ## Documentation
 

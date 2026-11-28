@@ -46,7 +46,8 @@ The repository ships two MCP stdio servers, their installers and documentation â
 ## 5. CI
 
 - [x] Linux `Validate` job: syntax (`node --check` on both entries, `compileall`, `bash -n`
-  on every shell script), Python smoke test, Python/Node conformance, version
+  on every shell script), Python smoke test, Python/Node conformance and randomized
+  parity, version
   consistency, JSON, the pinned PyYAML install with the Dependabot check and its
   self-test, the workflow checks and their self-test, the pin and image self-tests, the
   Windows tracert test, the stack self-test, both version self-tests, the archive

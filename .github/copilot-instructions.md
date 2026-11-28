@@ -82,6 +82,7 @@ python3 -m compileall -q server installers Tools
 bash -n installers/*.sh Tools/*.sh
 python3 server/smoke_test.py
 python3 Tools/check-conformance.py
+python3 Tools/test_parity.py
 python3 Tools/check-version.py
 python3 Tools/validate-json.py .
 python3 -m pip install --quiet pyyaml==6.0.4   # check-dependabot.py and check-workflows.py

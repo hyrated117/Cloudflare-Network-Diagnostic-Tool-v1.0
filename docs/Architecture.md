@@ -125,7 +125,9 @@ The Node server needs no dependencies; the unified installers write a
 - `.github/workflows/ci.yml` — `validate` job (syntax, smoke test, conformance,
   version consistency, JSON, the pinned PyYAML with the Dependabot check and its
   self-test, the workflow checks and their self-test, the version self-tests, the
-  archive self-test, documentation links, installer configs), a `package` job (build
+  archive self-test, documentation links, installer configs) on a matrix that runs the
+  release environment (Node 20, Python 3.12) and the floor the README promises
+  (Node 18, Python 3.8), a `package` job (build
   the archive, check it, install from the extracted copy), a `lint` job (actionlint
   with its bundled shellcheck, then pinned shellcheck over `installers/*.sh` and
   `Tools/*.sh`), a `windows` job (PowerShell parser, a real `tracert` trace, and the

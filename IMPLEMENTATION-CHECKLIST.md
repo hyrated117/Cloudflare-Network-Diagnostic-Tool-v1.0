@@ -56,6 +56,9 @@ The repository ships two MCP stdio servers, their installers and documentation �
   Windows tracert test, the destination/domain injection test, the stack self-test, both
   version self-tests, the archive
   self-test, documentation links, installer configs **(automated)**
+- [x] The same `Validate` steps run on the documented floor — Node 18 with Python 3.8,
+  alongside Node 20 and Python 3.12 — so the minimums in [README.md](./README.md) are
+  executed rather than assumed **(automated: the `validate` job's matrix)**
 - [x] `lint` job: actionlint pinned by image digest, with its bundled shellcheck over
   every `run:` block, then shellcheck 0.11.0 from its checksum-verified tarball over
   `installers/*.sh` and `Tools/*.sh` **(automated)**

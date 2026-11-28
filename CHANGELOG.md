@@ -13,6 +13,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
 ## [Unreleased]
 
 ### Added
+- A `Validate` matrix: the job now runs on the runtimes the project promises as well as
+  the one it releases from — Node 18 with Python 3.8 next to Node 20 and Python 3.12. The floor was a
+  README claim with nothing executing it. PyYAML is pinned to `6.0.3` because `6.0.4`
+  requires Python 3.10 and cannot install on that leg
 - `VERSION` at the repository root as the one place the version is written, plus
   `Tools/stamp-version.py`, which stamps it into all sixteen hand-maintained literals
   in twelve files, including both `package-lock.json` files npm would otherwise rewrite. `Tools/check-version.py` now fails when any site drifts from `VERSION`, so
@@ -240,6 +244,16 @@ entries have been removed. The first version in this repository is `1.0.0`.
   both servers; with a single supported version the echoed and the fallback answers are
   the same string, so the unsupported rows are what catch a version being echoed that
   the server does not speak
+
+### Fixed
+- The Python server's `export_results` CSV depended on the runtime: `csv.writer` quotes a
+  bare carriage return on 3.10+ and leaves it bare on 3.8, where Node always quotes it, so
+  the same result object produced two different documents. Cells are now quoted by the
+  Node server's rule on every version. Found by running the checks on 3.8
+- `Tools/check-archive.py` used `str.removeprefix` (3.9+) and
+  `Tools/check-actionlint-image.py` annotated with `dict[...]` and `str | None` (3.9+/3.10+),
+  so the archive and image self-tests failed on the Python 3.8 floor. The first is sliced
+  and the second takes its annotations from `__future__`
 
 ## [1.0.1] - 2026-11-25
 

@@ -96,7 +96,7 @@ python3 Tools/check-conformance.py
 python3 Tools/test_parity.py
 python3 Tools/check-version.py
 python3 Tools/validate-json.py .
-python3 -m pip install --quiet pyyaml==6.0.4   # check-dependabot.py and check-workflows.py
+python3 -m pip install --quiet pyyaml==6.0.3   # check-dependabot.py and check-workflows.py
 python3 Tools/check-dependabot.py
 python3 Tools/test_check_dependabot.py
 python3 Tools/check-workflows.py

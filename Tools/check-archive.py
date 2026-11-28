@@ -105,9 +105,12 @@ def version(archive, release=None):
             return False
         expected = words[0]
         ok = True
-        if release is not None and expected != release.removeprefix("v"):
+        # Sliced rather than `str.removeprefix`, which is 3.9+: `Validate` runs on the
+        # Python 3.8 floor the README promises.
+        release_version = release[1:] if release is not None and release.startswith("v") else release
+        if release is not None and expected != release_version:
             print(
-                f"FAIL: archive is stamped {expected}, but the release is {release.removeprefix('v')}",
+                f"FAIL: archive is stamped {expected}, but the release is {release_version}",
                 file=sys.stderr,
             )
             ok = False

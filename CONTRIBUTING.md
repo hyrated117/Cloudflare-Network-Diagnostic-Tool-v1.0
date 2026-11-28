@@ -41,8 +41,14 @@ python3 Tools/test_check_archive.py               # each archive rule fails a ba
 python3 Tools/check-installers.py --installers-root dist/pack
 ```
 
+CI runs that list twice: on the release environment (Node 20, Python 3.12) and on the
+floor `README.md` promises (Node 18, Python 3.8). A tool that quietly needs a newer
+runtime, a stdlib function that only exists from 3.9 or a runtime-specific output now
+fails `Validate` instead of the user. Both legs pin PyYAML `6.0.3`, the newest release
+that installs on 3.8 — `6.0.4` requires 3.10.
+
 `check-dependabot.py` is the one check that needs a package: `python3 -m pip install
-pyyaml==6.0.4`. CI installs that pinned version before running it, and every other tool
+pyyaml==6.0.3`. CI installs that pinned version before running it, and every other tool
 here is stdlib-only. It checks the keys Dependabot needs and reports unrecognized ones
 as warnings rather than failures (GitHub keeps adding keys), and it exists because
 GitHub reads `dependabot.yml` only from the default branch and says nothing when the

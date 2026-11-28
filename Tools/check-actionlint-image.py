@@ -24,6 +24,8 @@ Usage:
     python3 Tools/check-actionlint-image.py
 """
 
+from __future__ import annotations
+
 import hashlib
 import io
 import json

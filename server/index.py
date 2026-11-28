@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 """Cloudflare network diagnostics over newline-delimited JSON-RPC on stdio."""
 
-import csv
-import io
 import json
 import logging
 import socket
@@ -56,6 +54,18 @@ def valid_hostname(name):
         and all(ch.isalnum() or ch == "-" for ch in label)
         for label in labels
     )
+
+
+def csv_cell(text):
+    """A CSV cell quoted exactly as the Node server quotes it, on every Python version.
+
+    `csv.writer` quotes a bare carriage return on 3.10+ and leaves it bare on 3.8, so the
+    same result object produced two different documents depending on the runtime.
+    """
+    if any(ch in text for ch in (",", '"', "\n", "\r")):
+        return '"' + text.replace('"', '""') + '"'
+    return text
+
 
 class DiagnosticServer:
     """MCP-style JSON-RPC stdio server with network diagnostic tools."""
@@ -191,14 +201,12 @@ class DiagnosticServer:
         if format == "json":
             content = json.dumps(results, indent=2, ensure_ascii=False)
         else:
-            output = io.StringIO(newline="")
-            writer = csv.writer(output, lineterminator="\n")
-            writer.writerow(["name", "value"])
+            rows = ["name,value"]
             for key, value in results.items():
                 # Strings verbatim, every other value as compact JSON, matching the Node server.
                 cell = value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, separators=(",", ":"))
-                writer.writerow([key, cell])
-            content = output.getvalue().rstrip("\n")
+                rows.append(f"{csv_cell(key)},{csv_cell(cell)}")
+            content = "\n".join(rows)
         return {"tool": "export_results", "format": format, "status": "ok", "content": content, "timestamp": now()}
 
     def list_tools(self):

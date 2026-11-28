@@ -17,6 +17,9 @@ those are tracked in [ROADMAP.md](./ROADMAP.md).
 Neither server uses third-party packages, so no `npm install` or `pip install` is
 involved.
 
+Both minimums run in CI: the `Validate` job also runs on Node 18 and Python 3.8, so a
+runtime that stops working at the floor fails before a release rather than after it.
+
 ## Installation
 
 ### macOS / Linux
@@ -117,7 +120,7 @@ python3 Tools/check-conformance.py  # Python and Node answer identically
 python3 Tools/test_parity.py        # ...and on 300 seeded random requests too
 python3 Tools/check-version.py      # VERSION, the stamped sites and the changelog agree
 python3 Tools/validate-json.py .    # JSON syntax
-python3 -m pip install --quiet pyyaml==6.0.4   # needed by the two checks below
+python3 -m pip install --quiet pyyaml==6.0.3   # needed by the two checks below
 python3 Tools/check-dependabot.py   # .github/dependabot.yml parses and is accepted
 python3 Tools/test_check_dependabot.py         # that check's rules, both ways
 python3 Tools/check-workflows.py    # triggers, timeouts, pins, broken continuations

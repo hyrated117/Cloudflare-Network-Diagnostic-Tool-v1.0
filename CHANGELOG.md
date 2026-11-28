@@ -137,8 +137,8 @@ entries have been removed. The first version in this repository is `1.0.0`.
   arrive as one literal argument. Every payload aims a `touch` at a marker file that must
   never appear, so a shell in either server fails the test
 - `Tools/test_parity.py` sends Unicode domains: `münchen.test`, an upper-case and an
-  NFD-composed form must all encode to `xn--mnchen-3ya.test`, a malformed label must be
-  refused by both servers, and `faß.test`/`ς.test` — which Python's IDNA2003 and Node's
+  NFD-composed form must all encode to `xn--mnchen-3ya.test`, a malformed name that needs
+  conversion must be refused by both servers, and `faß.test`/`ς.test` — which Python's IDNA2003 and Node's
   UTS#46 encode differently — are pinned per server in `IDN_DIVERGENT`, kept out of the
   strict diff and failed if they ever stop differing, so the remaining gap is deliberate
   rather than silent
@@ -197,9 +197,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
   while Python's `getaddrinfo` encoded and resolved it, so one server returned addresses
   and the other an error for the same domain. Both lowercase and NFC-normalise first, so
   case and composition no longer matter, and both refuse a name that is not a valid
-  hostname with the same `domain is not a valid hostname` result and the name as typed;
-  `faß.test` and `ς.test` still encode differently by standard; both are documented and
-  pinned, rather than quietly disagreeing
+  hostname with the same `domain is not a valid hostname` result and the name as typed,
+  while a plain ASCII name is still left to the resolver as before; `faß.test` and `ς.test`
+  still encode differently by standard, and both are documented and pinned rather than
+  quietly disagreeing
 - `release.yml` no longer appends the repository's whole history to a first tag's
   release body: with no earlier tag the curated notes stand alone and a notice is
   logged, and otherwise only the commits since that tag are listed

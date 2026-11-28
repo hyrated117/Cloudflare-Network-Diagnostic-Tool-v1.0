@@ -76,9 +76,9 @@ class DiagnosticServer {
       // encode differently (ß, final sigma) — docs/Modules.md lists them.
       const normalized = host.normalize('NFC').toLowerCase();
       host = domainToASCII(normalized) || normalized;
-    }
-    if (!validHostname(host)) {
-      return { tool: 'dns_check', domain: typed, status: 'error', addresses: [], error: DNS_INVALID, timestamp: timestamp() };
+      if (!validHostname(host)) {
+        return { tool: 'dns_check', domain: typed, status: 'error', addresses: [], error: DNS_INVALID, timestamp: timestamp() };
+      }
     }
     const results = await Promise.allSettled([
       dns.promises.resolve4(host),

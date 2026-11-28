@@ -38,7 +38,9 @@ def trace_candidates():
 
 
 def valid_hostname(name):
-    """The ASCII label rules the Node server applies, shared so both refuse the same names."""
+    """The ASCII label rules the Node server applies, shared so both refuse the same
+    converted names. Plain ASCII input is not checked here: it goes to the resolver as it
+    always did, and only a name that was IDNA-converted is held to these rules."""
     if not name.isascii() or len(name) > 253:
         return False
     labels = (name[:-1] if name.endswith(".") else name).split(".")
@@ -100,8 +102,8 @@ class DiagnosticServer:
                 domain = domain.encode("idna").decode("ascii")
             except UnicodeError:
                 pass  # the label check below refuses it, the same on both servers
-        if not valid_hostname(domain):
-            return {"tool": "dns_check", "domain": typed, "status": "error", "addresses": [], "error": DNS_INVALID, "timestamp": now()}
+            if not valid_hostname(domain):
+                return {"tool": "dns_check", "domain": typed, "status": "error", "addresses": [], "error": DNS_INVALID, "timestamp": now()}
         try:
             addresses = sorted({entry[4][0] for entry in socket.getaddrinfo(domain, None)})
             return {"tool": "dns_check", "domain": domain, "status": "ok", "addresses": addresses, "timestamp": now()}

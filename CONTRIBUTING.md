@@ -112,10 +112,9 @@ and `Validate` runs it as `Diff the servers on randomized requests`.
 
 `Tools/test_injection.py` covers the input side: a fake `traceroute` first on `PATH`
 records its argv and resolver stubs record names, then flag-shaped and shell-shaped
-destinations and domains are sent. A destination must be refused or arrive as one literal
-argument, the same strings as a domain must be refused as invalid hostnames with no
-lookup, no payload may add an argument, and a marker file every payload aims a `touch` at
-must never appear. `Validate` runs it as `Test hostile destinations and domains`.
+destinations and domains are sent. Each value must be refused or arrive as one literal
+argument, no payload may add an argument, and a marker file every payload aims a `touch`
+at must never appear. `Validate` runs it as `Test hostile destinations and domains`.
 
 `Tools/check-stack.py --fetch` is the pre-flight for the stacked pull requests: it
 resolves each branch, refuses a pull request whose base is not the previous tip (its diff

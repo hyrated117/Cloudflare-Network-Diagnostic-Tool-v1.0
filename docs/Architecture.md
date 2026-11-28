@@ -102,9 +102,8 @@ The Node server needs no dependencies; the unified installers write a
   image `lint` runs, pulled by its pinned digest and executed from its extracted
   binaries, so the Docker step is reproducible without a daemon; its rules run offline.
 - `Tools/test_injection.py` — a fake `traceroute` first on `PATH` records its argv and
-  resolver stubs record names; flag-shaped and shell-shaped destinations must be refused
-  or arrive as one literal argument, never as extra flags or shell code, and the same
-  strings in a domain are refused as invalid hostnames before any lookup.
+  resolver stubs record names; flag-shaped and shell-shaped destinations and domains must
+  be refused or arrive as one literal argument, never as extra flags or shell code.
 - `Tools/test_windows_trace_route.py` — forces the `tracert` branch of `trace_route` in
   both servers with a shim on `PATH`, so its flags and its success, failure and missing
   outcomes are validated on Linux instead of only by the Windows job.

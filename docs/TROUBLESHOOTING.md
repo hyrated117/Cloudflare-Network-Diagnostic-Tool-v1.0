@@ -67,9 +67,10 @@ A tool that completes but fails returns a normal result with
   composition do not change the result, but the two servers use different IDNA standards
   for a few characters, so `faß.test` is `fass.test` in Python and `xn--fa-hia.test` in
   Node — see the differences table below.
-- `domain is not a valid hostname` means the name has an empty label, a label over 63
-  characters or a leading/trailing hyphen. It is refused before the resolver is asked, and
-  the result echoes the name as typed.
+- `domain is not a valid hostname` means a name that needed IDNA conversion has an empty
+  label, a label over 63 characters or a leading/trailing hyphen. It is refused before the
+  resolver is asked, and the result echoes the name as typed. Plain ASCII names are not
+  checked this way; their errors come from the resolver, as before.
 
 ### doh_test
 

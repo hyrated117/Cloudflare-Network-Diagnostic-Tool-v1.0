@@ -152,9 +152,8 @@ outcomes are checked on every pull request rather than only in the Windows job.
 opened: bases, ancestry and a conflict-free merge into `main` in order.
 `Tools/test_injection.py` puts a logging fake `traceroute` first on `PATH` and stubs the
 resolver in both runtimes, then sends flag-shaped and shell-shaped destinations and
-domains: a destination must be refused or arrive as one literal argument, the same strings
-as a domain are refused as invalid hostnames with no lookup, and a marker file aimed at by
-every payload must never appear.
+domains: a value must be refused or arrive as one literal argument, and a marker file
+aimed at by every payload must never appear.
 `Tools/test_parity.py` widens the hand-written conformance cases into a seeded random
 corpus of odd arguments, malformed lines and hostile values, and fails on any response
 that differs between the two servers — including the success and error results of DNS and

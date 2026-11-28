@@ -49,8 +49,10 @@
 - `dns_check` lowercases and NFC-normalises a Unicode domain, then converts it with each
   runtime's IDNA (Python: IDNA2003, Node: UTS#46) and reports the resolved ASCII name.
   Keep the shared steps identical; `faß.test` and `ς.test` still encode differently by
-  standard, and `Tools/test_parity.py`'s `IDN_DIVERGENT` pins both answers. A name that is
-  not a valid hostname is refused with `domain is not a valid hostname` on both servers.
+  standard, and `Tools/test_parity.py`'s `IDN_DIVERGENT` pins both answers. Only a name
+  that needed conversion is label-checked: one that is not a valid hostname is refused
+  with `domain is not a valid hostname` on both servers, while plain ASCII input keeps
+  going to the resolver unchanged.
 - `ci.yml` runs `validate` on Linux, `package`, `lint`, `windows`, and a `macos` job with
   the syntax checks, smoke test, conformance, differential test and injection test.
 - Use the standard library only. Do not add dependencies to either server.

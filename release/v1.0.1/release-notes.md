@@ -39,6 +39,11 @@ the first commit. No tool was added or removed; the protocol surface is unchange
 - **`dns_check` sorts addresses in both servers.** Node reported the resolver's order
   where Python sorted the list; both now de-duplicate and sort, and the differential
   check compares every list with a sorted copy of itself.
+- **`trace_route` returns the same fields in both servers.** Node reported a completed
+  trace with only `output`, and a non-zero exit as `error` with no `returnCode`, where
+  Python returned `returnCode` beside the captured output. Both now return `returnCode`
+  and `output` for any run that completed, and `error` only when the utility could not
+  run at all.
 
 ### Changed
 

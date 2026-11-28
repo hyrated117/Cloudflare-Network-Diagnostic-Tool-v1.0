@@ -99,9 +99,11 @@ Linux/macOS, and `tracert -d -h 15 -w 300` on Windows.
   and must not start with `-`.
 - `status: "unavailable"` when the platform's utility is missing.
 
-Node returns the tracer's stdout, and on failure puts the failure text in `error`
-with no `returnCode`. Python returns `returnCode` plus stdout, or stderr when stdout
-is empty, and reports `status: "error"` for a non-zero exit.
+Both servers run the tracer to completion and return the same fields: `returnCode` and
+`output` (stdout, else stderr, else `No output captured`). A non-zero exit is
+`status: "error"` with those same fields. If the utility exists but cannot run — a
+timeout, or a binary that cannot be executed — the result is `status: "error"` with
+`error` instead of a return code.
 
 ## health_score
 
@@ -126,11 +128,11 @@ is returned in `content`. See [Export](./Export.md).
 
 Both servers accept the same requests and return the same result shape. Unknown
 tools, missing required arguments and unexpected arguments are rejected by both
-with `-32602`. These differences remain:
-
-| Area | Node | Python |
-|---|---|---|
-| `trace_route` failure | `error` with the failure text, no `returnCode` | `error` with `returnCode` and the captured output |
+with `-32602`, and no result field differs between them: `doh_test` echoes the URL as
+supplied, `dns_check` de-duplicates and sorts addresses, `timestamp` has one format, and
+`trace_route` reports `returnCode`/`output` or `error` the same way on both. The one
+difference left comes from the standard libraries' IDNA versions (`faß.test`,
+`ς.test`), described under [`dns_check`](#dns_check).
 
 ## Planned tools (not implemented)
 

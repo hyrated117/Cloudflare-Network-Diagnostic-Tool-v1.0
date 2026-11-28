@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /** Cloudflare network diagnostics over newline-delimited JSON-RPC on stdio. */
-import { execFileSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import dns from 'node:dns';
 import net from 'node:net';
 import { domainToASCII, pathToFileURL } from 'node:url';
@@ -145,13 +145,17 @@ class DiagnosticServer {
     }
     const target = destination.trim();
     for (const [command, fixedArgs] of traceCandidates()) {
-      try {
-        const output = execFileSync(command, [...fixedArgs, target], { encoding: 'utf8', timeout: TRACE_TIMEOUT_MS, stdio: ['ignore', 'pipe', 'pipe'] });
-        return { tool: 'trace_route', destination: target, status: 'ok', output: output.trim(), timestamp: timestamp() };
-      } catch (error) {
-        if (error?.code === 'ENOENT') continue;
-        return { tool: 'trace_route', destination: target, status: 'error', error: error?.stderr?.toString().trim() || error?.message, timestamp: timestamp() };
+      // spawnSync, not execFileSync: a non-zero exit is an outcome rather than an
+      // exception, and both streams come back, so a completed trace carries the same
+      // `returnCode` and `output` fields as the Python server's.
+      const child = spawnSync(command, [...fixedArgs, target], { encoding: 'utf8', timeout: TRACE_TIMEOUT_MS, stdio: ['ignore', 'pipe', 'pipe'] });
+      if (child.error) {
+        if (child.error.code === 'ENOENT') continue;
+        // The utility exists but could not run (timeout, permissions): no exit code.
+        return { tool: 'trace_route', destination: target, status: 'error', error: child.error.message, timestamp: timestamp() };
       }
+      const output = (child.stdout || '').trim() || (child.stderr || '').trim() || 'No output captured';
+      return { tool: 'trace_route', destination: target, status: child.status === 0 ? 'ok' : 'error', returnCode: child.status, output, timestamp: timestamp() };
     }
     return { tool: 'trace_route', destination: target, status: 'unavailable', message: 'No traceroute, tracepath or tracert utility available on this system.', timestamp: timestamp() };
   }

@@ -139,7 +139,7 @@ entries have been removed. The first version in this repository is `1.0.0`.
   listed fails. Deterministic (`--seed`, `--count`) and offline: name resolution is
   stubbed in both runtimes from one table, DoH is served by a loopback fixture (200, 404,
   503, a redirect, empty, non-JSON, over the 64 KiB cap) with each outcome asserted,
-  `trace_route` runs with an empty `PATH` and `health_score` is never generated. It found
+  `trace_route` runs a shim traceroute and `health_score` is never generated. It found
   eleven server differences: ten are fixed below, and the eleventh — IDNA2003 in Python
   against UTS#46 in Node — is documented and pinned as deliberate
 - `Tools/test_injection.py` and a `Validate` step that keep caller input out of the
@@ -273,6 +273,12 @@ entries have been removed. The first version in this repository is `1.0.0`.
   slash and normalises the host, where Python returned the string supplied. Both echo the
   request verbatim now, and `Tools/test_parity.py` compares each echo with the URL it
   sent, including a fixture endpoint addressed without a path
+- `trace_route` returned different fields: Node reported a completed trace with only
+  `output` and turned a non-zero exit into `error`, where Python returned `returnCode`
+  beside `output`. Node now runs the tracer with `spawnSync`, so any run that completed —
+  successful or not — carries `returnCode` and the captured `output` on both servers, and
+  only a utility that could not run gives `error`. The parity corpus runs a shim
+  traceroute that succeeds for one destination and exits 1 for another, and asserts both
 
 ## [1.0.1] - 2026-11-25
 

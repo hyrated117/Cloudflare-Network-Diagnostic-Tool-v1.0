@@ -11,8 +11,10 @@ The corpus is deterministic: the seed defaults to 20261128 and `--seed` explores
 different one. Nothing here reaches the network, but the success and error paths that
 normally need one are compared too: name resolution is stubbed in both runtimes from one
 table (A, AAAA, both, neither), DoH is served by a loopback fixture (200, 404, 503, a
-redirect, empty, non-JSON, over the 64 KiB cap), `trace_route` runs with an empty PATH so
-it reports "unavailable", and `health_score` — which dials 1.1.1.1 — is not generated;
+redirect, empty, non-JSON, over the 64 KiB cap), `trace_route` runs a shim `traceroute`
+that succeeds for one destination and exits 1 for another, so a completed trace and a
+failed one are compared field by field (`check-conformance.py` keeps the empty-PATH
+"unavailable" case), and `health_score` — which dials 1.1.1.1 — is not generated;
 `check-conformance.py` stubs that probe and asserts both documented scores instead.
 Timestamps record the instant a call ran, so they are compared by shape —
 `YYYY-MM-DDTHH:MM:SS.mmmZ` on both servers — rather than ignored, the `doh_test` echo is
@@ -104,11 +106,31 @@ DOH_BODIES = {
 DNS_VALUES = BAD_DOMAINS + list(DNS_TABLE) + ["münchen.test"]
 URL_VALUES = BAD_URLS + [DOH_BASE + path for path in DOH_PATHS]
 
-# The last two reach the trace and find no binary (empty PATH), so both must say
-# "unavailable"; the rest fail validation.
+# The last three are valid and reach the shim traceroute; the rest fail validation.
 DESTINATIONS = [
     "", " ", "\t", "\n", "\u00a0", "-oops", " -oops ", "two words", "a\x00b",
     42, 1.5, True, None, [], {}, "127.0.0.1", "example.com", "2001:db8::1",
+]
+
+# The corpus's traceroute: succeeds for any destination, and fails with a message on
+# stderr for the one below, so a completed trace and a failed one are both compared.
+TRACE_SHIM = '''#!/bin/sh
+case "$1" in
+  trace-fail.parity.test)
+    echo "hop 1"
+    echo "trace failed" >&2
+    exit 1
+    ;;
+  *)
+    echo "traceroute to $1, 1 hop"
+    exit 0
+    ;;
+esac
+'''
+
+TRACE_REQUESTS = [
+    {"jsonrpc": "2.0", "id": f"trace:{case}", "method": "tools/call", "params": {"name": "trace_route", "arguments": {"destination": f"trace-{case}.parity.test"}}}
+    for case in ("ok", "fail")
 ]
 
 FORMATS = ["json", "csv", "JSON", "CSV", "", "xml", None, 42, True, [], {}]
@@ -286,7 +308,7 @@ def protocol_request(rng):
 def corpus(seed, count):
     """A fixed edge list followed by a seeded mix of tool calls, protocol calls and junk."""
     rng = random.Random(seed)
-    messages = list(EDGE_MESSAGES) + list(NETWORK_REQUESTS) + list(PROTOCOL_VERSION_REQUESTS)
+    messages = list(EDGE_MESSAGES) + list(NETWORK_REQUESTS) + list(TRACE_REQUESTS) + list(PROTOCOL_VERSION_REQUESTS)
     for index in range(count):
         roll = rng.random()
         if roll < 0.7:
@@ -330,9 +352,10 @@ def start_fixture():
 
 
 def build_env(workdir):
-    """Stub name resolution, keep the fixture off any proxy, and hide every binary."""
+    """Stub name resolution and the tracer, keep the fixture off any proxy, and hide
+    every other binary."""
     env = {**os.environ}
-    env["PATH"] = str(workdir / "empty")
+    env["PATH"] = str(workdir / "bin")
     env["NO_PROXY"] = env["no_proxy"] = "127.0.0.1"
     env["PYTHONPATH"] = os.pathsep.join(filter(None, (str(workdir / "python"), env.get("PYTHONPATH"))))
     env["NODE_OPTIONS"] = " ".join(filter(None, (env.get("NODE_OPTIONS"), f'--require "{workdir / "node-dns-stub.cjs"}"')))
@@ -358,6 +381,12 @@ def check_outcomes(label, normalized):
     expect("dns:aaaa.parity.test", {"status": "ok", "addresses": ["2001:db8::1"]})
     expect("dns:dual.parity.test", {"status": "ok", "addresses": ["192.0.2.2", "192.0.2.9", "2001:db8::9"]})
     expect("dns:missing.parity.test", {"status": "error", "addresses": [], "error": "missing.parity.test not found"})
+    expect("trace:ok", {"status": "ok", "returnCode": 0})
+    expect("trace:fail", {"status": "error", "returnCode": 1})
+    for key, expected_output in (("trace:ok", "traceroute to trace-ok.parity.test, 1 hop"), ("trace:fail", "hop 1")):
+        output = (results.get(key) or {}).get("output")
+        if output != expected_output:
+            problems.append(f"{label}: {key} returned output {output!r}, expected {expected_output!r}")
     expect("dns:münchen.test", {"status": "ok", "domain": "xn--mnchen-3ya.test", "addresses": ["198.51.100.7"]})
     expect("dns:MÜNCHEN.test", {"status": "ok", "domain": "xn--mnchen-3ya.test", "addresses": ["198.51.100.7"]})
     expect("dns:e\u0301xample.test", {"status": "ok", "domain": "xn--xample-9ua.test", "addresses": ["198.51.100.6"]})
@@ -477,7 +506,10 @@ def main():
     try:
         with tempfile.TemporaryDirectory() as temporary:
             workdir = Path(temporary)
-            (workdir / "empty").mkdir()
+            (workdir / "bin").mkdir()
+            traceroute = workdir / "bin" / "traceroute"
+            traceroute.write_text(TRACE_SHIM, encoding="utf-8")
+            traceroute.chmod(0o755)
             (workdir / "python").mkdir()
             (workdir / "python" / "sitecustomize.py").write_text(PYTHON_DNS_STUB, encoding="utf-8")
             (workdir / "node-dns-stub.cjs").write_text(NODE_DNS_STUB, encoding="utf-8")

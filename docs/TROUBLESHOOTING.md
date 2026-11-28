@@ -92,8 +92,10 @@ A tool that completes but fails returns a normal result with
 - Windows runs `tracert -d -h 15 -w 300`: no reverse DNS, at most 15 hops, 300 ms
   per probe, so a run fits inside the 20 second timeout.
 - The command is bounded at 20 seconds; a slow path returns `status: "error"` with
-  the timeout message. Because Node runs it synchronously, later requests in the
-  same session wait for it.
+  the timeout message and no `returnCode`. Because Node runs it synchronously, later
+  requests in the same session wait for it.
+- A run that completes returns `returnCode` and `output` on both servers, including a
+  non-zero exit, which is `status: "error"` with the captured output.
 
 ### health_score
 

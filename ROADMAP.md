@@ -35,7 +35,7 @@ exist in this repository:
 ### Near term
 
 - Close the differences the runtimes still impose: IDNA2003 vs UTS#46 for a few
-  characters, `trace_route` failure fields and JSON number rendering in CSV cells
+  characters and JSON number rendering in CSV cells
 - Conformance tests for every tool plus malformed-input cases in CI
 - Clearer timeout configuration instead of fixed values
 

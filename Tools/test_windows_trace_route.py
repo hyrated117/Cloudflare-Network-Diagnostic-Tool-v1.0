@@ -10,8 +10,8 @@ never exercised until that job starts. This test forces the branch and puts a fa
   `status: ok` with the destination in the output, and must be invoked as exactly
   `tracert -d -h 15 -w 300 <destination>` — the flags bound reverse DNS and the run;
 - a shim that exits 1 with the message Windows writes when the route fails must surface
-  as `status: error` in both servers, with Python's `returnCode: 1` and Node's `error`
-  carrying the text;
+  as `status: error` in both servers, with `returnCode: 1` and the text in `output`, so
+  both outcomes carry the same keys;
 - with no `tracert` on `PATH` at all, both servers must say `unavailable` rather than
   claim a trace.
 
@@ -142,9 +142,14 @@ def main():
             json.dumps(python_ok),
         )
         expect(
-            node_ok.get("status") == "ok" and DESTINATION in node_ok.get("output", ""),
+            node_ok.get("status") == "ok" and node_ok.get("returnCode") == 0 and DESTINATION in node_ok.get("output", ""),
             "node trace succeeds",
             json.dumps(node_ok),
+        )
+        expect(
+            set(python_ok) == set(node_ok),
+            "both success results carry the same keys",
+            f"{sorted(python_ok)} / {sorted(node_ok)}",
         )
 
         # 2. A tracert that fails: both servers report the failure, not a trace.
@@ -166,9 +171,16 @@ def main():
             json.dumps(python_failed),
         )
         expect(
-            node_failed.get("status") == "error" and FAILURE_TEXT in node_failed.get("error", ""),
+            node_failed.get("status") == "error"
+            and node_failed.get("returnCode") == 1
+            and FAILURE_TEXT in node_failed.get("output", ""),
             "node reports the failed trace with its message",
             json.dumps(node_failed),
+        )
+        expect(
+            set(python_failed) == set(node_failed),
+            "both failure results carry the same keys",
+            f"{sorted(python_failed)} / {sorted(node_failed)}",
         )
 
         # 3. No tracert at all: both say unavailable rather than inventing a trace.

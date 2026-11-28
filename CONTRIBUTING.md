@@ -122,8 +122,9 @@ differing. Two structurally invalid ASCII names (`a..b`, an over-long label) are
 too: the resolver is asked and rejects them, and both servers must report the same
 `domain is not a valid hostname` result instead of CPython's `UnicodeError` or c-ares's
 `EBADNAME`. It is deterministic and
-offline — `trace_route` runs with an empty `PATH` and `health_score` is never generated —
-and `Validate` runs it as `Diff the servers on randomized requests`.
+offline — `trace_route` runs a shim traceroute that succeeds for one destination and
+exits 1 for another, and `health_score` is never generated — and `Validate` runs it as
+`Diff the servers on randomized requests`.
 
 `Tools/test_injection.py` covers the input side: a fake `traceroute` first on `PATH`
 records its argv and resolver stubs record names, then flag-shaped and shell-shaped

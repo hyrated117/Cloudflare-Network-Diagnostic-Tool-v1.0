@@ -14,7 +14,7 @@ faster. Objectives and the measurement approach live in
 | `health_score` | TCP connect to `1.1.1.1:443` | 3 s |
 | `export_results` | string building | none required |
 
-`trace_route` dominates a run. It spawns a child process (Node uses `execFileSync`, so
+`trace_route` dominates a run. It spawns a child process (Node uses `spawnSync`, so
 the event loop is blocked for the whole call) and waits for hop discovery to finish or
 for the 20 s timeout. On Windows the single `tracert` candidate is bounded by its own
 `-h 15 -w 300` flags, so the run ends by hop count or by the timeout, whichever comes

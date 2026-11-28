@@ -34,7 +34,10 @@
   crashing; `trace_route` returns `"unavailable"` when the platform's tracer is
   missing: `traceroute` or `tracepath` on Linux/macOS, `tracert` on Windows. Windows
   ships `tracert`, so `unavailable` there means it is not on `PATH`.
-- Do not claim a check succeeded unless it completed.
+- A `trace_route` that ran to completion returns `returnCode` and `output` on both
+  servers, including a non-zero exit (`status: "error"` with the captured output); only
+  a utility that could not run gives `error` instead. Keep that field set identical, and
+  use `spawnSync` rather than `execFileSync` so a non-zero exit is an outcome.
 
 ## Node and Python parity
 

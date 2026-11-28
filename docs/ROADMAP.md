@@ -18,7 +18,7 @@ reference and [Architecture](./Architecture.md) for the design.
 
 ### Servers
 - Close the differences the runtimes still impose: IDNA2003 vs UTS#46 for a few
-  characters, `trace_route` failure fields and JSON number rendering in CSV cells
+  characters and JSON number rendering in CSV cells
 - Conformance tests per tool, including malformed input and offline behaviour, run
   in CI on both platforms
 

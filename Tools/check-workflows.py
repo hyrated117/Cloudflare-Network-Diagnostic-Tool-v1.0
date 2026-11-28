@@ -8,11 +8,12 @@ Triggers: these branches are stacked, so a pull request is opened against the br
 below it rather than against main. A `branches:` filter on `pull_request` therefore
 skips exactly the pull requests under review: the file still parses, GitHub just never
 creates the run. The four pull-request workflows must trigger on all of them. The push
-trigger is not checked - it stays filtered so a branch is scanned once, when it lands.
+trigger is not checked: it stays filtered so a branch is scanned once, when it lands.
 
 Timeouts: a job without `timeout-minutes` inherits GitHub's six-hour default, so a hung
-download, trace or upload holds a runner until then. Every job that can set one must. A
-job that calls a reusable workflow is skipped: its timeout belongs to the callee.
+download, trace or upload holds a runner until then. Every job that can set one must
+set one. A job that calls a reusable workflow is skipped: its timeout belongs to the
+callee.
 
 Pins: an action referenced by tag, branch or nothing can change under a commit that
 already passed. Every `uses:` must name a commit SHA, a docker image digest, or a local
@@ -21,7 +22,7 @@ workflow under ./ that cannot be pinned at all.
 Continuations: a pwsh line break is a backtick and a POSIX one is a backslash, and
 either must be the last character on the line. Whitespace after it ends the line
 instead, so the continuation is lost and the rest of the command runs as its own
-statement - `--flag` then reads as a unary operator or an unknown command. The shell
+statement: `--flag` then reads as a unary operator or an unknown command. The shell
 reports it only at run time, so no local check reached it. Which character is checked
 follows the shell the block runs in: the step's `shell:`, then the job's and the
 workflow's `defaults.run.shell`, then the runner (pwsh on Windows, bash elsewhere).

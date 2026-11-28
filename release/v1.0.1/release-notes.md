@@ -38,9 +38,9 @@ the first commit. No tool was added or removed; the protocol surface is unchange
 - Version strings now report `1.0.1` in both servers' `initialize` response, both
   `package.json` files, `installers/cli.js`, `installers/install-mcp-server.py` and
   the client configs written by the shell and PowerShell installers.
-- The release archive ships `LICENSE` and `README.md` alongside `installers/`,
-  `server/` and `docs/`, and `Tools/build-package.sh` builds it for both the release
-  workflow and CI so the two cannot drift apart.
+- The release archive ships `LICENSE`, `README.md` and `VERSION` alongside
+  `installers/`, `server/` and `docs/`, and `Tools/build-package.sh` builds it for both
+  the release workflow and CI so the two cannot drift apart.
 - `installers/package.json` no longer points `main`, `start` and `dev` at an
   `index.js` that does not exist, and the unused `axios`, `express`, `dotenv` and
   `eslint` dependencies are gone.

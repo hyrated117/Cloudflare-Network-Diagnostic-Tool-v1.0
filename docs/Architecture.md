@@ -90,11 +90,11 @@ The Node server needs no dependencies; the unified installers write a
 - `Tools/check-installers.py` / `Tools/check-installers.ps1` — run the shell,
   unified-shell, Python and Node CLI installers (or the two PowerShell installers) into
   a temporary directory and confirm the generated config launches the server.
-- `.github/workflows/ci.yml` — `validate` job (syntax, smoke test, conformance, version
-  consistency, JSON, the pinned PyYAML with the Dependabot check and its self-test, the
-  workflow checks and their self-test, the version self-tests, the archive self-test,
-  documentation links, installer configs),
-  a `package` job (build the archive, check it, install from the extracted copy), a
-  `lint` job (actionlint with its bundled shellcheck, then pinned shellcheck over
-  `installers/*.sh` and `Tools/*.sh`) and a `windows` job (PowerShell parser, a real
-  `tracert` trace, and the same archive installed with the `.ps1` installers).
+- `.github/workflows/ci.yml` — `validate` job (syntax, smoke test, conformance,
+  version consistency, JSON, the pinned PyYAML with the Dependabot check and its
+  self-test, the workflow checks and their self-test, the version self-tests, the
+  archive self-test, documentation links, installer configs), a `package` job (build
+  the archive, check it, install from the extracted copy), a `lint` job (actionlint
+  with its bundled shellcheck, then pinned shellcheck over `installers/*.sh` and
+  `Tools/*.sh`) and a `windows` job (PowerShell parser, a real `tracert` trace, and the
+  same archive installed with the `.ps1` installers).

@@ -2,8 +2,8 @@
 """Self-test for the rules in Tools/check-archive.py.
 
 The archive check is the release gate: nothing is published unless it reports
-`release archive: shippable`. Each rule it asserts is pinned here both ways, against
-small archives built in a temporary directory - a pack missing a required file, carrying
+`release archive: shippable`. Each rule it asserts is pinned here both ways, against small archives built in a
+temporary directory: a pack missing a required file, carrying
 build junk, stamped with a half-bumped version, or with a wrong or absent checksum must
 fail, and a sound pack must pass. The gate's exit status is exercised through the CLI
 too, so the order in which the rules run stays part of what is tested.

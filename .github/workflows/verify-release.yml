@@ -3,10 +3,9 @@ name: Verify release
 # The publishing job proves the archive is good *before* upload. Nothing proved the
 # bytes GitHub then served: a truncated upload, a replaced asset or a checksum file
 # that does not match the archive would only surface for a user. This downloads the
-# published assets again and applies the same contract to them. The archive itself is
-# checked on both runners - it is Python, so the verdict cannot differ - and each
-# runner handshakes the installers it can run: the POSIX ones on Linux, the PowerShell
-# ones on Windows.
+# published assets again and applies the same contract to them. Both runners check the
+# archive itself — it is Python, so the verdict cannot differ — and each handshakes the
+# installers it can run: the POSIX ones on Linux, the PowerShell ones on Windows.
 on:
   release:
     types: [ published ]

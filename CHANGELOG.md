@@ -15,8 +15,8 @@ entries have been removed. The first version in this repository is `1.0.0`.
 ### Added
 - `VERSION` at the repository root as the one place the version is written, plus
   `Tools/stamp-version.py`, which stamps it into all twelve hand-maintained literals in
-  ten files;   `Tools/check-version.py` now fails when any site drifts from `VERSION`,
-  so a bump is one edit and one command instead of twelve edits
+  ten files. `Tools/check-version.py` now fails when any site drifts from `VERSION`, so
+  a bump is one edit and one command instead of twelve edits
 - `Tools/check-dependabot.py` plus a `Validate` step that parse
   `.github/dependabot.yml` and assert the parts that matter: `version: 2`, a
   `package-ecosystem`, exactly one of `directory` or `directories`, a known `schedule`
@@ -82,7 +82,6 @@ entries have been removed. The first version in this repository is `1.0.0`.
   inside the packaging job. The publishing job only proves the local archive before
   upload; this proves the served bytes, so an upload that truncated, replaced or
   mismatched an asset fails a check instead of a user
-
 - `Tools/check-installers.py` also runs `installers/install-mcp-server.py`, so the
   Python server installer's config is handshaked like the shell, unified-shell and Node
   CLI ones instead of only being described in the docs

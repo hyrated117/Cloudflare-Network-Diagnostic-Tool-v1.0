@@ -23,12 +23,12 @@ python3 Tools/check-version.py                    # version sites, VERSION and c
 python3 Tools/validate-json.py .                  # JSON syntax
 python3 Tools/check-dependabot.py                 # .github/dependabot.yml parses and Dependabot would accept it
 python3 Tools/test_check_dependabot.py            # each rule fails a bad config, passes a sound one
-python3 Tools/check-workflows.py                  # every pull request is scanned, every job has a timeout, every use is pinned, no continuation is broken
+python3 Tools/check-workflows.py                  # triggers, timeouts, pins, broken continuations
 python3 Tools/test_check_workflows.py             # each rule fails its break and passes a sound workflow
 python3 Tools/test_check_version.py               # every failure the version checker promises
 python3 Tools/test_stamp_version.py               # a bad VERSION writes nothing; a bump reads back consistent
 python3 Tools/check-links.py                      # no broken relative doc links
-python3 Tools/check-installers.py                 # shell and CLI installers write launchable configs
+python3 Tools/check-installers.py                 # shell, Python and CLI installers write launchable configs
 Tools/build-package.sh v0.0.0-ci                  # build the release archive
 python3 Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract-to dist/pack
 python3 Tools/test_check_archive.py               # each archive rule fails a bad pack, passes a good one

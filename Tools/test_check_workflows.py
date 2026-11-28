@@ -4,8 +4,8 @@
 Each rule is pinned against a failure GitHub reports as nothing: a trigger that skips a
 stacked pull request, a job that inherits the six-hour default, a `uses:` that can move
 under a commit that already passed, and a continuation character followed by
-whitespace. Both halves are asserted for every rule - a break that must fail and a
-sound workflow that must stay quiet - so a change that stops a rule firing, or makes it
+whitespace. Both halves are asserted for every rule — a break that must fail and a
+sound workflow that must stay quiet — so a change that stops a rule firing, or makes it
 fire on a workflow GitHub would run fine, fails this test.
 
     python3 Tools/test_check_workflows.py

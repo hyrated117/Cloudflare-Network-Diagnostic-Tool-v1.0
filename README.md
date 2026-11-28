@@ -116,7 +116,7 @@ python3 server/smoke_test.py        # protocol smoke test, no network access
 python3 Tools/check-conformance.py  # Python and Node answer identically
 python3 Tools/check-version.py      # VERSION, the stamped sites and the changelog agree
 python3 Tools/validate-json.py .    # JSON syntax
-python3 -m pip install --quiet pyyaml==6.0.4   # for the two checks below
+python3 -m pip install --quiet pyyaml==6.0.4   # needed by the two checks below
 python3 Tools/check-dependabot.py   # .github/dependabot.yml parses and is accepted
 python3 Tools/test_check_dependabot.py         # that check's rules, both ways
 python3 Tools/check-workflows.py    # triggers, timeouts, pins, broken continuations
@@ -125,7 +125,7 @@ python3 Tools/test_check_version.py            # every failure the checker promi
 python3 Tools/test_stamp_version.py            # a bump writes all sites or none
 python3 Tools/test_check_archive.py            # the release gate's rules, on built packs
 python3 Tools/check-links.py        # no broken relative links in the docs
-python3 Tools/check-installers.py   # shell and CLI installers write launchable configs
+python3 Tools/check-installers.py   # shell, Python and CLI installers write launchable configs
 ```
 
 The `Validate` job runs these on Linux in this order. A `package` job then builds the

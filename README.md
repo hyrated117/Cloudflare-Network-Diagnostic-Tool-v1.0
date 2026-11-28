@@ -149,7 +149,8 @@ outcomes are checked on every pull request rather than only in the Windows job.
 opened: bases, ancestry and a conflict-free merge into `main` in order.
 `Tools/test_parity.py` widens the hand-written conformance cases into a seeded random
 corpus of odd arguments, malformed lines and hostile values, and fails on any response
-that differs between the two servers.
+that differs between the two servers — including the success and error results of DNS and
+DoH, which it reaches through a stubbed resolver and a loopback DoH fixture.
 
 ## Documentation
 

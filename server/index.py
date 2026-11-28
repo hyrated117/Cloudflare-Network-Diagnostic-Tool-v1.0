@@ -15,6 +15,8 @@ from datetime import datetime, timezone
 
 PROTOCOL_VERSION = "2024-11-05"
 MAX_DOH_BYTES = 65536
+# Non-JSON bodies are kept only this far, so a remote endpoint cannot stuff the result.
+MAX_RAW_CHARS = 4096
 logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -92,19 +94,24 @@ class DiagnosticServer:
         request = urllib.request.Request(url, headers={"Accept": "application/dns-json", "User-Agent": "Cloudflare-Diagnostic-Tool/1.0"})
         try:
             with urllib.request.urlopen(request, timeout=5) as response:
-                payload = response.read(MAX_DOH_BYTES + 1)
-                # A body over the cap is a remote outcome, so report it like a
-                # timeout: a tool result with status "error", not -32602.
-                if len(payload) > MAX_DOH_BYTES:
-                    return {"tool": "doh_test", "url": url, "status": "error", "statusCode": response.status, "error": "DoH response exceeded 64 KiB limit", "timestamp": now()}
-                text = payload.decode("utf-8", errors="replace")
-                try:
-                    data = json.loads(text)
-                except json.JSONDecodeError:
-                    data = {"raw": text}
-                return {"tool": "doh_test", "url": url, "status": "ok" if 200 <= response.status < 300 else "error", "statusCode": response.status, "response": data, "timestamp": now()}
+                return self.doh_result(url, response.status, response.read(MAX_DOH_BYTES + 1))
+        except urllib.error.HTTPError as exc:
+            # urllib raises on 4xx/5xx; a DoH endpoint answering with a status is a
+            # tool result, body and status included, exactly like the Node server.
+            return self.doh_result(url, exc.code, exc.read(MAX_DOH_BYTES + 1))
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
             return {"tool": "doh_test", "url": url, "status": "error", "error": str(exc), "timestamp": now()}
+
+    def doh_result(self, url, status, payload):
+        """The tool result for a DoH response body; over-cap is an outcome, not -32602."""
+        if len(payload) > MAX_DOH_BYTES:
+            return {"tool": "doh_test", "url": url, "status": "error", "statusCode": status, "error": "DoH response exceeded 64 KiB limit", "timestamp": now()}
+        text = payload.decode("utf-8", errors="replace")
+        try:
+            data = json.loads(text)
+        except json.JSONDecodeError:
+            data = {"raw": text[:MAX_RAW_CHARS]}
+        return {"tool": "doh_test", "url": url, "status": "ok" if 200 <= status < 300 else "error", "statusCode": status, "response": data, "timestamp": now()}
 
     def trace_route(self, destination):
         if not isinstance(destination, str) or not destination.strip() or any(ch.isspace() or ch == "\0" for ch in destination) or destination.strip().startswith("-"):

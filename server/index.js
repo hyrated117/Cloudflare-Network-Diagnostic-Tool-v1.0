@@ -68,8 +68,9 @@ class DiagnosticServer {
       dns.promises.resolve4(host),
       dns.promises.resolve6(host),
     ]);
-    const addresses = [...new Set(results.flatMap((result) => result.status === 'fulfilled' ? result.value : []))];
-    const errors = results.filter((result) => result.status === 'rejected').map((result) => result.reason.message);
+    // Sorted and de-duplicated like the Python server, so both report one order.
+    const addresses = [...new Set(results.flatMap((result) => result.status === 'fulfilled' ? result.value : []))].sort();
+    const errors = [...new Set(results.filter((result) => result.status === 'rejected').map((result) => result.reason.message))];
     return { tool: 'dns_check', domain: host, status: addresses.length ? 'ok' : 'error', addresses, ...(addresses.length ? {} : { error: errors.join('; ') || 'No addresses found' }), timestamp: timestamp() };
   }
 

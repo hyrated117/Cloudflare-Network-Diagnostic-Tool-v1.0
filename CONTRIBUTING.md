@@ -96,9 +96,12 @@ one and a missing binary are all asserted offline in `Validate`.
 cases: a seeded random corpus (plus a fixed edge list) of odd argument types, missing and
 extra keys, nulls, malformed lines, credentials and non-HTTP schemes in a DoH URL, a NUL
 byte in a destination and non-ASCII export payloads goes to both servers, and every
-response must match. It is deterministic and offline — the argument pools fail validation
-before a lookup, `trace_route` runs with an empty `PATH`, and `health_score` is never
-generated — and `Validate` runs it as `Diff the servers on randomized requests`.
+response must match. The paths that normally need a network are compared too: name
+resolution is stubbed in both runtimes from one table (A, AAAA, both, neither) and DoH is
+served by a loopback fixture (200, 404, 503, a redirect, empty, non-JSON, over the 64 KiB
+cap), with each outcome asserted rather than merely diffed. It is deterministic and
+offline — `trace_route` runs with an empty `PATH` and `health_score` is never generated —
+and `Validate` runs it as `Diff the servers on randomized requests`.
 
 `Tools/check-stack.py --fetch` is the pre-flight for the stacked pull requests: it
 resolves each branch, refuses a pull request whose base is not the previous tip (its diff

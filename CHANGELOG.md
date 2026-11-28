@@ -124,9 +124,11 @@ entries have been removed. The first version in this repository is `1.0.0`.
   random corpus plus a fixed edge list — odd argument types, missing and extra keys,
   nulls, malformed lines, credentials and non-HTTP schemes in a DoH URL, a NUL byte in a
   destination, non-ASCII exports — so drift the hand-written conformance cases never
-  listed fails. Deterministic (`--seed`, `--count`) and offline: the argument pools fail
-  validation before a lookup, `trace_route` runs with an empty `PATH`, `health_score` is
-  never generated. It immediately found five server differences, all fixed below
+  listed fails. Deterministic (`--seed`, `--count`) and offline: name resolution is
+  stubbed in both runtimes from one table, DoH is served by a loopback fixture (200, 404,
+  503, a redirect, empty, non-JSON, over the 64 KiB cap) with each outcome asserted,
+  `trace_route` runs with an empty `PATH` and `health_score` is never generated. It found
+  ten server differences, all fixed below
 
 ### Changed
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,
@@ -190,6 +192,12 @@ entries have been removed. The first version in this repository is `1.0.0`.
   reported as `'None'` by Python and `'null'`/`'undefined'` by Node; and the two servers
   chose different messages for a DoH URL whose scheme was missing, non-HTTP or carried
   credentials
+- Results that only differ against a live network, found once the parity test stubbed the
+  resolver and served DoH locally: Python raised on a 4xx/5xx DoH response and lost its
+  status and body instead of returning them as a tool result; Python kept an unbounded
+  non-JSON body where Node caps it at 4096 characters; Node listed resolved addresses in
+  resolution order where Python sorts them; and Node repeated a failed lookup's message
+  once per address family where Python reports it once
 
 ## [1.0.1] - 2026-11-25
 

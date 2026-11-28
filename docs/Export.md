@@ -35,12 +35,12 @@ dns,ok
 trace,2
 ```
 
-Node builds the CSV by hand, quoting `"` as `""`; Python uses the `csv` module. Both
-quote a cell containing a comma, a double quote, LF or CR the same way, so a string
-cell comes out identical on both servers (a non-string cell is still rendered by each
-runtime's JSON writer, so those can differ — see the known differences at the end of
-[docs/Modules.md](./Modules.md)). Both flatten only the top level, so nested structures
-arrive as JSON text in a single cell.
+Both servers build the CSV by hand, not with a CSV library: a cell containing a comma,
+a double quote, LF or CR is wrapped in quotes and its `"` doubled. A string cell
+therefore comes out identical on both servers (a non-string cell is still rendered by
+each runtime's JSON writer, so those can differ — see the known differences at the end
+of [docs/Modules.md](./Modules.md)). Both flatten only the top level, so nested
+structures arrive as JSON text in a single cell.
 
 ## Constraints
 

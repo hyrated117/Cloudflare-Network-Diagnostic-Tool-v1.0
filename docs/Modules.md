@@ -126,13 +126,23 @@ is returned in `content`. See [Export](./Export.md).
 
 ## Behavioural differences between the two servers
 
-Both servers accept the same requests and return the same result shape. Unknown
-tools, missing required arguments and unexpected arguments are rejected by both
-with `-32602`, and no result field differs between them: `doh_test` echoes the URL as
-supplied, `dns_check` de-duplicates and sorts addresses, `timestamp` has one format, and
-`trace_route` reports `returnCode`/`output` or `error` the same way on both. The one
-difference left comes from the standard libraries' IDNA versions (`faß.test`,
-`ς.test`), described under [`dns_check`](#dns_check).
+Both servers accept the same requests and return the same result shape, and no result
+field differs between them: `doh_test` echoes the URL as supplied, `dns_check`
+de-duplicates and sorts addresses, `timestamp` has one format, and `trace_route` reports
+`returnCode`/`output` or `error` the same way on both.
+
+Two differences remain, both in a value rather than in the field set:
+
+| Area | Node | Python |
+|---|---|---|
+| CSV cell holding a number | `JSON.stringify`, so `1.0` becomes `1` | `json.dumps`, so `1.0` stays `1.0` |
+| `dns_check` with `ß` or `ς` | UTS#46: `xn--fa-hia.test`, `xn--3xa.test` | IDNA2003: `fass.test`, `xn--4xa.test` |
+
+The CSV one covers any non-string cell whose JSON form contains a float: a nested object
+holding `1.0` renders as `{"a":1}` in Node and `{"a":1.0}` in Python. Node also parses
+every request number as a double, so an integer above 2^53 has lost precision before a
+tool sees it. String cells are identical on both — see [Export](./Export.md). The IDNA
+difference is described under [`dns_check`](#dns_check).
 
 ## Planned tools (not implemented)
 

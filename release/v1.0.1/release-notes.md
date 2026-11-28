@@ -18,11 +18,13 @@ the first commit. No tool was added or removed; the protocol surface is unchange
   `"status": "error"`, the endpoint's HTTP `statusCode` and the message
   `DoH response exceeded 64 KiB limit`. Previously Node buffered the whole body with
   no limit and Python turned the same condition into a JSON-RPC `-32602` error.
-- **CSV quoting matches on carriage returns.** The Node CSV writer now quotes a
-  cell that contains a carriage return, as Python's `csv` module already did, so a
-  value with a bare CR no longer splits the row for readers that treat CR as a line
-  ending. Non-string cells still go through each runtime's JSON writer, so `1.0`
-  stays `1.0` in Python and becomes `1` in Node (see known issues).
+- **CSV quoting matches on carriage returns.** Both servers now quote cells by the
+  same hand-written rule: a cell containing a comma, a double quote, LF or CR is
+  wrapped in quotes and its `"` doubled. A bare CR therefore no longer splits the row
+  for readers that treat CR as a line ending, and the Python `csv` module — whose
+  quoting of a bare CR differed between 3.8 and 3.10+ — is no longer used. Non-string
+  cells still go through each runtime's JSON writer, so `1.0` stays `1.0` in Python and
+  becomes `1` in Node (see known issues).
 - **`trace_route` works on Windows.** Both servers run `tracert -d -h 15 -w 300`
   there instead of looking only for `traceroute`/`tracepath`, which Windows does not
   ship. Destinations starting with `-` are rejected in both servers.

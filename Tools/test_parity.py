@@ -15,7 +15,9 @@ redirect, empty, non-JSON, over the 64 KiB cap), `trace_route` runs with an empt
 it reports "unavailable", and `health_score` — which dials 1.1.1.1 — is not generated;
 `check-conformance.py` stubs that probe and asserts both documented scores instead.
 Timestamps record the instant a call ran, so they are compared by shape —
-`YYYY-MM-DDTHH:MM:SS.mmmZ` on both servers — rather than ignored.
+`YYYY-MM-DDTHH:MM:SS.mmmZ` on both servers — rather than ignored, and the `doh_test`
+echo is compared with the URL that was sent, including one endpoint addressed without a
+path.
 
 Usage: python3 Tools/test_parity.py [--seed N] [--count N]
 """
@@ -83,9 +85,13 @@ IDN_DIVERGENT = {
 DOH_PORT_PLACEHOLDER = "DOH_PORT"
 DOH_BASE = f"http://127.0.0.1:{DOH_PORT_PLACEHOLDER}"
 DOH_PATHS = ["/ok", "/unicode", "/text", "/long-text", "/empty", "/missing", "/error", "/redirect", "/over"]
+# The same endpoint with no path at all. Node's URL parser adds the slash, so an echo of
+# the parsed URL differs from the string that was sent; the echo is compared against it.
+DOH_NO_PATH_ID = "doh:(no path)"
 DOH_OVER_CAP = 65537
 DOH_REDIRECTS = {"/redirect": "/ok"}
 DOH_BODIES = {
+    "/": (200, '{"Status":0,"note":"root"}'),
     "/ok": (200, '{"Status":0,"Answer":[{"name":"dual.parity.test.","type":1,"TTL":60,"data":"192.0.2.9"}]}'),
     "/unicode": (200, '{"Status":0,"note":"héllo 🙂"}'),
     "/text": (200, "parity fixture: not JSON"),
@@ -169,6 +175,8 @@ NETWORK_REQUESTS = [
 ] + [
     {"jsonrpc": "2.0", "id": f"doh:{path}", "method": "tools/call", "params": {"name": "doh_test", "arguments": {"url": DOH_BASE + path}}}
     for path in DOH_PATHS
+] + [
+    {"jsonrpc": "2.0", "id": DOH_NO_PATH_ID, "method": "tools/call", "params": {"name": "doh_test", "arguments": {"url": DOH_BASE}}}
 ]
 
 # Answer name resolution from DNS_TABLE in both runtimes; an unknown host is an error,
@@ -368,9 +376,31 @@ def check_outcomes(label, normalized):
     expect("doh:/error", {"status": "error", "statusCode": 503, "response": {"Status": 2}})
     expect("doh:/redirect", {"status": "ok", "statusCode": 200})
     expect("doh:/over", {"status": "error", "statusCode": 200, "error": "DoH response exceeded 64 KiB limit"})
+    expect(DOH_NO_PATH_ID, {"status": "ok", "statusCode": 200})
     long_raw = (results.get("doh:/long-text") or {}).get("response", {}).get("raw")
     if long_raw != "x" * 4096:
         problems.append(f"{label}: doh:/long-text kept {len(long_raw) if isinstance(long_raw, str) else 'no'} raw characters, expected 4096")
+    return problems
+
+
+def check_url_echo(label, normalized, doh_port):
+    """`doh_test` must echo the URL exactly as supplied, on both servers.
+
+    Comparing the two servers with each other is not enough: both could normalise the
+    same way. Each `url` is compared with the string the request carried instead.
+    """
+    base = DOH_BASE.replace(DOH_PORT_PLACEHOLDER, str(doh_port))
+    supplied = {f"doh:{path}": base + path for path in DOH_PATHS}
+    supplied[DOH_NO_PATH_ID] = base
+    echoed = {
+        response.get("id"): ((response.get("result") or {}).get("structuredContent") or {}).get("url")
+        for response in normalized
+        if isinstance(response.get("id"), str)
+    }
+    problems = []
+    for key, expected in supplied.items():
+        if echoed.get(key) != expected:
+            problems.append(f"{label}: {key} echoed {echoed.get(key)!r}, expected the supplied {expected!r}")
     return problems
 
 
@@ -442,6 +472,8 @@ def main():
             problems = (
                 check.timestamp_problems("server/index.py", python_responses)
                 + check.timestamp_problems("server/index.js", node_responses)
+                + check_url_echo("server/index.py", expected, fixture.server_address[1])
+                + check_url_echo("server/index.js", actual, fixture.server_address[1])
                 + check_outcomes("server/index.py", expected)
                 + check_outcomes("server/index.js", actual)
                 + check_protocol_versions("server/index.py", expected)

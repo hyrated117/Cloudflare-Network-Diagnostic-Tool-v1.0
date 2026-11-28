@@ -82,7 +82,9 @@ Sends a GET request to a caller-supplied DNS-over-HTTPS endpoint.
 {"name":"doh_test","arguments":{"url":"https://cloudflare-dns.com/dns-query?name=example.com&type=A"}}
 ```
 
-The result includes `statusCode` and the decoded `response`. Note that any HTTP(S)
+The result includes `statusCode` and the decoded `response`. The echoed `url` is the
+string the client sent, unchanged — `https://host` keeps no trailing slash — on both
+servers. Note that any HTTP(S)
 URL is fetched, not only Cloudflare endpoints — treat the tool as a general request
 helper when reviewing what a client can reach.
 
@@ -127,7 +129,6 @@ with `-32602`. These differences remain:
 | Area | Node | Python |
 |---|---|---|
 | `trace_route` failure | `error` with the failure text, no `returnCode` | `error` with `returnCode` and the captured output |
-| `doh_test` echoed `url` | normalised (`https://host` becomes `https://host/`) | exactly as supplied |
 | `dns_check` address order | resolver order | sorted |
 
 ## Planned tools (not implemented)

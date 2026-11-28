@@ -107,7 +107,8 @@ extra keys, nulls, malformed lines, credentials and non-HTTP schemes in a DoH UR
 byte in a destination and non-ASCII export payloads goes to both servers, and every
 response must match. Timestamps are compared by shape (`YYYY-MM-DDTHH:MM:SS.mmmZ`)
 rather than ignored: the two servers cannot share an instant, but they must share the
-format. The paths that normally need a network are compared too: name
+format. The `doh_test` echo is compared with the URL that was sent — one case addresses
+the fixture without a path, where a normalising echo cannot match. The paths that normally need a network are compared too: name
 resolution is stubbed in both runtimes from one table (A, AAAA, both, neither, and
 Unicode names) and DoH is served by a loopback fixture (200, 404, 503, a redirect, empty,
 non-JSON, over the 64 KiB cap), with each outcome asserted rather than merely diffed.

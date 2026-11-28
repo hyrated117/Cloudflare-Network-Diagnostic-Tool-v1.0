@@ -267,6 +267,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
   to drop `timestamp` before diffing. Both now emit `YYYY-MM-DDTHH:MM:SS.mmmZ`, and
   `Tools/check-conformance.py` / `Tools/test_parity.py` assert that shape instead of
   ignoring the field, so a server that changes format fails the comparison
+- `doh_test` echoed different URLs: Node returned `url.toString()`, which adds the path
+  slash and normalises the host, where Python returned the string supplied. Both echo the
+  request verbatim now, and `Tools/test_parity.py` compares each echo with the URL it
+  sent, including a fixture endpoint addressed without a path
 
 ## [1.0.1] - 2026-11-25
 

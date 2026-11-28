@@ -101,6 +101,9 @@ class DiagnosticServer {
   }
 
   async dohTest(input) {
+    // `url` is the parsed form used for the request only. Results echo `input` verbatim,
+    // as the Python server does: `url.toString()` adds a path slash and normalises the
+    // host, so the same request produced two different `url` values.
     let url;
     try {
       url = new URL(input);
@@ -123,16 +126,16 @@ class DiagnosticServer {
       for await (const chunk of response.body ?? []) {
         size += chunk.length;
         if (size > MAX_DOH_BYTES) {
-          return { tool: 'doh_test', url: url.toString(), status: 'error', statusCode: response.status, error: 'DoH response exceeded 64 KiB limit', timestamp: timestamp() };
+          return { tool: 'doh_test', url: input, status: 'error', statusCode: response.status, error: 'DoH response exceeded 64 KiB limit', timestamp: timestamp() };
         }
         chunks.push(chunk);
       }
       const body = Buffer.concat(chunks, size).toString('utf8');
       let data;
       try { data = JSON.parse(body); } catch { data = { raw: body.slice(0, 4096) }; }
-      return { tool: 'doh_test', url: url.toString(), status: response.ok ? 'ok' : 'error', statusCode: response.status, response: data, timestamp: timestamp() };
+      return { tool: 'doh_test', url: input, status: response.ok ? 'ok' : 'error', statusCode: response.status, response: data, timestamp: timestamp() };
     } catch (error) {
-      return { tool: 'doh_test', url: url.toString(), status: 'error', error: error.message, timestamp: timestamp() };
+      return { tool: 'doh_test', url: input, status: 'error', error: error.message, timestamp: timestamp() };
     }
   }
 

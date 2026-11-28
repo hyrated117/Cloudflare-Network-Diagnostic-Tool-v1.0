@@ -48,9 +48,10 @@
   format fails the comparison.
 - Both servers cap DoH bodies at 64 KiB and return a tool-level `status: "error"` for a
   larger body (Node keeps only the first 4096 characters of a non-JSON body within the
-  cap). Known differences, which must stay deliberate and documented: `doh_test`
-  echoes the URL as supplied in Python and normalised in Node; `dns_check` sorts
-  addresses in Python and keeps resolver order in Node.
+  cap). Both servers echo the `doh_test` `url` exactly as supplied — do not normalise it,
+  which is what `new URL(...).toString()` did — so the parity diff compares the echo with
+  the string that was sent. Known difference, which must stay deliberate and documented:
+  `dns_check` sorts addresses in Python and keeps resolver order in Node.
 - `dns_check` lowercases and NFC-normalises a Unicode domain, then converts it with each
   runtime's IDNA (Python: IDNA2003, Node: UTS#46) and reports the resolved ASCII name.
   Keep the shared steps identical; `faß.test` and `ς.test` still encode differently by

@@ -18,7 +18,7 @@ reference and [Architecture](./Architecture.md) for the design.
 
 ### Servers
 - Full behavioural parity between the Node and Python implementations (the
-  remaining differences: the echoed `doh_test` URL and `dns_check` address order)
+  remaining difference: `dns_check` address order)
 - Conformance tests per tool, including malformed input and offline behaviour, run
   in CI on both platforms
 

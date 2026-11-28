@@ -26,6 +26,7 @@ python3 Tools/test_check_dependabot.py            # each rule fails a bad config
 python3 Tools/check-workflows.py                  # triggers, timeouts, pins, broken continuations
 python3 Tools/test_check_workflows.py             # each rule fails its break and passes a sound workflow
 python3 Tools/test_check_pins.py                  # every pin-audit rule, offline
+python3 Tools/test_check_actionlint_image.py      # every image-check rule, offline
 python3 Tools/test_check_version.py               # every failure the version checker promises
 python3 Tools/test_stamp_version.py               # a bad VERSION writes nothing; a bump reads back consistent
 python3 Tools/check-links.py                      # no broken relative doc links
@@ -75,6 +76,13 @@ be compared — and asks Docker Hub whether the actionlint digest, which Dependa
 update, is the image the tag serves. `Tools/test_check_pins.py` pins those rules offline
 with fake registries and runs in `Validate` as `Self-test the pin check`; set
 `GITHUB_TOKEN` to lift the unauthenticated API quota when you run the audit itself.
+
+`Tools/check-actionlint-image.py` closes the other half of that gap: it pulls the image
+`lint` runs by the digest pinned in `ci.yml`, verifies each layer's sha256, extracts the
+`actionlint` and `shellcheck` files and runs them from the repository root, exactly as
+the image's entrypoint does under `docker://`. That makes the Docker step checkable on a
+machine without a daemon; `Tools/test_check_actionlint_image.py` pins its rules offline
+and runs in `Validate` as `Self-test the image check`.
 
 `Tools/test_check_version.py` and `Tools/test_stamp_version.py` pin the version
 tooling the same way, and the `Validate` job runs them as `Self-test the version

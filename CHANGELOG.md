@@ -90,6 +90,12 @@ entries have been removed. The first version in this repository is `1.0.0`.
   fails. `Tools/test_check_pins.py` pins its rules offline against fake registries and
   `Validate` runs it as `Self-test the pin check`; the audit itself needs the network and
   takes `GITHUB_TOKEN` when the unauthenticated quota is not enough
+- `Tools/check-actionlint-image.py`, which closes the gap the lint job left on a machine
+  without Docker: it reads the image digest `ci.yml` pins, fetches the OCI index and the
+  `linux/amd64` manifest, verifies every layer's sha256, extracts the image's own
+  `actionlint` and `shellcheck` binaries and runs them from the repository root, so the
+  exact bytes CI lints with are exercised. `Tools/test_check_actionlint_image.py` pins
+  its rules offline and `Validate` runs it as `Self-test the image check`
 - `Tools/check-installers.py` also runs `installers/install-mcp-server.py`, so the
   Python server installer's config is handshaked like the shell, unified-shell and Node
   CLI ones instead of only being described in the docs

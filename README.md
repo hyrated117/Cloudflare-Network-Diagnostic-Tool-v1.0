@@ -122,6 +122,7 @@ python3 Tools/test_check_dependabot.py         # that check's rules, both ways
 python3 Tools/check-workflows.py    # triggers, timeouts, pins, broken continuations
 python3 Tools/test_check_workflows.py          # each rule, the break and the sound case
 python3 Tools/test_check_pins.py               # the pin audit's rules, offline
+python3 Tools/test_check_actionlint_image.py   # the image check's rules, offline
 python3 Tools/test_check_version.py            # every failure the checker promises
 python3 Tools/test_stamp_version.py            # a bump writes all sites or none
 python3 Tools/test_check_archive.py            # the release gate's rules, on built packs
@@ -135,7 +136,10 @@ pinned shellcheck over the workflows and shell scripts, and a Windows job parses
 PowerShell installers, runs a real `trace_route` through `tracert`, and installs from
 the archive the Linux job built — see `.github/workflows/ci.yml`. `Tools/check-pins.py`
 re-runs the pin audit against the GitHub API and Docker Hub, which is why it needs
-network access and only its self-test is part of CI.
+network access and only its self-test is part of CI. `Tools/check-actionlint-image.py`
+does the same for the `lint` job's image: it pulls the pinned digest, checks every layer,
+extracts the actionlint and shellcheck binaries and runs them, so the lint step is
+reproduced without a Docker daemon.
 
 ## Documentation
 

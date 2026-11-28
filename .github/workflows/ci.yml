@@ -100,6 +100,10 @@ jobs:
       - name: Self-test the pin check
         run: python Tools/test_check_pins.py
 
+      # The image itself is a 25 MiB download, so CI pins the check's rules, not the run.
+      - name: Self-test the image check
+        run: python Tools/test_check_actionlint_image.py
+
       # A bump is one edit and one command only if the stamp is all-or-nothing and the
       # checker still fails a drift; both run against a temporary copy of the tree.
       - name: Self-test the version checks

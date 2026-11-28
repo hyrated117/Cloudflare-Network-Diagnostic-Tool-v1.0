@@ -89,6 +89,9 @@ The Node server needs no dependencies; the unified installers write a
 - `Tools/check-pins.py` and `Tools/test_check_pins.py` — every action's release comment
   resolves to its pinned commit through the GitHub API, and the actionlint image digest
   through Docker Hub. The audit needs network access, so `Validate` runs its self-test.
+- `Tools/check-actionlint-image.py` and `Tools/test_check_actionlint_image.py` — the
+  image `lint` runs, pulled by its pinned digest and executed from its extracted
+  binaries, so the Docker step is reproducible without a daemon; its rules run offline.
 - `Tools/check-links.py` — relative documentation links resolve.
 - `Tools/check-installers.py` / `Tools/check-installers.ps1` — run the shell,
   unified-shell, Python and Node CLI installers (or the two PowerShell installers) into

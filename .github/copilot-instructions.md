@@ -90,6 +90,7 @@ python3 Tools/test_check_dependabot.py
 python3 Tools/check-workflows.py
 python3 Tools/test_check_workflows.py
 python3 Tools/test_check_pins.py
+python3 Tools/test_check_actionlint_image.py
 python3 Tools/test_check_version.py
 python3 Tools/test_stamp_version.py
 python3 Tools/check-links.py

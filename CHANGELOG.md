@@ -82,6 +82,14 @@ entries have been removed. The first version in this repository is `1.0.0`.
   inside the packaging job. The publishing job only proves the local archive before
   upload; this proves the served bytes, so an upload that truncated, replaced or
   mismatched an asset fails a check instead of a user
+- `Tools/check-pins.py`, which audits the one thing the offline checks cannot: it asks
+  the GitHub API whether each `owner/repo[/subpath]@SHA  # vX.Y.Z` resolves to that
+  commit — splitting a subpath such as `github/codeql-action/init` from the repository
+  and dereferencing annotated release tags — and asks Docker Hub whether the actionlint
+  digest is the image the tag serves, so a pin whose comment names the wrong release
+  fails. `Tools/test_check_pins.py` pins its rules offline against fake registries and
+  `Validate` runs it as `Self-test the pin check`; the audit itself needs the network and
+  takes `GITHUB_TOKEN` when the unauthenticated quota is not enough
 - `Tools/check-installers.py` also runs `installers/install-mcp-server.py`, so the
   Python server installer's config is handshaked like the shell, unified-shell and Node
   CLI ones instead of only being described in the docs

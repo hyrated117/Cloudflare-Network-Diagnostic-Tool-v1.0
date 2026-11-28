@@ -25,6 +25,7 @@ python3 Tools/check-dependabot.py                 # .github/dependabot.yml parse
 python3 Tools/test_check_dependabot.py            # each rule fails a bad config, passes a sound one
 python3 Tools/check-workflows.py                  # triggers, timeouts, pins, broken continuations
 python3 Tools/test_check_workflows.py             # each rule fails its break and passes a sound workflow
+python3 Tools/test_check_pins.py                  # every pin-audit rule, offline
 python3 Tools/test_check_version.py               # every failure the version checker promises
 python3 Tools/test_stamp_version.py               # a bad VERSION writes nothing; a bump reads back consistent
 python3 Tools/check-links.py                      # no broken relative doc links
@@ -65,6 +66,15 @@ SHA- or digest-pinned `uses:` pass, and a here-document body and a trailing comm
 stay quiet while a real continuation break in either shell still fails — and the
 `Validate` job runs it as `Self-test the workflow checks`; it is stdlib-only, so it runs
 before PyYAML is installed.
+
+`Tools/check-pins.py` is the one audit that needs the network, so it is not a
+`Validate` step: it asks the GitHub API whether every `owner/repo[/subpath]@SHA  # vX.Y.Z`
+resolves to that commit — subpaths such as `github/codeql-action/init` are not part of
+the repository name, and an annotated release tag has to be dereferenced before it can
+be compared — and asks Docker Hub whether the actionlint digest, which Dependabot cannot
+update, is the image the tag serves. `Tools/test_check_pins.py` pins those rules offline
+with fake registries and runs in `Validate` as `Self-test the pin check`; set
+`GITHUB_TOKEN` to lift the unauthenticated API quota when you run the audit itself.
 
 `Tools/test_check_version.py` and `Tools/test_stamp_version.py` pin the version
 tooling the same way, and the `Validate` job runs them as `Self-test the version

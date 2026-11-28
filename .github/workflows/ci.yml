@@ -95,6 +95,11 @@ jobs:
       - name: Self-test the workflow checks
         run: python Tools/test_check_workflows.py
 
+      # The audit needs the network, so it is not a CI step; its rules run here, offline,
+      # so a change cannot quietly stop a wrong pin from failing.
+      - name: Self-test the pin check
+        run: python Tools/test_check_pins.py
+
       # A bump is one edit and one command only if the stamp is all-or-nothing and the
       # checker still fails a drift; both run against a temporary copy of the tree.
       - name: Self-test the version checks

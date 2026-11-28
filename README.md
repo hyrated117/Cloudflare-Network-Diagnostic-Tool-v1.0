@@ -121,6 +121,7 @@ python3 Tools/check-dependabot.py   # .github/dependabot.yml parses and is accep
 python3 Tools/test_check_dependabot.py         # that check's rules, both ways
 python3 Tools/check-workflows.py    # triggers, timeouts, pins, broken continuations
 python3 Tools/test_check_workflows.py          # each rule, the break and the sound case
+python3 Tools/test_check_pins.py               # the pin audit's rules, offline
 python3 Tools/test_check_version.py            # every failure the checker promises
 python3 Tools/test_stamp_version.py            # a bump writes all sites or none
 python3 Tools/test_check_archive.py            # the release gate's rules, on built packs
@@ -132,7 +133,9 @@ The `Validate` job runs these on Linux in this order. A `package` job then build
 release archive and installs from the extracted copy, `lint` runs actionlint and the
 pinned shellcheck over the workflows and shell scripts, and a Windows job parses the
 PowerShell installers, runs a real `trace_route` through `tracert`, and installs from
-the archive the Linux job built — see `.github/workflows/ci.yml`.
+the archive the Linux job built — see `.github/workflows/ci.yml`. `Tools/check-pins.py`
+re-runs the pin audit against the GitHub API and Docker Hub, which is why it needs
+network access and only its self-test is part of CI.
 
 ## Documentation
 

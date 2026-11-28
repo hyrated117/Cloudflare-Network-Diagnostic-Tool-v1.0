@@ -108,19 +108,29 @@ Arguments, result fields, statuses and timeouts are documented in
 ## Checks
 
 ```bash
+node --check server/index.js
+node --check installers/cli.js
+python3 -m compileall -q server installers Tools
+bash -n installers/*.sh Tools/*.sh
 python3 server/smoke_test.py        # protocol smoke test, no network access
 python3 Tools/check-conformance.py  # Python and Node answer identically
+python3 Tools/check-version.py      # VERSION, the stamped sites and the changelog agree
 python3 Tools/validate-json.py .    # JSON syntax
-python3 Tools/check-installers.py   # shell and CLI installers write launchable configs
+python3 -m pip install --quiet pyyaml==6.0.4   # for the two checks below
+python3 Tools/check-dependabot.py   # .github/dependabot.yml parses and is accepted
+python3 Tools/check-workflows.py    # triggers, timeouts, pins, broken continuations
+python3 Tools/test_check_workflows.py          # that rule ignores literal text
+python3 Tools/test_check_version.py            # every failure the checker promises
+python3 Tools/test_stamp_version.py            # a bump writes all sites or none
 python3 Tools/check-links.py        # no broken relative links in the docs
-node --check server/index.js
+python3 Tools/check-installers.py   # shell and CLI installers write launchable configs
 ```
 
-CI runs those on Linux together with `Tools/check-conformance.py`, which compares the
-two servers, plus a `package` job that builds the release archive and installs from
-the extracted copy. A Windows job parses the PowerShell installers, runs a real
-`trace_route` through `tracert`, and installs from the archive the Linux job built —
-see `.github/workflows/ci.yml`.
+The `Validate` job runs these on Linux in this order. A `package` job then builds the
+release archive and installs from the extracted copy, `lint` runs actionlint and the
+pinned shellcheck over the workflows and shell scripts, and a Windows job parses the
+PowerShell installers, runs a real `trace_route` through `tracert`, and installs from
+the archive the Linux job built — see `.github/workflows/ci.yml`.
 
 ## Documentation
 

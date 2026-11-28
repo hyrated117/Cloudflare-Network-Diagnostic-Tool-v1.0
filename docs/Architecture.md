@@ -76,12 +76,25 @@ The Node server needs no dependencies; the unified installers write a
 ## Verification
 
 - `server/smoke_test.py` — protocol smoke test without network access.
+- `Tools/check-conformance.py` — feeds the same requests to both servers and fails on
+  any difference; `--live-trace` adds one real trace.
+- `Tools/check-version.py` — `VERSION`, the ten stamped sites and the newest changelog
+  section agree, and the release notes exist and name that version.
+- `Tools/validate-json.py` — JSON syntax validation.
+- `Tools/check-dependabot.py` — `.github/dependabot.yml` parses and holds the keys
+  Dependabot needs.
+- `Tools/check-workflows.py` and `Tools/test_check_workflows.py` — every pull request
+  triggers a run, every job sets a timeout, every `uses:` is pinned, and no `run:` line
+  hides a continuation character behind whitespace.
+- `Tools/check-links.py` — relative documentation links resolve.
 - `Tools/check-installers.py` / `Tools/check-installers.ps1` — run the shell,
   unified-shell and Node CLI installers (or the two PowerShell installers) into a
   temporary directory and confirm the generated config launches the server. Neither
   check runs `installers/install-mcp-server.py`.
-- `Tools/validate-json.py` — JSON syntax validation.
-- `.github/workflows/ci.yml` — `validate` job (syntax, smoke test, conformance,
-  JSON, documentation links, installer configs), a `package` job (build the archive,
-  check it, install from the extracted copy) and a `windows` job (PowerShell parser,
-  a real `tracert` trace, and the same archive installed with the `.ps1` installers).
+- `.github/workflows/ci.yml` — `validate` job (syntax, smoke test, conformance, version
+  consistency, JSON, the pinned PyYAML with the Dependabot check, the workflow checks
+  and their self-test, the version self-tests, documentation links, installer configs),
+  a `package` job (build the archive, check it, install from the extracted copy), a
+  `lint` job (actionlint with its bundled shellcheck, then pinned shellcheck over
+  `installers/*.sh` and `Tools/*.sh`) and a `windows` job (PowerShell parser, a real
+  `tracert` trace, and the same archive installed with the `.ps1` installers).

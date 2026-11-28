@@ -79,9 +79,17 @@ Run the same checks as CI:
 node --check server/index.js
 node --check installers/cli.js
 python3 -m compileall -q server installers Tools
+bash -n installers/*.sh Tools/*.sh
 python3 server/smoke_test.py
 python3 Tools/check-conformance.py
+python3 Tools/check-version.py
 python3 Tools/validate-json.py .
+python3 -m pip install --quiet pyyaml==6.0.4   # check-dependabot.py and check-workflows.py
+python3 Tools/check-dependabot.py
+python3 Tools/check-workflows.py
+python3 Tools/test_check_workflows.py
+python3 Tools/test_check_version.py
+python3 Tools/test_stamp_version.py
 python3 Tools/check-links.py
 python3 Tools/check-installers.py
 Tools/build-package.sh v0.0.0-ci

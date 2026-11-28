@@ -86,6 +86,13 @@ entries have been removed. The first version in this repository is `1.0.0`.
 - `Tools/check-installers.py` also runs `installers/install-mcp-server.py`, so the
   Python server installer's config is handshaked like the shell, unified-shell and Node
   CLI ones instead of only being described in the docs
+- `Tools/test_check_archive.py`, which builds its own packs, both ways for every rule
+  the release gate asserts: a missing required file, build junk, a `VERSION` that is not
+  MAJOR.MINOR.PATCH or matches neither server nor installer, a half-bumped stamp against
+  `--expect-version` and a missing, wrong or unreadable `SHA256SUMS` each fail, while a
+  sound pack passes and extracts. A `SHA256SUMS` with fewer than two fields, a pack with
+  no `VERSION` and a missing versioned site now report a failure instead of raising, and
+  `Validate` runs the test as `Self-test the archive check`
 
 ### Changed
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,

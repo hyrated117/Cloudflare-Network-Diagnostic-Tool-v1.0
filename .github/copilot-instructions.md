@@ -95,6 +95,7 @@ python3 Tools/check-links.py
 python3 Tools/check-installers.py
 Tools/build-package.sh v0.0.0-ci
 python3 Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract-to dist/pack
+python3 Tools/test_check_archive.py
 python3 Tools/check-installers.py --installers-root dist/pack
 ./Tools/check-installers.ps1 -InstallersRoot dist/pack   # Windows installers
 ```

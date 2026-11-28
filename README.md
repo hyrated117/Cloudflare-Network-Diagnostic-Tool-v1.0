@@ -123,6 +123,7 @@ python3 Tools/check-workflows.py    # triggers, timeouts, pins, broken continuat
 python3 Tools/test_check_workflows.py          # each rule, the break and the sound case
 python3 Tools/test_check_version.py            # every failure the checker promises
 python3 Tools/test_stamp_version.py            # a bump writes all sites or none
+python3 Tools/test_check_archive.py            # the release gate's rules, on built packs
 python3 Tools/check-links.py        # no broken relative links in the docs
 python3 Tools/check-installers.py   # shell and CLI installers write launchable configs
 ```

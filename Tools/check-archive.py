@@ -8,6 +8,11 @@ Tools/check-installers.ps1 (Windows), which take the tree root as an argument.
 The archive also ships `VERSION`, and this check requires it to match the version
 stamped into the server and the unified installer the pack carries, so a pack built
 from a half-bumped tree cannot be published under either version.
+
+Every rule is pinned both ways by `Tools/test_check_archive.py`, which builds its own
+archives: a pack missing a file, carrying build junk, stamped with a half-bumped
+version or checked against a wrong or malformed `SHA256SUMS` must fail, and a sound one
+must pass.
 """
 
 import argparse
@@ -54,6 +59,9 @@ def checksum(archive, checksum_file, required):
             return False
         return True
     fields = checksum_file.read_text(encoding="utf-8").split()
+    if len(fields) < 2:
+        print(f"FAIL: SHA256SUMS next to {archive} is malformed", file=sys.stderr)
+        return False
     expected, name = fields[0].lower(), fields[-1].lstrip("*")
     if name != archive.name:
         print(f"FAIL: SHA256SUMS covers {name}, not {archive.name}", file=sys.stderr)
@@ -86,7 +94,11 @@ def contents(archive):
 def version(archive, release=None):
     """Require the pack's VERSION to match the server and installer it ships."""
     with tarfile.open(archive) as tar:
-        raw = tar.extractfile("VERSION").read().decode("utf-8")
+        try:
+            raw = tar.extractfile("VERSION").read().decode("utf-8")
+        except (KeyError, AttributeError, OSError):
+            print("FAIL: VERSION is not in the archive", file=sys.stderr)
+            return False
         words = raw.split()
         if len(words) != 1 or not SEMVER.match(words[0]):
             print(f"FAIL: VERSION in the archive is not MAJOR.MINOR.PATCH: {raw.strip()!r}", file=sys.stderr)
@@ -100,7 +112,13 @@ def version(archive, release=None):
             )
             ok = False
         for name, pattern in VERSION_SITES.items():
-            found = re.findall(pattern, tar.extractfile(name).read().decode("utf-8"), re.MULTILINE)
+            try:
+                text = tar.extractfile(name).read().decode("utf-8")
+            except (KeyError, AttributeError, OSError):
+                print(f"FAIL: {name} is not in the archive", file=sys.stderr)
+                ok = False
+                continue
+            found = re.findall(pattern, text, re.MULTILINE)
             if len(found) != 1:
                 print(f"FAIL: {name} in the archive has {len(found)} version string(s), expected 1", file=sys.stderr)
                 ok = False

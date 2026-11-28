@@ -31,6 +31,7 @@ python3 Tools/check-links.py                      # no broken relative doc links
 python3 Tools/check-installers.py                 # shell and CLI installers write launchable configs
 Tools/build-package.sh v0.0.0-ci                  # build the release archive
 python3 Tools/check-archive.py dist/v0.0.0-ci/mcp-installer-pack.tar.gz --extract-to dist/pack
+python3 Tools/test_check_archive.py               # each archive rule fails a bad pack, passes a good one
 python3 Tools/check-installers.py --installers-root dist/pack
 ```
 

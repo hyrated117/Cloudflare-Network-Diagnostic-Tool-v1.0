@@ -122,7 +122,9 @@ class DiagnosticServer:
                 completed = subprocess.run([command, *fixed_args, destination], capture_output=True, text=True, errors="replace", timeout=20, check=False)
             except FileNotFoundError:
                 continue
-            except subprocess.TimeoutExpired as exc:
+            except (subprocess.TimeoutExpired, OSError) as exc:
+                # A binary that exists but cannot run (wrong format, permissions) is a
+                # failed trace, not a reason to lose the rest of the session.
                 return {"tool": "trace_route", "destination": destination, "status": "error", "error": str(exc), "timestamp": now()}
             output = completed.stdout.strip() or completed.stderr.strip() or "No output captured"
             return {"tool": "trace_route", "destination": destination, "status": "ok" if completed.returncode == 0 else "error", "returnCode": completed.returncode, "output": output, "timestamp": now()}

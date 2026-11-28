@@ -129,6 +129,12 @@ entries have been removed. The first version in this repository is `1.0.0`.
   503, a redirect, empty, non-JSON, over the 64 KiB cap) with each outcome asserted,
   `trace_route` runs with an empty `PATH` and `health_score` is never generated. It found
   ten server differences, all fixed below
+- `Tools/test_injection.py` and a `Validate` step that keep caller input out of the
+  command line: a fake `traceroute` first on `PATH` logs its exact argv and resolver stubs
+  log every name, then flag-shaped destinations (`-n`, `--help`, a trailing `-n 1`) must
+  be refused while shell-shaped ones (`;`, `&&`, `|`, `$(...)`, backticks, `${IFS}`) must
+  arrive as one literal argument. Every payload aims a `touch` at a marker file that must
+  never appear, so a shell in either server fails the test
 
 ### Changed
 - `release.yml` calls the `ci.yml` workflow as a `checks` job and gates publishing on it,
@@ -198,6 +204,9 @@ entries have been removed. The first version in this repository is `1.0.0`.
   non-JSON body where Node caps it at 4096 characters; Node listed resolved addresses in
   resolution order where Python sorts them; and Node repeated a failed lookup's message
   once per address family where Python reports it once
+- A `traceroute`/`tracepath` that exists but cannot execute (wrong format, permissions)
+  no longer kills the Python server: it returns a failed trace, the way Node does, instead
+  of raising out of the request loop
 
 ## [1.0.1] - 2026-11-25
 

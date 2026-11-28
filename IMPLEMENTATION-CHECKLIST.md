@@ -50,7 +50,8 @@ The repository ships two MCP stdio servers, their installers and documentation â
   parity, version
   consistency, JSON, the pinned PyYAML install with the Dependabot check and its
   self-test, the workflow checks and their self-test, the pin and image self-tests, the
-  Windows tracert test, the stack self-test, both version self-tests, the archive
+  Windows tracert test, the destination/domain injection test, the stack self-test, both
+  version self-tests, the archive
   self-test, documentation links, installer configs **(automated)**
 - [x] `lint` job: actionlint pinned by image digest, with its bundled shellcheck over
   every `run:` block, then shellcheck 0.11.0 from its checksum-verified tarball over

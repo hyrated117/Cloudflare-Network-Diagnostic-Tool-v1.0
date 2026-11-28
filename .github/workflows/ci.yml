@@ -112,6 +112,10 @@ jobs:
       - name: Test the Windows tracert branch
         run: python Tools/test_windows_trace_route.py
 
+      # A caller-supplied destination or domain must never become a flag or a command.
+      - name: Test hostile destinations and domains
+        run: python Tools/test_injection.py
+
       # The guard itself needs the five branches' refs, so Validate pins its rules and the
       # mapping chain is rehearsed with `python Tools/check-stack.py --fetch` before a PR.
       - name: Self-test the stack check

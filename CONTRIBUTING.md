@@ -29,6 +29,7 @@ python3 Tools/test_check_workflows.py             # each rule fails its break an
 python3 Tools/test_check_pins.py                  # every pin-audit rule, offline
 python3 Tools/test_check_actionlint_image.py      # every image-check rule, offline
 python3 Tools/test_windows_trace_route.py         # the Windows tracert branch, forced
+python3 Tools/test_injection.py                   # no flag or shell injection via trace/dns
 python3 Tools/test_check_stack.py                 # every stack-guard rule, on temp repos
 python3 Tools/test_check_version.py               # every failure the version checker promises
 python3 Tools/test_stamp_version.py               # a bad VERSION writes nothing; a bump reads back consistent
@@ -102,6 +103,12 @@ served by a loopback fixture (200, 404, 503, a redirect, empty, non-JSON, over t
 cap), with each outcome asserted rather than merely diffed. It is deterministic and
 offline — `trace_route` runs with an empty `PATH` and `health_score` is never generated —
 and `Validate` runs it as `Diff the servers on randomized requests`.
+
+`Tools/test_injection.py` covers the input side: a fake `traceroute` first on `PATH`
+records its argv and resolver stubs record names, then flag-shaped and shell-shaped
+destinations and domains are sent. Each value must be refused or arrive as one literal
+argument, no payload may add an argument, and a marker file every payload aims a `touch`
+at must never appear. `Validate` runs it as `Test hostile destinations and domains`.
 
 `Tools/check-stack.py --fetch` is the pre-flight for the stacked pull requests: it
 resolves each branch, refuses a pull request whose base is not the previous tip (its diff

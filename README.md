@@ -125,6 +125,7 @@ python3 Tools/test_check_workflows.py          # each rule, the break and the so
 python3 Tools/test_check_pins.py               # the pin audit's rules, offline
 python3 Tools/test_check_actionlint_image.py   # the image check's rules, offline
 python3 Tools/test_windows_trace_route.py      # the Windows tracert branch, forced
+python3 Tools/test_injection.py                # no flag or shell injection via trace/dns
 python3 Tools/test_check_stack.py              # the stack guard's rules, on temp repos
 python3 Tools/test_check_version.py            # every failure the checker promises
 python3 Tools/test_stamp_version.py            # a bump writes all sites or none
@@ -147,6 +148,10 @@ Windows `tracert` branch on Linux with a shim, so the command shape and the thre
 outcomes are checked on every pull request rather than only in the Windows job.
 `Tools/check-stack.py --fetch` rehearses the five stacked pull requests before they are
 opened: bases, ancestry and a conflict-free merge into `main` in order.
+`Tools/test_injection.py` puts a logging fake `traceroute` first on `PATH` and stubs the
+resolver in both runtimes, then sends flag-shaped and shell-shaped destinations and
+domains: a value must be refused or arrive as one literal argument, and a marker file
+aimed at by every payload must never appear.
 `Tools/test_parity.py` widens the hand-written conformance cases into a seeded random
 corpus of odd arguments, malformed lines and hostile values, and fails on any response
 that differs between the two servers — including the success and error results of DNS and

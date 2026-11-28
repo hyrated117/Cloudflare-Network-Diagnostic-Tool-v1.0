@@ -84,8 +84,9 @@ jobs:
       - name: Check workflow triggers, timeouts, pins and continuations
         run: python Tools/check-workflows.py
 
-      # The continuation rule has to ignore literal text and still catch a real break;
-      # this pins both halves so a later simplification cannot give up either one.
+      # Every rule has to fail the break GitHub would not report and stay quiet on a
+      # workflow GitHub runs fine; this pins both halves per rule so a simplification
+      # cannot give up either one.
       - name: Self-test the workflow checks
         run: python Tools/test_check_workflows.py
 

@@ -52,7 +52,10 @@ entries have been removed. The first version in this repository is `1.0.0`.
   masked first and a literal character inside them is not reported. The rule and its
   masking are held in place by `Tools/test_check_workflows.py`, which the `Validate` job
   runs as `Self-test the workflow checks`: a here-document body and a trailing comment
-  must stay quiet while a real break in either shell must still fail
+  must stay quiet while a real break in either shell must still fail. The trigger,
+  timeout and pin rules are pinned the same way — a filtered `pull_request`, a missing
+  or non-numeric `timeout-minutes` and a tag-pinned `uses:` each fail while an
+  unfiltered trigger, a positive timeout and a SHA- or digest-pinned `uses:` pass
 - `Tools/test_check_version.py` and `Tools/test_stamp_version.py`, and a `Validate` step
   `Self-test the version checks` that runs both. The first pins every failure
   `check-version.py` promises — a drifted site, two sites that disagree, a `VERSION`

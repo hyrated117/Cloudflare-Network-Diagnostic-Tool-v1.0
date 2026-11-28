@@ -23,7 +23,7 @@ python3 Tools/check-version.py                    # version sites, VERSION and c
 python3 Tools/validate-json.py .                  # JSON syntax
 python3 Tools/check-dependabot.py                 # .github/dependabot.yml parses and Dependabot would accept it
 python3 Tools/check-workflows.py                  # every pull request is scanned, every job has a timeout, every use is pinned, no continuation is broken
-python3 Tools/test_check_workflows.py             # that rule ignores literal text and still fails a real break
+python3 Tools/test_check_workflows.py             # each rule fails its break and passes a sound workflow
 python3 Tools/test_check_version.py               # every failure the version checker promises
 python3 Tools/test_stamp_version.py               # a bad VERSION writes nothing; a bump reads back consistent
 python3 Tools/check-links.py                      # no broken relative doc links
@@ -57,10 +57,12 @@ the line there and runs the rest of the command as its own statement, which only
 runner would report, and only at run time; which character to look for comes from the
 shell the block runs in. Only code counts, so quoted text, comments, here-documents and
 here-strings are masked before a match is trusted. `Tools/test_check_workflows.py`
-pins both halves of that — a here-document body and a trailing comment stay quiet, a
-real break in either shell still fails — and the `Validate` job runs it as
-`Self-test the workflow checks`; it is stdlib-only, so it runs before PyYAML is
-installed.
+pins both halves of every rule — a filtered `pull_request`, a job without a timeout and
+a tag-pinned `uses:` each fail while an unfiltered trigger, a positive timeout and a
+SHA- or digest-pinned `uses:` pass, and a here-document body and a trailing comment
+stay quiet while a real continuation break in either shell still fails — and the
+`Validate` job runs it as `Self-test the workflow checks`; it is stdlib-only, so it runs
+before PyYAML is installed.
 
 `Tools/test_check_version.py` and `Tools/test_stamp_version.py` pin the version
 tooling the same way, and the `Validate` job runs them as `Self-test the version

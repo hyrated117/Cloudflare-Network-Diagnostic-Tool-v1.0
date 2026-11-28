@@ -119,7 +119,7 @@ python3 Tools/validate-json.py .    # JSON syntax
 python3 -m pip install --quiet pyyaml==6.0.4   # for the two checks below
 python3 Tools/check-dependabot.py   # .github/dependabot.yml parses and is accepted
 python3 Tools/check-workflows.py    # triggers, timeouts, pins, broken continuations
-python3 Tools/test_check_workflows.py          # that rule ignores literal text
+python3 Tools/test_check_workflows.py          # each rule, the break and the sound case
 python3 Tools/test_check_version.py            # every failure the checker promises
 python3 Tools/test_stamp_version.py            # a bump writes all sites or none
 python3 Tools/check-links.py        # no broken relative links in the docs

@@ -139,6 +139,21 @@ request that moves the SHA and its comment together: take those, rather than edi
 a pin by hand or pointing it back at a tag, so an already cut tag keeps running the
 code it was tested with.
 
+One pin is the exception: the `lint` job runs
+`docker://rhysd/actionlint@sha256:…`. Dependabot's `github-actions` updater only
+rewrites `owner/repo@ref` action references, and
+[GitHub's supported-ecosystems page](https://docs.github.com/en/code-security/reference/supply-chain-security/supported-ecosystems-and-repositories)
+says `docker://` container references are not supported, so nothing will open a pull
+request for that digest and it would otherwise age silently. Bump it by hand:
+
+1. Read the digest of the new multi-arch index, not of one architecture's image, with
+   `docker buildx imagetools inspect rhysd/actionlint:<version>` (or
+   `docker manifest inspect`), and copy the `sha256:` it reports for the index.
+2. Replace the digest in `ci.yml` and the version in the comment above that step, so the
+   two still say the same thing.
+3. Run the `lint` job: it checks the shell actionlint bundles, so a digest that resolves
+   to something other than the image the workflows were linted with shows up there.
+
 ## Version bumps
 
 `VERSION` at the repository root holds the version. The installers are copied to a

@@ -1,7 +1,8 @@
 # Keeps the actions in .github/workflows current. release.yml pins each action to a
 # commit SHA with its release in a comment, so an update has to move both; Dependabot
-# rewrites the SHA and the comment together, which is why its PRs are the only
-# sanctioned way to change a pin.
+# rewrites the SHA and the comment together, which is why its PRs are how an action pin
+# moves. The one `docker://` image reference, in `ci.yml`'s lint job, is not an action
+# reference and Dependabot cannot update it: CONTRIBUTING.md records the manual bump.
 version: 2
 updates:
   - package-ecosystem: "github-actions"

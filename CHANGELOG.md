@@ -231,6 +231,16 @@ entries have been removed. The first version in this repository is `1.0.0`.
   no longer kills the Python server: it returns a failed trace, the way Node does, instead
   of raising out of the request loop
 
+### Changed
+- `initialize` negotiates the protocol version instead of answering `2024-11-05`
+  regardless of what the client asked for. Both servers echo `2024-11-05` when it is
+  requested and answer `2024-11-05` for any other value — a newer or older MCP version,
+  or one that is not a string — so a client is never told a version the server does not
+  speak. `Tools/test_parity.py` pins the supported, newer, older and malformed cases on
+  both servers; with a single supported version the echoed and the fallback answers are
+  the same string, so the unsupported rows are what catch a version being echoed that
+  the server does not speak
+
 ## [1.0.1] - 2026-11-25
 
 Patch release: the two servers now answer identically for the two remaining

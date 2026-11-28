@@ -7,6 +7,10 @@ import net from 'node:net';
 import { domainToASCII, pathToFileURL } from 'node:url';
 
 const PROTOCOL_VERSION = '2024-11-05';
+// The only version this server speaks. `initialize` echoes it when a client asks for it
+// and answers with it for anything else, so a client is never told a version the server
+// cannot speak.
+const SUPPORTED_PROTOCOL_VERSIONS = new Set([PROTOCOL_VERSION]);
 const TRACE_TIMEOUT_MS = 20000;
 const MAX_DOH_BYTES = 65536;
 const timestamp = () => new Date().toISOString();
@@ -206,9 +210,12 @@ class DiagnosticServer {
     let result;
     try {
       switch (message.method) {
-        case 'initialize':
-          result = { protocolVersion: PROTOCOL_VERSION, capabilities: { tools: {} }, serverInfo: { name: this.name, version: this.version } };
+        case 'initialize': {
+          const requested = params.protocolVersion;
+          const version = typeof requested === 'string' && SUPPORTED_PROTOCOL_VERSIONS.has(requested) ? requested : PROTOCOL_VERSION;
+          result = { protocolVersion: version, capabilities: { tools: {} }, serverInfo: { name: this.name, version: this.version } };
           break;
+        }
         case 'notifications/initialized':
           return null;
         case 'ping':

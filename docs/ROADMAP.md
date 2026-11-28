@@ -7,9 +7,10 @@ It replaces an earlier version that described a SwiftUI app and an AppMaker
 generator as current work.
 
 **Today:** five tools (`dns_check`, `doh_test`, `trace_route`, `health_score`,
-`export_results`) over JSON-RPC on stdio, macOS/Linux and Windows installers, and
-CI on both platforms. See [Modules](./Modules.md) for the tool reference and
-[Architecture](./Architecture.md) for the design.
+`export_results`) over JSON-RPC on stdio, `initialize` negotiating the protocol version
+(`2024-11-05`; any other requested version is answered with it), macOS/Linux and
+Windows installers, and CI on both platforms. See [Modules](./Modules.md) for the tool
+reference and [Architecture](./Architecture.md) for the design.
 
 ---
 
@@ -20,8 +21,6 @@ CI on both platforms. See [Modules](./Modules.md) for the tool reference and
   (extra-argument rejection, DoH body size limits, timestamp format)
 - Conformance tests per tool, including malformed input and offline behaviour, run
   in CI on both platforms
-- Documented handling of unknown methods and unsupported protocol versions (both
-  servers currently report `2024-11-05`)
 
 ### Installers
 - One config shape across all six installers, verified by the existing

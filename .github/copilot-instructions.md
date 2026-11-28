@@ -12,7 +12,8 @@
 ## MCP protocol
 
 - `server/index.js` and `server/index.py` speak JSON-RPC 2.0, one message per line,
-  over stdio, and both report protocol version `2024-11-05`.
+  over stdio, and both speak protocol version `2024-11-05`: `initialize` echoes it when
+  asked for and answers `2024-11-05` for any other requested version.
 - Protocol frames go to stdout and nothing else: never write logs, diagnostics or
   warnings there. The servers make no logging calls, so stderr stays empty except
   for a fatal startup error.

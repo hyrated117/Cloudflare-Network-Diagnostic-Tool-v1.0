@@ -15,6 +15,10 @@ import urllib.request
 from datetime import datetime, timezone
 
 PROTOCOL_VERSION = "2024-11-05"
+# The only version this server speaks. `initialize` echoes it when a client asks for
+# it and answers with it for anything else, so a client is never told a version the
+# server cannot speak.
+SUPPORTED_PROTOCOL_VERSIONS = (PROTOCOL_VERSION,)
 MAX_DOH_BYTES = 65536
 # Non-JSON bodies are kept only this far, so a remote endpoint cannot stuff the result.
 MAX_RAW_CHARS = 4096
@@ -213,7 +217,9 @@ class DiagnosticServer:
         if method == "notifications/initialized":
             return None
         if method == "initialize":
-            result = {"protocolVersion": PROTOCOL_VERSION, "capabilities": {"tools": {}}, "serverInfo": {"name": self.name, "version": self.version}}
+            requested = params.get("protocolVersion")
+            version = requested if isinstance(requested, str) and requested in SUPPORTED_PROTOCOL_VERSIONS else PROTOCOL_VERSION
+            result = {"protocolVersion": version, "capabilities": {"tools": {}}, "serverInfo": {"name": self.name, "version": self.version}}
         elif method == "ping":
             result = {}
         elif method == "tools/list":

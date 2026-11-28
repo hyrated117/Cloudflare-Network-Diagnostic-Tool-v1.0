@@ -37,8 +37,6 @@ exist in this repository:
 - Bring the Node and Python servers to full behavioural parity (extra-argument
   handling, DoH body limits, timestamp format)
 - Conformance tests for every tool plus malformed-input cases in CI
-- Document MCP protocol-version compatibility (`2024-11-05` today) and how the
-  servers respond to unknown methods
 - Clearer timeout configuration instead of fixed values
 
 ### Mid term

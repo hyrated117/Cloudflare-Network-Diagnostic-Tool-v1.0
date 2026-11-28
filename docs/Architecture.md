@@ -24,8 +24,12 @@ planned work in [docs/ROADMAP.md](./ROADMAP.md). AppMaker has its own
 ## Transport and protocol
 
 - JSON-RPC 2.0, one message per line, over stdio (stdin/stdout).
-- Methods: `initialize` (reports `protocolVersion: 2024-11-05`, `capabilities.tools`),
+- Methods: `initialize` (reports `protocolVersion` and `capabilities.tools`),
   `notifications/initialized`, `ping`, `tools/list`, `tools/call`.
+- Protocol version: both servers speak `2024-11-05`. `initialize` echoes that version
+  when the client asks for it and answers with it for any other request — a newer or
+  older MCP version, or a value that is not a string — so a client is never told a
+  version the server does not speak.
 - No MCP resources or prompts are served.
 - Error codes: `-32700` parse error, `-32600` invalid request, `-32601` method not
   found, `-32602` invalid parameters. Notifications never receive a response.

@@ -118,6 +118,19 @@ PROTOCOL_METHODS = [
     "initialize", "ping", "tools/list", "notifications/initialized",
     "does/not/exist", "Initialize", "",
 ]
+# The version both servers speak, and the only one they echo. `initialize` must answer
+# with it for every request below that is not this exact string.
+PROTOCOL_VERSION = "2024-11-05"
+PROTOCOL_VERSION_CASES = [
+    ("supported", PROTOCOL_VERSION),
+    ("newer", "2025-06-18"),
+    ("older", "2024-10-07"),
+    ("malformed", 42),
+]
+PROTOCOL_VERSION_REQUESTS = [
+    {"jsonrpc": "2.0", "id": f"init:{case}", "method": "initialize", "params": {"protocolVersion": requested}}
+    for case, requested in PROTOCOL_VERSION_CASES
+]
 PARAMS = [{}, None, [], "x", 42, {"cursor": "c"}, {"name": "dns_check", "arguments": {"domain": ""}}]
 IDS = [1, "text-id", None, 1.5, -3, 10**12, {"a": 1}, [1, 2]]
 
@@ -263,7 +276,7 @@ def protocol_request(rng):
 def corpus(seed, count):
     """A fixed edge list followed by a seeded mix of tool calls, protocol calls and junk."""
     rng = random.Random(seed)
-    messages = list(EDGE_MESSAGES) + list(NETWORK_REQUESTS)
+    messages = list(EDGE_MESSAGES) + list(NETWORK_REQUESTS) + list(PROTOCOL_VERSION_REQUESTS)
     for index in range(count):
         roll = rng.random()
         if roll < 0.7:
@@ -359,6 +372,27 @@ def check_outcomes(label, normalized):
     return problems
 
 
+def check_protocol_versions(label, normalized):
+    """`initialize` echoes the supported version and falls back to it otherwise.
+
+    With one supported version the echoed and the fallback answer are the same string,
+    so the `supported` row cannot tell the two apart. The newer, older and malformed
+    rows are the ones that fail if a server echoes a version it does not speak, or if a
+    version is added to SUPPORTED_PROTOCOL_VERSIONS without updating this table.
+    """
+    answered = {
+        response.get("id"): (response.get("result") or {}).get("protocolVersion")
+        for response in normalized
+        if isinstance(response.get("id"), str) and response["id"].startswith("init:")
+    }
+    problems = []
+    for case, requested in PROTOCOL_VERSION_CASES:
+        actual = answered.get(f"init:{case}")
+        if actual != PROTOCOL_VERSION:
+            problems.append(f"{label}: initialize with {requested!r} answered {actual!r}, expected {PROTOCOL_VERSION!r}")
+    return problems
+
+
 def compare(check, expected, actual, ignore=()):
     """Every response, in order, must match once volatile fields are normalized."""
     if len(expected) != len(actual):
@@ -401,7 +435,12 @@ def main():
             stdin = stdin.replace(DOH_PORT_PLACEHOLDER, str(fixture.server_address[1]))
             expected = check.normalize(check.responses(run_server(python_server, stdin, env)))
             actual = check.normalize(check.responses(run_server(node_server, stdin, env)))
-            problems = check_outcomes("server/index.py", expected) + check_outcomes("server/index.js", actual)
+            problems = (
+                check_outcomes("server/index.py", expected)
+                + check_outcomes("server/index.js", actual)
+                + check_protocol_versions("server/index.py", expected)
+                + check_protocol_versions("server/index.js", actual)
+            )
     finally:
         fixture.shutdown()
         fixture.server_close()

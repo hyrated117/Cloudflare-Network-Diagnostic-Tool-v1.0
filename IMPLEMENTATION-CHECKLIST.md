@@ -18,6 +18,9 @@ The repository ships two MCP stdio servers, their installers and documentation â
 ## 2. Servers
 
 - [x] Both servers expose the same five tools (`dns_check`, `doh_test`, `trace_route`, `health_score`, `export_results`)
+- [x] `initialize` echoes `protocolVersion` `2024-11-05` when it is requested and answers
+  the same version for a newer, older or malformed request **(automated:
+  `Tools/test_parity.py`, plus `Tools/check-installers.py` for the echoed case)**
 - [x] Node/Python differences documented and intentional (the "Behavioural differences
   between the two servers" section of [docs/Modules.md](./docs/Modules.md))
 - [x] Protocol frames on stdout only; no logging calls, stderr silent except startup errors
